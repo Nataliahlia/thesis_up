@@ -8,9 +8,15 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files, tells Express to serve static files from the current directory
 app.use(express.static(path.join(__dirname, 'thesis_up')));
 
-// Serve the login page at root URL, when someone accesses the root URL send them the index.html file
+// Serve the login page at root URL, when someone accesses the root URL send them the public_endpoint.html file
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'thesis_up', 'index.html'));
+});
+
+// Serve the login page at /login, when someone accesses the /login URL send them the public_endpoint.html file
+app.get('/login', (req, res) => {
+  console.log('Login page requested');
+  res.sendFile(path.join(__dirname, 'thesis_up', 'login.html'));
 });
 
 // Handle login form submission, when the server receives a POST request to /login, it will execute the following function
@@ -23,7 +29,7 @@ app.post('/login', (req, res) => {
     res.redirect('/dashboard');
   } else {
     //  Show an error message if login fails
-    res.redirect('/index.html?error=1');
+    res.redirect('/login.html?error=1');
   }
 });
 
