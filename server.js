@@ -15,7 +15,6 @@ app.get('/', (req, res) => {
 
 // Serve the login page at /login, when someone accesses the /login URL send them the public_endpoint.html file
 app.get('/login', (req, res) => {
-  console.log('Login page requested');
   res.sendFile(path.join(__dirname, 'thesis_up', 'login.html'));
 });
 
