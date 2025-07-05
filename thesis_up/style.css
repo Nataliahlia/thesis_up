@@ -45,3 +45,9 @@
   0%   { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
+
+.nav-link i {
+  font-size: 1.2rem;
+  width: 20px;        
+  text-align: center; 
+}

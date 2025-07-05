@@ -79,8 +79,14 @@ app.post('/login', (req, res) => {
 
     // Check if user exists
     if (results.length > 0) {
-      // Redirect to dashboard if login successful
-      res.redirect('/dashboard');
+      if (results[0].role == 'secretary') {
+        // Redirect to dashboard if login successful
+        res.redirect('/dashboards/dashboardSecretary');
+      } else if (results[0].role == 'professor') {
+        res.redirect('/dashboards/dashboardProfessor');
+      } else if (results[0].role == 'student') {
+        res.redirect('/dashboards/dashboardStudent');
+      }
     } else {
       // Show an error message if login fails
       res.redirect('/login.html?error=1');
@@ -88,11 +94,24 @@ app.post('/login', (req, res) => {
   });
 });
 
-// If login is successful, redirect to the dashboard page, by sending a GET request to /dashboard
-app.get('/dashboard', (req, res) => {
-  console.log('Serving dashboard.html');
-  res.sendFile(path.join(__dirname, 'thesis_up', 'dashboard.html'));
+// If login is successful, redirect to the dashboard page, by sending a GET request to the correct dashboard
+app.get('/dashboards/dashboardSecretary', (req, res) => {
+  console.log('Serving dashboardSecretary.html');
+  res.sendFile(path.join(__dirname, 'thesis_up', 'dashboards/dashboardSecretary.html'));
 });
+
+
+// If login is successful, redirect to the dashboard page, by sending a GET request to the correct dashboard
+app.get('/dashboards/dashboardProfessor', (req, res) => {
+  console.log('Serving dashboardProfessor.html');
+  res.sendFile(path.join(__dirname, 'thesis_up', 'dashboards/dashboardProfessor.html'));
+});
+
+app.get('/dashboards/dashboardStudent', (req, res) => {
+  console.log('Serving dashboardStudent.html');
+  res.sendFile(path.join(__dirname, 'thesis_up', 'dashboards/dashboardStudent.html'));
+});
+
 
 // Start the server
 const PORT = 3000;
