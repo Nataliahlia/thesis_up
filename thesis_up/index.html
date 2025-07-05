@@ -11,10 +11,10 @@
   <!-- Custom CSS -->
   <link rel="stylesheet" href="../style.css" />
 </head>
-<body class="bg-beige">
+<body class="bg-white">
 
     <!-- Create a navigation bar using Bootstrap -->
-    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+    <nav class="navbar navbar-expand-lg bg-light border-bottom">
         <div class="container-fluid">
         <!-- Image Inserted -->
         <a class="navbar-brand" href="#">
@@ -25,33 +25,63 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <!-- Home -->
-                <li class="nav-item">
-                    <a class="nav-link active" aria-current="page" href="#">Home</a>
-                </li>
-                <!-- Dropdown -->
-                <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    Dropdown
-                </a>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#">Action</a></li>
-                    <li><a class="dropdown-item" href="#">Another action</a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="#">Something else here</a></li>
-                </ul>
-                <!-- Search -->
-                <li class="nav-item">
-                </li>
-                <form class="d-flex" role="search">
-                    <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search"/>
-                    <button class="btn btn-dark w-10" type="submit">Search</button>
-                </form>
             </ul>
             <a href="/login" class="btn btn-dark w-10" type="button">Login</a>
         </div>
     </div>
     </nav>
+    <h1 class="h3 text-dark fw-bold text-center">
+        Τρέχουσες Ανακοινώσεις Διπλωματικών Εργασιών
+    </h1>
+    <div class="carousel-wrapper mt-5">
+        <div class="carousel-track" id="carouselContainer">
+            <!-- Cards will go here -->
+        </div>
+    </div>
+    
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const container = document.getElementById('carouselContainer');
+
+    fetch('/api/announcements')
+        .then(response => response.json())
+        .then(announcements => {
+            if (!Array.isArray(announcements)) {
+            console.error("Invalid data from server");
+            return;
+        }
+
+        // Δημιουργία κάρτας
+        announcements.forEach(announcements => {
+            const card = document.createElement('div');
+            card.className = 'card shadow-sm mx-2';
+            card.style.width = '300px';
+            card.style.minWidth = '300px';
+            card.style.height = '200px';
+            card.style.overflow = 'hidden';
+            card.style.flex = '0 0 auto'; // Prevent flex items from shrinking
+            card.innerHTML = `
+            <div class="card-body">
+                <h5 class="card-title">Διπλωματική</h5>
+                <p class="card-text">${announcements.title || 'Χωρίς τίτλο'}</p>
+                <span class="badge bg-secondary">${announcements.thesis_id || ''}</span>
+            </div>
+            `;
+            container.appendChild(card);
+        });
+
+        container.innerHTML += container.innerHTML;
+        })
+    .catch(err => {console.error("Fetch error:", err);
+    });
+});
+</script>
+
+<div class="container mt-3">
+  <div class="text-end">
+    <button type="submit" class="btn btn-dark mt-3">Εύρος Χρόνου</button>
+  </div>
+</div>
 
 </body>
 </html>

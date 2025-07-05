@@ -7,6 +7,7 @@ const saltRounds = 10; // Number of rounds for bcrypt hashing
 
 // Middleware to parse form data, this middleware reads the body and turns it into a JavaScript object accessible via req.body
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 // Serve static files, tells Express to serve static files from the current directory
 app.use(express.static(path.join(__dirname, 'thesis_up')));
@@ -31,16 +32,38 @@ connection.connect((err) => {
 
 // Serve the login page at root URL, when someone accesses the root URL send them the public_endpoint.html file
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'thesis_up', 'index.html'));
+  console.log('Attempting to serve index.html');
+  res.sendFile(path.join(__dirname, 'thesis_up', 'index.html'), (err) => {
+    if (err) {
+      console.error('Error sending file:', err);
+      res.status(500).send('Error loading page');
+    } else {
+      console.log('File sent successfully');
+    }
+  });
+});
+
+app.get('/api/announcements', (req, res) => {
+  console.log('Fetching announcements');
+  const sql = `SELECT id, thesis_id, title, date, time, type, location_or_link FROM announcements`;
+  connection.query(sql, (err, results) => {
+    if (err) {
+      console.error('Error fetching theses:', err);
+      return res.status(500).json({ error: 'Failed to retrieve theses' });
+    }
+    res.json(results);
+  });
 });
 
 // Serve the login page at /login, when someone accesses the /login URL send them the public_endpoint.html file
 app.get('/login', (req, res) => {
+  console.log('Attempting to serve login.html');
   res.sendFile(path.join(__dirname, 'thesis_up', 'login.html'));
 });
 
 // Handle login form submission, when the server receives a POST request to /login, it will execute the following function
 app.post('/login', (req, res) => {
+  console.log('Login attempt with username:', req.body.username);
   const { username, password } = req.body;
 
   // Handle the authentication check
@@ -67,6 +90,7 @@ app.post('/login', (req, res) => {
 
 // If login is successful, redirect to the dashboard page, by sending a GET request to /dashboard
 app.get('/dashboard', (req, res) => {
+  console.log('Serving dashboard.html');
   res.sendFile(path.join(__dirname, 'thesis_up', 'dashboard.html'));
 });
 
