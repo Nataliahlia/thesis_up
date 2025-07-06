@@ -4,6 +4,27 @@
   background-color: #6A1F2B; /* bordeaux, primary colour -> used for navbars, buttons, links etc */
 }
 
+.text-bordeaux {
+  color:  #6A1F2B; /* or your custom bordeaux hex code */
+}
+
+/* Bold when hovered */
+a:hover .text-bordeaux {
+  font-weight: bold;
+}
+
+/* Colouring for the outlines, small details */
+.btn-outline-bordeaux {
+  color: #6A1F2B; /* bordeaux -> for the button */
+  border-color: #6A1F2B; /* bordeaux -> for the outline*/
+}
+
+/* Their colour when hovered */
+.btn-outline-bordeaux:hover {
+  background-color: #800000; /* dark bordeaux -> used for the button when hovered */
+  color: #fff;  /* white text when hovered */
+}
+
 .bg-dark_gold {
   background-color: #AF8948; /* dark gold -> used for icons, boarders */
 }
@@ -50,4 +71,18 @@
   font-size: 1.2rem;
   width: 20px;        
   text-align: center; 
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
 }
