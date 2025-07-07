@@ -9,9 +9,9 @@
             "server": "localhost",
             "port": 3306,
             "driver": "MySQL",
-            "name": "web_db",
-            "database": "web_db",
-            "username": "root"
+            "name": "thesis_up_connection",
+            "username": "root",
+            "database": "thesis_up"
         }
     ]
 }
