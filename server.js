@@ -12,6 +12,7 @@ app.use(express.static(path.join(__dirname, 'thesis_up')));
 app.use(require('./routes/auth.routes'));
 app.use(require('./routes/dashboard.routes'));  
 app.use(require('./routes/public_endpoint.routes'));
+app.use(require('./routes/upload.routes'));
 
 const updatePasswords = require('./scripts/updatePasswords');
 
