@@ -11,7 +11,6 @@ const fs = require('fs'); // Import fs for file system operations, used to read 
 // First we need to read the file and then parse it to JSON
 const upload = multer({ dest: 'uploads/' }); // Set the destination for uploaded files, when a file is uploaded it will be saved in the uploads folder
 
-console.log('Upload route initialized'); // Log to confirm the upload route is initialized
 // Handle the file that was uploaded with the name userAddingFile
 router.post('/upload-user', upload.single('userAddingFile'), async (req, res) => {
     // Now the file info is in req.file
@@ -22,9 +21,11 @@ router.post('/upload-user', upload.single('userAddingFile'), async (req, res) =>
         // Error if reading the file fails
         if (err) return res.status(500).send('Error reading file');
 
-        try {
-            //let users = JSON.parse(jsonData); // Parse the JSON data from the file, cpuld be single user or an array of users
+        // Variables used to confirm the upload result
+        let addedStudents = 0;
+        let addedProfessors = 0;
 
+        try {
             const parsed = JSON.parse(jsonData); // Parse the JSON data from the file
             // Wrap single student object into array - to handle both single and multiple student uploads
             if (parsed.student && !Array.isArray(parsed.student)) {
@@ -36,8 +37,10 @@ router.post('/upload-user', upload.single('userAddingFile'), async (req, res) =>
             if (Array.isArray(parsed.student)) {
                 // Process each user in the array
                 for (const student of parsed.student) {
+                    // Increment the addedStudents counter
+                    addedStudents++;
                     // process the student data
-                    const { student_number, email, password_hash, name, surname, street, number, city, postcode, father_name, landline_telephone, mobile_telephone } = student;
+                    const { student_number, email, name, surname, street, number, city, postcode, father_name, landline_telephone, mobile_telephone } = student;
 
                     // Check if all required fields are present, if not error
                     if (!student_number || !email || !name || !surname) {
@@ -54,43 +57,64 @@ router.post('/upload-user', upload.single('userAddingFile'), async (req, res) =>
                     // Wait until the query is done
                     await connection.promise().query(sql, [student_number, email, hashedPassword, name, surname, street, number, city, postcode, father_name, landline_telephone, mobile_telephone]);
                 }
-
-                // Send a response back to the client
-                res.status(200).send('Users added successfully');
-            } else if (Array.isArray(parsed.professor)) {
+            } 
+            if (Array.isArray(parsed.professor)) {
                 // Process each user in the array
                 for (const professor of parsed.professor) {
+                    // Increment the addedProfessors counter
+                    addedProfessors++;
                     // process the professor data
-                    const { professor_id, email, name, surname, topic, department, university, landline, mobile } = professor;
+                    const { email, name, surname, topic, department, university, landline, mobile } = professor;
 
                     // Check if all required fields are present, if not error
-                    if (!professor_id || !email || !name || !surname) {
+                    if (!email || !name || !surname) {
                         console.error('Missing required fields for user:', professor);
                         continue;
                     }
 
                     // Auto-generate password
-                    const rawPassword = `prof${professor_id}@2025`;
+                    const rawPassword = `prof_${email.split('@')[0]}@2025`;
                     // Hash the password using bcrypt
                     const hashedPassword = await bcrypt.hash(rawPassword, saltRounds); // Hash the password using bcrypt
                     // Insert the professor into the database
-                    const sql = `INSERT INTO professor (professor_id, email, password_hash, name, surname, topic, department, university, landline, mobile) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+                    const sql = `INSERT INTO professor (email, password_hash, name, surname, topic, department, university, landline, mobile) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
                     // Wait until the query is done
-                    await connection.promise().query(sql, [professor_id, email, hashedPassword, name, surname, topic, department, university, landline, mobile]);
+                    await connection.promise().query(sql, [email, hashedPassword, name, surname, topic, department, university, landline, mobile]);
                 }
-
-                // Send a response back to the client
-                res.status(200).send('Users added successfully');
             }
+            // Send a response back to the client
+            res.status(200).json({addedStudents, addedProfessors, success: true, message: 'Users added successfully'});
         } catch (parseError) {
             // If there is an error parsing the JSON data, send an error response
-            console.error('Error parsing JSON data:', parseError);
-            res.status(400).send('Invalid JSON data');
+            res.status(400).json({error: 'Invalid JSON data in the uploaded file'});
         } finally {
             // Clean up the uploaded file after processing, prevents the server from filling up with old files
             fs.unlink(filePath, () => {}); 
         }
     });
 });
+
+// To dynamically fetch the list of users from the database and display them on the dashboard
+// router.get('/api/users', async (req, res) => {
+//     try {
+//         const [students] = await connection.promise().query(
+//             'SELECT student_number, name, surname, email FROM student'
+//         );
+//         const [professors] = await connection.promise().query(
+//             'SELECT professor_id, name, surname, email FROM professor'
+//         );
+
+//         // Ενοποίηση των 2 πινάκων σε έναν πίνακα χρηστών
+//         const users = [
+//             ...students.map(s => ({ ...s, professor_id: null })), // για να υπάρχει το πεδίο
+//             ...professors.map(p => ({ ...p, student_number: null })) // για να υπάρχει το πεδίο
+//         ];
+
+//         res.json(users);
+//     } catch (err) {
+//         console.error('Σφάλμα βάσης:', err);
+//         res.status(500).json({ error: 'Σφάλμα βάσης δεδομένων.' });
+//     }
+// });
 
 module.exports = router; // Export the router to be used in server.js

@@ -16,7 +16,7 @@
   <div class="d-flex justify-content-center align-items-center vh-100">
     <div class="card p-4 shadow" style="width: 300px;">
       <h3 class="text-center mb-4">Login</h3>
-      <form action="/login" method="POST">
+      <form id="loginForm">
         <div class="mb-3">
           <label for="username" class="form-label">Username</label>
           <input name="username" type="text" id="username" class="form-control" placeholder="Enter username" required />
@@ -36,6 +36,36 @@
   if (params.get('error') === '1') {
     document.getElementById('error-msg').textContent = 'Wrong username or password!';
   }
+</script>
+
+<script>
+  // Wait for the DOM to be fully loaded before attaching event listeners
+  document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+      e.preventDefault(); // Prevent the default form submission
+
+      // Get the values from the input fields
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        // Send a POST request to the server with the login credentials, the body should be a JSON object
+        const response = await fetch('/login', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ username, password }) });
+
+        if (response.status === 200) {
+          window.location.href = await response.text(); // server sends URL to redirect to
+        } else if (response.status === 401) {
+          const data = await response.json();
+          document.getElementById('error-msg').textContent = data.error;
+        } else {
+          const errorData = await response.json();
+          document.getElementById('error-msg').textContent = errorData.error || 'An unknown error occurred.';
+        }
+      } catch (error) {
+        document.getElementById('error-msg').textContent = 'An error occurred. Please try again.';
+      }
+    });
+  });
 </script>
 
 </body>

@@ -23,14 +23,12 @@ router.post('/login', (req, res) => {
         // Handle any errors that occur during the query
         if (err)  {
             // If there is a db error return error
-            console.error('Database query error:', err);
             return res.status(500).send('Database query error');
         } 
         
         if (results.length === 0) {
             // If no user found, redirect to login with error
-            console.log('No user found with the provided email.');
-            return res.redirect('/login.html?error=1');
+            return res.status(401).json({ error: 'Λάθος όνομα χρήστη ή κωδικός πρόσβασης' });
         }
 
         // results[0] contains the users id 
@@ -42,20 +40,19 @@ router.post('/login', (req, res) => {
 
                 if (!isMatch) {
                     // If password does not match, redirect to login with error
-                    return res.redirect('/login.html?error=1');
+                    return res.status(401).json({ error: 'Λάθος όνομα χρήστη ή κωδικός πρόσβασης' });
                 } else {
                     if (user.role == 'secretary') {
                         // Redirect to dashboard if login successful
-                        res.redirect('/dashboards/dashboardSecretary');
+                        return res.status(200).send('/dashboards/dashboardSecretary');
                     } else if (user.role == 'professor') {
-                        res.redirect('/dashboards/dashboardProfessor');
+                        return res.status(200).send('/dashboards/dashboardProfessor');
                     } else if (user.role == 'student') {
-                        res.redirect('/dashboards/dashboardStudent');
+                        return res.status(200).send('/dashboards/dashboardStudent');
                     }
                 }
             } catch (error) {
                 // Handles errors that occur because of await
-                console.error('Error comparing passwords:', error);
                 return res.status(500).send('Error comparing passwords');
             }   
         }
