@@ -8,13 +8,21 @@ app.use(express.json());
 
 // Serve static files, tells Express to serve static files from the current directory
 app.use(express.static(path.join(__dirname, 'thesis_up')));
+app.use('/uploads/thesis-pdfs', express.static(path.join(__dirname, 'uploads/thesis-pdfs')));
 
 app.use(require('./routes/auth.routes'));
 app.use(require('./routes/dashboard.routes'));  
 app.use(require('./routes/public_endpoint.routes'));
 app.use(require('./routes/upload.routes'));
 app.use(require('./routes/thesis_topics.routes'));
-//app.use(require('./routes/professor.routes'));
+
+// Add professor routes with error handling
+try {
+    app.use(require('./routes/professor.routes'));
+    console.log('Professor routes loaded successfully');
+} catch (error) {
+    console.error('Error loading professor routes:', error.message);
+}
 
 const updatePasswords = require('./scripts/updatePasswords');
 

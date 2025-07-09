@@ -3,12 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bootstrap 5 Simple Admin Dashboard</title>
-    <!-- Updated Bootstrap CSS -->
+    <title>Professor Dashboard - Thesis Support System</title>
+    
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
     <!-- Custom CSS -->
     <link rel="stylesheet" href="../style.css" />
+    <link rel="stylesheet" href="../css/professor.css" />
 </head>
 <body>
     <!-- Navigation Bar -->
@@ -22,7 +27,7 @@
                     </button>
 
                     <a class="navbar-brand" href="#">
-                        <img src="../loggo.png"  class="img-fluid" style="height: 40px;">
+                        <img src="../loggo.png" class="img-fluid" style="height: 40px;">
                     </a>
                 </div>
 
@@ -51,7 +56,7 @@
                             <li><a class="dropdown-item" href="#">Προφίλ</a></li>
                             <li><a class="dropdown-item" href="#">Ρυθμίσεις</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#">Αποσύνδεση</a></li>
+                            <li><a class="dropdown-item" href="/logout" id="logoutLink">Αποσύνδεση</a></li>
                         </ul>
                     </div>
                 </div>
@@ -61,25 +66,24 @@
     
     <!-- Side Bar -->
     <div class="d-flex">
-        <!-- Contains a scroll down bar which is transparent, needed: overflow-y, scrollbar settings -->
-        <div class="sidebar" id="sidebar" style="background-color: #f8f9fa; width: 250px; height: calc(100vh - 82px); position: fixed; top: 82px; left: -250px; transition: left 0.3s ease; z-index: 999; box-shadow: 2px 0 5px rgba(0,0,0,0.1); overflow-y: auto; scrollbar-width: thin; scrollbar-color: #dee2e6 transparent;">
+        <div class="sidebar" id="sidebar" style="background-color: #f8f9fa; width: 250px; height: calc(100vh - 82px); position: fixed; top: 82px; left: -250px; transition: left 0.3s ease; z-index: 999; box-shadow: 2px 0 5px rgba(0,0,0,0.1); overflow-y: auto; scrollbar-width: thin; scrollbar-color: #dee2e6 transparent; display: flex; flex-direction: column;">
             <div class="p-3">
                 <h5>Μενού</h5>
             </div>
-            <nav class="nav flex-column">
+            <nav class="nav flex-column flex-grow-1">
                 <a class="nav-link text-bordeaux active d-flex align-items-center py-3 px-4" href="#">
                     <i class="fas fa-home me-3 text-bordeaux"></i>
                     <span class="text-bordeaux menu-text">Αρχική</span>
                 </a>
-                <a class="nav-link text-bordeaux d-flex align-items-center py-3 px-4" href="#">
+                <a class="nav-link text-bordeaux d-flex align-items-center py-3 px-4" href="#" id="createTopicLink">
                     <i class="fa-solid fa-book me-3 text-bordeaux"></i>
                     <span class="text-bordeaux menu-text">Δημιουργία και Επεξεργασία Θέματος</span>
                 </a>
-                <a class="nav-link text-bordeaux d-flex align-items-center py-3 px-4" href="#">
+                <a class="nav-link text-bordeaux d-flex align-items-center py-3 px-4" href="#" id="assignTopicLink">
                     <i class="fa-solid fa-pen-fancy me-3 text-bordeaux"></i>
                     <span class="text-bordeaux menu-text">Αρχική Ανάθεση Θέματος Διπλωματικής</span>
                 </a>
-                <a class="nav-link text-bordeaux d-flex align-items-center py-3 px-4" href="#">
+                <a class="nav-link text-bordeaux d-flex align-items-center py-3 px-4" href="#" id="myThesesLink">
                     <i class="fa-solid fa-book-open me-3 text-bordeaux"></i>
                     <span class="text-bordeaux menu-text">Οι Διπλωματικές Μου</span>
                 </a>
@@ -94,7 +98,7 @@
             </nav>
             
             <!-- Sidebar Footer -->
-            <div class="mt-auto p-3 border-top">
+            <div class="sidebar-footer">
                 <div class="text-muted small">Συνδεδεμένος ως:</div>
                 <div class="fw-bold">John Doe</div>
             </div>
@@ -104,36 +108,315 @@
     <!-- Main Content -->
     <div class="main-content" style="margin-left: 0; transition: margin-left 0.3s ease; width: 100%;">
         <div class="container-fluid mt-4">
-            <h1>Hello world!</h1>
+            <h1 id="mainTitle">Hello world!</h1>
+        </div>
+        
+        <!-- Create Thesis Topic Form -->
+        <div id="createTopicForm" style="display: none;" class="container-fluid mt-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light border-0 py-3">
+                    <h3 class="card-title mb-0 text-bordeaux">
+                        <i class="fa-solid fa-book me-2"></i>Δημιουργία Νέου Θέματος Διπλωματικής
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <form id="thesisTopicForm">
+                        <!-- Τίτλος θέματος -->
+                        <div class="mb-4">
+                            <label for="topicTitle" class="form-label fw-semibold">
+                                <i class="fas fa-heading me-2 text-bordeaux"></i>Τίτλος Θέματος *
+                            </label>
+                            <input type="text" id="topicTitle" name="title" class="form-control form-control-lg" 
+                                   placeholder="Εισάγετε τον τίτλο του θέματος..." required maxlength="255">
+                            <div class="form-text">Μέγιστο 255 χαρακτήρες</div>
+                        </div>
+                        
+                        <!-- Σύντομη περιγραφή -->
+                        <div class="mb-4">
+                            <label for="topicDescription" class="form-label fw-semibold">
+                                <i class="fas fa-align-left me-2 text-bordeaux"></i>Σύντομη Περιγραφή *
+                            </label>
+                            <textarea id="topicDescription" name="description" class="form-control" rows="5" 
+                                      placeholder="Περιγράψτε το θέμα της διπλωματικής εργασίας..." required></textarea>
+                            <div class="form-text">Προσθέστε μια σαφή και περιεκτική περιγραφή του θέματος</div>
+                        </div>
+                        
+                        <!-- Αρχείο PDF (προαιρετικό) -->
+                        <div class="mb-4">
+                            <label for="topicPdf" class="form-label fw-semibold">
+                                <i class="fas fa-file-pdf me-2 text-bordeaux"></i>Αρχείο PDF (Προαιρετικό)
+                            </label>
+                            <input type="file" id="topicPdf" name="pdf" class="form-control" accept=".pdf">
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Μπορείτε να επισυνάψετε ένα PDF με αναλυτική περιγραφή του θέματος (μέγιστο 5MB)
+                            </div>
+                        </div>
+                        
+                        <!-- Preview Section -->
+                        <div id="topicPreview" class="mb-4 p-3 bg-light rounded" style="display: none;">
+                            <h5 class="text-bordeaux">
+                                <i class="fas fa-eye me-2"></i>Προεπισκόπηση Θέματος
+                            </h5>
+                            <div class="border-start border-3 border-bordeaux ps-3">
+                                <h6 id="previewTitle" class="fw-bold"></h6>
+                                <p id="previewSummary" class="mb-1"></p>
+                                <small id="previewFile" class="text-muted"></small>
+                            </div>
+                        </div>
+                        
+                        <!-- Κουμπιά -->
+                        <div class="d-flex gap-3 justify-content-end">
+                            <button type="button" class="btn btn-outline-secondary px-4" id="cancelTopicForm">
+                                <i class="fas fa-times me-2"></i>Ακύρωση
+                            </button>
+                            <button type="button" class="btn btn-outline-bordeaux px-4" id="previewTopicBtn">
+                                <i class="fas fa-eye me-2"></i>Προεπισκόπηση
+                            </button>
+                            <button type="submit" class="btn btn-bordeaux px-4">
+                                <i class="fas fa-save me-2"></i>Αποθήκευση Θέματος
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Existing Topics List -->
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-light border-0 py-3">
+                    <h4 class="card-title mb-0 text-bordeaux">
+                        <i class="fas fa-list me-2"></i>Τα Θέματά Μου
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div id="topicsContainer">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Εδώ θα εμφανίζονται τα θέματα που έχετε δημιουργήσει.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Assign Topic Form -->
+        <div id="assignTopicForm" style="display: none;" class="container-fluid mt-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light border-0 py-3">
+                    <h3 class="card-title mb-0 text-bordeaux">
+                        <i class="fa-solid fa-pen-fancy me-2"></i>Αρχική Ανάθεση Θέματος
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <!-- Βήμα 1: Επιλογή διαθέσιμου θέματος -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-list me-2 text-bordeaux"></i>Επιλέξτε Διαθέσιμο Θέμα *
+                        </label>
+                        <select id="topicSelect" class="form-select" required>
+                            <option value="">-- Επιλέξτε θέμα --</option>
+                        </select>
+                        <div id="selectedTopicInfo" class="mt-2"></div>
+                    </div>
+                    
+                    <!-- Βήμα 2: Αναζήτηση φοιτητή -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-search me-2 text-bordeaux"></i>Αναζήτηση Φοιτητή *
+                        </label>
+                        <div class="input-group">
+                            <input type="text" id="studentSearch" class="form-control" 
+                                   placeholder="Αναζήτηση με ΑΜ ή όνομα...">
+                            <button type="button" id="searchBtn" class="btn btn-outline-bordeaux">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                        <!-- Αποτελέσματα αναζήτησης -->
+                        <div id="searchResults" class="mt-3"></div>
+                        <div id="selectedStudentInfo" class="mt-2"></div>
+                    </div>
+                    
+                    <!-- Κουμπιά -->
+                    <div class="d-flex gap-3 justify-content-end">
+                        <button type="button" class="btn btn-outline-secondary px-4" id="cancelAssignForm">
+                            <i class="fas fa-times me-2"></i>Ακύρωση
+                        </button>
+                        <button type="button" class="btn btn-bordeaux px-4" id="assignTopicBtn" disabled>
+                            <i class="fas fa-check me-2"></i>Ανάθεση Θέματος
+                        </button>
+                        <button type="button" class="btn btn-bordeaux px-4" id="confirmAssignBtn" disabled>
+                            <i class="fas fa-check me-2"></i>Επιβεβαίωση Ανάθεσης
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- My Theses List Section (UC8) -->
+        <div id="myThesesList" style="display: none;" class="container-fluid mt-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light border-0 py-3">
+                    <h3 class="card-title mb-0 text-bordeaux">
+                        <i class="fa-solid fa-book-open me-2"></i>Οι Διπλωματικές Μου
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Filters Section -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="statusFilter" class="form-label fw-semibold">
+                                <i class="fas fa-filter me-2 text-bordeaux"></i>Φίλτρο κατά Κατάσταση
+                            </label>
+                            <select id="statusFilter" class="form-select">
+                                <option value="">Όλες οι καταστάσεις</option>
+                                <option value="under_assignment">Υπό Ανάθεση</option>
+                                <option value="active">Ενεργές</option>
+                                <option value="under_examination">Υπό Εξέταση</option>
+                                <option value="completed">Ολοκληρωμένες</option>
+                                <option value="cancelled">Ακυρωμένες</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="roleFilter" class="form-label fw-semibold">
+                                <i class="fas fa-user-tag me-2 text-bordeaux"></i>Φίλτρο κατά Ρόλο
+                            </label>
+                            <select id="roleFilter" class="form-select">
+                                <option value="">Όλοι οι ρόλοι</option>
+                                <option value="supervisor">Επιβλέπων</option>
+                                <option value="member">Μέλος Επιτροπής</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Search Section -->
+                    <div class="mb-4">
+                        <label for="thesesSearch" class="form-label fw-semibold">
+                            <i class="fas fa-search me-2 text-bordeaux"></i>Αναζήτηση
+                        </label>
+                        <div class="input-group">
+                            <input type="text" id="thesesSearch" class="form-control" 
+                                   placeholder="Αναζήτηση κατά τίτλο ή φοιτητή...">
+                            <button type="button" id="clearSearchBtn" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Results Summary -->
+                    <div class="mb-4 d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted">Εμφάνιση: <span id="filteredThesesCount">0</span> από <span id="totalThesesCount">0</span> διπλωματικές</span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-bordeaux btn-sm" id="exportCsvBtn">
+                                <i class="fas fa-file-csv me-2"></i>Εξαγωγή CSV
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Theses List -->
+                    <div id="thesesListContainer">
+                        <!-- Loading placeholder -->
+                        <div id="thesesLoading" class="text-center py-5">
+                            <i class="fas fa-spinner fa-spin fa-2x text-bordeaux"></i>
+                            <p class="mt-3 text-muted">Φόρτωση διπλωματικών...</p>
+                        </div>
+                        
+                        <!-- Theses Cards -->
+                        <div id="thesesCardsContainer" style="display: none;">
+                            <!-- Cards will be populated here -->
+                        </div>
+
+                        <!-- Empty state -->
+                        <div id="noThesesFound" style="display: none;" class="text-center py-5">
+                            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Δεν βρέθηκαν διπλωματικές</h5>
+                            <p class="text-muted">Δοκιμάστε να αλλάξετε τα φίλτρα ή τους όρους αναζήτησης.</p>
+                        </div>
+                    </div>
+
+                    <!-- Back Button -->
+                    <div class="d-flex justify-content-start mt-4">
+                        <button type="button" class="btn btn-outline-secondary px-4" id="backToMainFromTheses">
+                            <i class="fas fa-arrow-left me-2"></i>Επιστροφή στην Αρχική
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Logout Confirmation Modal -->
+    <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title text-bordeaux fw-bold" id="logoutModalLabel">
+                        <i class="fas fa-sign-out-alt me-2"></i>Επιβεβαίωση Αποσύνδεσης
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-question-circle text-warning" style="font-size: 3rem;"></i>
+                    </div>
+                    <p class="fs-5 mb-3">Είστε σίγουρος ότι θέλετε να αποσυνδεθείτε;</p>
+                    <p class="text-muted small">Θα χρειαστεί να συνδεθείτε ξανά για να έχετε πρόσβαση στο σύστημα.</p>
+                </div>
+                <div class="modal-footer border-0 justify-content-center">
+                    <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Ακύρωση
+                    </button>
+                    <button type="button" class="btn btn-bordeaux px-4" id="confirmLogout">
+                        <i class="fas fa-sign-out-alt me-2"></i>Αποσύνδεση
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Success Message Overlay -->
+    <div id="successOverlay" class="success-overlay">
+        <div class="success-message">
+            <!-- Close button στην πάνω δεξιά γωνία -->
+            <button type="button" class="btn-close position-absolute" id="closeSuccessBtn" 
+                    style="top: 15px; right: 15px;" aria-label="Close"></button>
+            
+            <div class="success-icon">
+                <i class="fas fa-check"></i>
+            </div>
+            <h2 class="success-title">Επιτυχής Ανάθεση!</h2>
+            <div class="success-details">
+                <p>Η διπλωματική εργασία ανατέθηκε επιτυχώς:</p>
+                <div class="success-topic">
+                    <div><strong>Θέμα:</strong> <span id="successTopicTitle"></span></div>
+                    <div><strong>Φοιτητής:</strong> <span id="successStudentName" class="success-student"></span></div>
+                </div>
+                <p class="mt-3 text-muted small">Ο φοιτητής θα ειδοποιηθεί μέσω email για την ανάθεση.</p>
+            </div>
+            <div class="success-actions">
+                <button type="button" class="btn btn-outline-bordeaux" id="viewMyThesesBtn">
+                    <i class="fas fa-list me-2"></i>Προβολή Διπλωματικών
+                </button>
+                <button type="button" class="btn btn-bordeaux" id="continueWorkBtn">
+                    <i class="fas fa-plus me-2"></i>Νέα Ανάθεση
+                </button>
+            </div>
         </div>
     </div>
 
     <!-- Footer -->
-    <footer class="bg-bordeaux border-top text-center text-lg-start mt-5">
+    <footer class="bg-bordeaux border-top text-center text-lg-start">
         <div class="text-center p-3"> 
-            <!-- Span used to apply the css class for styling to the footer text only -->
             <span class="text-white">© 2025 Πανεπιστήμιο Πατρών</span>
             <a class="text-white" href="https://www.upatras.gr/">www.upatras.gr</a>
         </div>
     </footer>
 
-    <!-- Updated Bootstrap JS -->
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <script>
-        // Toggle sidebar
-        document.querySelector('.navbar-toggler').addEventListener('click', function() {
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.querySelector('.main-content');
-            
-            if (sidebar.style.left === '0px') {
-                sidebar.style.left = '-250px';
-                mainContent.style.marginLeft = '0';
-            } else {
-                sidebar.style.left = '0px';
-                mainContent.style.marginLeft = '250px';
-            }
-        });
-    </script>
+    <!-- Custom JavaScript -->
+    <script src="../js/professor.js"></script>
 </body>
 </html>
