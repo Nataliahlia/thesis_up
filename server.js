@@ -12,7 +12,7 @@ app.use(express.static(path.join(__dirname, 'thesis_up')));
 app.use(require('./routes/auth.routes'));
 app.use(require('./routes/dashboard.routes'));  
 app.use(require('./routes/public_endpoint.routes'));
-app.use(require('./routes/upload.routes'));
+app.use(require('./routes/upload_users.routes'));
 app.use(require('./routes/thesis_topics.routes'));
 //app.use(require('./routes/professor.routes'));
 
