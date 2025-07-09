@@ -13,6 +13,8 @@ app.use(require('./routes/auth.routes'));
 app.use(require('./routes/dashboard.routes'));  
 app.use(require('./routes/public_endpoint.routes'));
 app.use(require('./routes/upload.routes'));
+app.use(require('./routes/thesis_topics.routes'));
+//app.use(require('./routes/professor.routes'));
 
 const updatePasswords = require('./scripts/updatePasswords');
 

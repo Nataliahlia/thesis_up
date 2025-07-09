@@ -8,7 +8,6 @@ router.get('/dashboards/dashboardSecretary', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'thesis_up', 'dashboards/dashboardSecretary.html'));
 });
 
-
 // If login is successful, redirect to the dashboard page, by sending a GET request to the correct dashboard
 router.get('/dashboards/dashboardProfessor', (req, res) => {
   console.log('Serving dashboardProfessor.html');

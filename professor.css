@@ -1,0 +1,470 @@
+/* Professor Dashboard Styles */
+
+.btn-bordeaux {
+    background-color: #8B0000;
+    border-color: #8B0000;
+    color: white;
+}
+
+.btn-bordeaux:hover {
+    background-color: #660000;
+    border-color: #660000;
+    color: white;
+}
+
+.text-bordeaux {
+    color: #8B0000 !important;
+}
+
+.modal-content {
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+}
+
+.modal-footer {
+    background: linear-gradient(135deg, #e9ecef, #f8f9fa);
+    border-bottom-left-radius: 15px;
+    border-bottom-right-radius: 15px;
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+#logoutModal .btn {
+    border-radius: 25px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+#logoutModal .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.modal-backdrop {
+    backdrop-filter: blur(2px);
+}
+
+/* Additional styles for thesis topic form */
+.border-bordeaux {
+    border-color: #8B0000 !important;
+}
+
+.form-control:focus {
+    border-color: #8B0000;
+    box-shadow: 0 0 0 0.2rem rgba(139, 0, 0, 0.25);
+}
+
+.card {
+    border: none;
+    border-radius: 10px;
+}
+
+.card-header {
+    border-bottom: 2px solid #8B0000;
+}
+
+#topicPreview {
+    border: 2px dashed #8B0000;
+    background: linear-gradient(135deg, #f8f9fa, #fff);
+}
+
+.form-control-lg {
+    font-size: 1.1rem;
+    padding: 0.75rem 1rem;
+}
+
+.btn {
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.form-label {
+    color: #333;
+    margin-bottom: 0.75rem;
+}
+
+.alert-info {
+    background-color: #e7f3ff;
+    border-color: #8B0000;
+    color: #0c5460;
+}
+
+/* Hide horizontal scrollbar */
+body {
+    overflow-x: hidden;
+    margin-bottom: 0; /* Remove any bottom margin */
+}
+
+.main-content {
+    overflow-x: hidden;
+    margin-bottom: 0; /* Remove any bottom margin */
+}
+
+/* Remove extra spacing before footer */
+footer {
+    margin-top: 0 !important; /* Remove all margin */
+}
+
+/* Remove margins from last elements in main content */
+.main-content > *:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* Sidebar footer styling */
+.sidebar-footer {
+    background-color: #8B0000; /* Same exact color as page footer */
+    color: white;
+    height: 58px; /* Match page footer height exactly */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    border-top: 1px solid #660000;
+    padding: 0.75rem;
+}
+
+.sidebar-footer .text-muted {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.sidebar-footer .fw-bold {
+    color: white;
+}
+
+/* Student search results styling */
+.student-option {
+    transition: all 0.3s ease;
+}
+
+.student-option:hover {
+    background-color: #f8f9fa;
+    border-color: #8B0000;
+}
+
+.student-option.active {
+    background-color: #8B0000;
+    color: white;
+    border-color: #8B0000;
+}
+
+.student-option.active h6,
+.student-option.active p,
+.student-option.active small {
+    color: white !important;
+}
+
+/* Form validation styles */
+.is-invalid {
+    border-color: #dc3545;
+}
+
+.invalid-feedback {
+    display: block;
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+/* Loading states */
+.btn-loading {
+    pointer-events: none;
+    opacity: 0.65;
+}
+
+/* Minimal Success Message */
+.success-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.success-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.success-message {
+    background: white;
+    border-radius: 12px;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    max-width: 450px;
+    margin: 0 1rem;
+    transform: scale(0.9) translateY(20px);
+    transition: transform 0.3s ease;
+    border: 1px solid #e9ecef;
+    position: relative; /* Για το positioning του close button */
+}
+
+/* Close button styling */
+.success-message .btn-close {
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+}
+
+.success-message .btn-close:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.success-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #28a745;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    animation: fadeInScale 0.5s ease-out;
+}
+
+.success-icon i {
+    color: white;
+    font-size: 1.8rem;
+}
+
+.success-title {
+    color: #28a745;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.success-details {
+    color: #6c757d;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+}
+
+.success-topic {
+    background: #f8f9fa;
+    border-left: 3px solid #8B0000;
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 0 6px 6px 0;
+    text-align: left;
+}
+
+.success-topic div {
+    margin-bottom: 0.5rem;
+}
+
+.success-topic div:last-child {
+    margin-bottom: 0;
+}
+
+.success-student {
+    color: #8B0000;
+    font-weight: 600;
+}
+
+.success-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.success-actions .btn {
+    padding: 0.5rem 1.25rem;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+/* Simple animations */
+@keyframes fadeInScale {
+    0% {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Thesis details specific styles */
+#viewThesisDetails .border-bordeaux {
+    border-color: #8B0000 !important;
+}
+
+#viewThesisDetails .text-bordeaux {
+    color: #8B0000 !important;
+}
+
+.timeline-item:last-child::after {
+    display: none;
+}
+
+/* My Theses List Styles */
+.thesis-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid #dee2e6;
+}
+
+.thesis-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.thesis-card .card-title {
+    font-size: 1.1rem;
+    line-height: 1.3;
+}
+
+.badge {
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* Filter section styling */
+#myThesesList .form-label {
+    font-weight: 600;
+    color: #495057;
+}
+
+#myThesesList .form-select:focus,
+#myThesesList .form-control:focus {
+    border-color: #8B0000;
+    box-shadow: 0 0 0 0.2rem rgba(139, 0, 0, 0.25);
+}
+
+/* Loading animation */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.fa-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .d-flex.gap-3 {
+        flex-direction: column;
+        gap: 0.5rem !important;
+    }
+    
+    .btn {
+        width: 100%;
+    }
+    
+    .modal-body {
+        padding: 1rem;
+    }
+    
+    .success-message {
+        padding: 2rem 1.5rem;
+        margin: 0 0.5rem;
+    }
+    
+    .success-icon {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .success-icon i {
+        font-size: 1.5rem;
+    }
+    
+    .success-title {
+        font-size: 1.25rem;
+    }
+    
+    .success-actions {
+        flex-direction: column;
+    }
+    
+    .success-actions .btn {
+        width: 100%;
+    }
+}
+
+/* Timeline styles */
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: flex-start;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -30px;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border: 2px solid #dee2e6;
+    border-radius: 50%;
+    font-size: 10px;
+}
+
+.timeline-item.completed .timeline-marker {
+    border-color: #28a745;
+}
+
+.timeline-item.upcoming .timeline-marker {
+    border-color: #ffc107;
+}
+
+.timeline-content {
+    flex: 1;
+    margin-left: 15px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: -21px;
+    top: 10px;
+    bottom: -10px;
+    width: 2px;
+    background: #dee2e6;
+}
