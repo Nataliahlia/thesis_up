@@ -13,7 +13,7 @@ app.use('/uploads/thesis-pdfs', express.static(path.join(__dirname, 'uploads/the
 app.use(require('./routes/auth.routes'));
 app.use(require('./routes/dashboard.routes'));  
 app.use(require('./routes/public_endpoint.routes'));
-app.use(require('./routes/upload.routes'));
+app.use(require('./routes/upload_users.routes'));
 app.use(require('./routes/thesis_topics.routes'));
 
 // Add professor routes with error handling
