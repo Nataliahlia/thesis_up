@@ -114,6 +114,61 @@ CREATE TABLE announcements (
     FOREIGN KEY (thesis_id) REFERENCES thesis_topic(thesis_id)
 );
 
+-- Create table for thesis committee members
+CREATE TABLE thesis_committee (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    thesis_id INT NOT NULL,
+    professor_id INT NOT NULL,
+    role ENUM('supervisor', 'member', 'secretary') NOT NULL,
+    invitation_date DATE,
+    acceptance_date DATE,
+    status ENUM('pending', 'accepted', 'declined') DEFAULT 'pending',
+    FOREIGN KEY (thesis_id) REFERENCES thesis_topic(thesis_id),
+    FOREIGN KEY (professor_id) REFERENCES professor(professor_id),
+    UNIQUE KEY unique_thesis_professor (thesis_id, professor_id)
+);
+
+-- Create table for thesis timeline/events
+CREATE TABLE thesis_events (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    thesis_id INT NOT NULL,
+    event_type VARCHAR(100) NOT NULL,
+    description TEXT,
+    event_date DATETIME NOT NULL,
+    status VARCHAR(50),
+    created_by INT,
+    FOREIGN KEY (thesis_id) REFERENCES thesis_topic(thesis_id),
+    FOREIGN KEY (created_by) REFERENCES professor(professor_id)
+);
+
+-- Create table for thesis files
+CREATE TABLE thesis_files (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    thesis_id INT NOT NULL,
+    file_name VARCHAR(255) NOT NULL,
+    file_path VARCHAR(500) NOT NULL,
+    file_type VARCHAR(10),
+    file_size INT,
+    upload_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    uploaded_by INT,
+    description TEXT,
+    FOREIGN KEY (thesis_id) REFERENCES thesis_topic(thesis_id),
+    FOREIGN KEY (uploaded_by) REFERENCES professor(professor_id)
+);
+
+-- Create table for thesis comments/grades from committee
+CREATE TABLE thesis_comments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    thesis_id INT NOT NULL,
+    professor_id INT NOT NULL,
+    comment TEXT,
+    grade DECIMAL(4,2),
+    comment_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    comment_type ENUM('progress', 'final', 'correction') DEFAULT 'progress',
+    FOREIGN KEY (thesis_id) REFERENCES thesis_topic(thesis_id),
+    FOREIGN KEY (professor_id) REFERENCES professor(professor_id)
+);
+
 DELIMITER //
 
 CREATE TRIGGER after_insert_student

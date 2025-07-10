@@ -8,33 +8,88 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize components
     initializeSidebar();
     initializeLogout();
+    initializeNavigationLinks(); // Add this to handle all navigation
     initializeCreateTopic();
     initializeAssignTopic();
     initializeMyTheses();
     
+    // ===== NOTIFICATION SYSTEM =====
+    function showNotification(message, type = 'info') {
+        // Remove existing notifications
+        const existingNotifications = document.querySelectorAll('.custom-notification');
+        existingNotifications.forEach(notification => notification.remove());
+        
+        const notification = document.createElement('div');
+        notification.className = `custom-notification alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show`;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+            max-width: 500px;
+        `;
+        
+        notification.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (notification && notification.parentNode) {
+                notification.remove();
+            }
+        }, 5000);
+    }
+    
+    // Make showNotification globally available
+    window.showNotification = showNotification;
+
     // ===== SIDEBAR FUNCTIONALITY =====
     function initializeSidebar() {
+        console.log('Initializing sidebar...');
         const sidebar = document.getElementById('sidebar');
         const mainContent = document.querySelector('.main-content');
+        const toggleBtn = document.querySelector('.navbar-toggler');
+        
+        console.log('Sidebar element:', sidebar);
+        console.log('Main content element:', mainContent);
+        console.log('Toggle button element:', toggleBtn);
         
         // Toggle sidebar
-        const toggleBtn = document.querySelector('.navbar-toggler');
         if (toggleBtn) {
+            console.log('Adding click listener to toggle button');
             toggleBtn.addEventListener('click', function() {
-                if (sidebar && sidebar.style.left === '0px') {
-                    sidebar.style.left = '-250px';
-                    if (mainContent) {
-                        mainContent.style.marginLeft = '0';
-                        mainContent.style.width = '100%';
-                    }
-                } else if (sidebar) {
-                    sidebar.style.left = '0px';
-                    if (mainContent) {
-                        mainContent.style.marginLeft = '250px';
-                        mainContent.style.width = 'calc(100% - 250px)';
+                console.log('Toggle button clicked!');
+                console.log('Current sidebar left:', sidebar ? sidebar.style.left : 'sidebar not found');
+                
+                if (sidebar) {
+                    // Check if sidebar is currently shown (left is 0px or empty/unset)
+                    const currentLeft = sidebar.style.left;
+                    const isVisible = currentLeft === '0px' || currentLeft === '';
+                    
+                    if (isVisible) {
+                        console.log('Hiding sidebar');
+                        sidebar.style.left = '-250px';
+                        if (mainContent) {
+                            mainContent.style.marginLeft = '0';
+                            mainContent.style.width = '100%';
+                        }
+                    } else {
+                        console.log('Showing sidebar');
+                        sidebar.style.left = '0px';
+                        if (mainContent) {
+                            mainContent.style.marginLeft = '250px';
+                            mainContent.style.width = 'calc(100% - 250px)';
+                        }
                     }
                 }
             });
+        } else {
+            console.log('Toggle button not found!');
         }
     }
     
@@ -57,6 +112,45 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // ===== NAVIGATION LINKS =====
+    function initializeNavigationLinks() {
+        // Home link - close all forms and show default view
+        const homeLinks = document.querySelectorAll('.nav-link[href="#"]:not([id])');
+        homeLinks.forEach(link => {
+            if (link.textContent.includes('Αρχική')) {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    hideAllForms();
+                    updateMainTitle('Πίνακας Ελέγχου Καθηγητή');
+                    
+                    // Set this as active
+                    document.querySelectorAll('.nav-link').forEach(navLink => {
+                        navLink.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                });
+            }
+        });
+        
+        // Other navigation links that are not yet implemented
+        const notImplementedLinks = document.querySelectorAll('.nav-link[href="#"]:not([id])');
+        notImplementedLinks.forEach(link => {
+            if (!link.textContent.includes('Αρχική')) {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    hideAllForms();
+                    showNotification('Αυτή η λειτουργία δεν έχει υλοποιηθεί ακόμα.', 'info');
+                    
+                    // Set this as active
+                    document.querySelectorAll('.nav-link').forEach(navLink => {
+                        navLink.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                });
+            }
+        });
+    }
+    
     // ===== CREATE TOPIC FUNCTIONALITY =====
     function initializeCreateTopic() {
         const createTopicLink = document.getElementById('createTopicLink');
@@ -70,6 +164,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     createTopicForm.style.display = 'block';
                     updateMainTitle('Δημιουργία Νέου Θέματος');
                 }
+                
+                // Set this as active
+                document.querySelectorAll('.nav-link').forEach(navLink => {
+                    navLink.classList.remove('active');
+                });
+                this.classList.add('active');
             });
         }
 
@@ -88,6 +188,15 @@ document.addEventListener('DOMContentLoaded', function() {
             cancelBtn.addEventListener('click', function() {
                 hideAllForms();
                 updateMainTitle('Πίνακας Ελέγχου Καθηγητή');
+                
+                // Set "Αρχική" as active
+                document.querySelectorAll('.nav-link').forEach(navLink => {
+                    navLink.classList.remove('active');
+                });
+                const homeLink = document.querySelector('.nav-link[href="#"]:not([id])');
+                if (homeLink && homeLink.textContent.includes('Αρχική')) {
+                    homeLink.classList.add('active');
+                }
             });
         }
     }
@@ -105,7 +214,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     assignTopicForm.style.display = 'block';
                     updateMainTitle('Ανάθεση Θέματος');
                     loadAvailableTopics();
+                    loadAvailableTopicsForDisplay(); // Load topics for the new display section
                 }
+                
+                // Set this as active
+                document.querySelectorAll('.nav-link').forEach(navLink => {
+                    navLink.classList.remove('active');
+                });
+                this.classList.add('active');
             });
         }
 
@@ -115,6 +231,114 @@ document.addEventListener('DOMContentLoaded', function() {
             studentSearch.addEventListener('input', debounce(searchStudents, 300));
         }
     }
+    
+    // Load available topics for display in the new section
+    async function loadAvailableTopicsForDisplay() {
+        const loadingDiv = document.getElementById('availableTopicsLoading');
+        const contentDiv = document.getElementById('availableTopicsContent');
+        const noTopicsDiv = document.getElementById('noAvailableTopics');
+        const cardsContainer = document.getElementById('availableTopicsCards');
+        
+        try {
+            // Show loading
+            if (loadingDiv) loadingDiv.style.display = 'block';
+            if (contentDiv) contentDiv.style.display = 'none';
+            if (noTopicsDiv) noTopicsDiv.style.display = 'none';
+            
+            console.log('Loading available topics for display...');
+            const response = await fetch('/api/professor/available-topics');
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const topics = await response.json();
+            console.log('Available topics received:', topics);
+            
+            // Hide loading
+            if (loadingDiv) loadingDiv.style.display = 'none';
+            
+            if (!topics || topics.length === 0) {
+                if (noTopicsDiv) noTopicsDiv.style.display = 'block';
+                return;
+            }
+            
+            // Show content and populate cards
+            if (contentDiv) contentDiv.style.display = 'block';
+            if (cardsContainer) {
+                displayAvailableTopicsCards(topics);
+            }
+            
+        } catch (error) {
+            console.error('Error loading available topics for display:', error);
+            if (loadingDiv) {
+                loadingDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Σφάλμα κατά τη φόρτωση των διαθέσιμων θεμάτων: ' + error.message + '</div>';
+            }
+        }
+    }
+    
+    // Display available topics as cards
+    function displayAvailableTopicsCards(topics) {
+        const container = document.getElementById('availableTopicsCards');
+        if (!container) return;
+        
+        let html = '<div class="row">';
+        
+        topics.forEach(topic => {
+            html += `
+                <div class="col-lg-6 col-xl-4 mb-3">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body d-flex flex-column">
+                            <div class="mb-3">
+                                <h6 class="card-title text-bordeaux fw-bold mb-2">${topic.title}</h6>
+                                <p class="card-text text-muted small mb-2" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+                                    ${topic.description}
+                                </p>
+                            </div>
+                            <div class="mt-auto">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        ${formatDate(topic.created_at)}
+                                    </small>
+                                    <span class="badge bg-success">Διαθέσιμο</span>
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <button type="button" class="btn btn-outline-bordeaux btn-sm" 
+                                            onclick="selectTopicForAssignment('${topic.thesis_id}', '${topic.title.replace(/'/g, "\\'")}')">
+                                        <i class="fas fa-hand-pointer me-1"></i>Επιλογή για Ανάθεση
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        container.innerHTML = html;
+    }
+    
+    // Select topic for assignment (called from onclick)
+    window.selectTopicForAssignment = function(topicId, topicTitle) {
+        const topicSelect = document.getElementById('topicSelect');
+        if (topicSelect) {
+            topicSelect.value = topicId;
+            
+            // Trigger change event to update topic info
+            const changeEvent = new Event('change');
+            topicSelect.dispatchEvent(changeEvent);
+            
+            // Scroll to the assignment form
+            document.getElementById('topicSelect').scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center' 
+            });
+            
+            showNotification(`Θέμα "${topicTitle}" επιλέχθηκε για ανάθεση`, 'success');
+        }
+    };
     
     // ===== MY THESES FUNCTIONALITY =====
     function initializeMyTheses() {
@@ -129,18 +353,29 @@ document.addEventListener('DOMContentLoaded', function() {
                     myThesesList.style.display = 'block';
                     updateMainTitle('Οι Διπλωματικές Μου');
                     loadMyTheses();
+                    initializeThesesFilters();
                 }
+                
+                // Set this as active
+                document.querySelectorAll('.nav-link').forEach(navLink => {
+                    navLink.classList.remove('active');
+                });
+                this.classList.add('active');
             });
         }
     }
     
     // ===== UTILITY FUNCTIONS =====
     function hideAllForms() {
-        const forms = ['createTopicForm', 'assignTopicForm', 'myThesesList'];
+        const forms = ['createTopicForm', 'assignTopicForm', 'myThesesList', 'thesisDetailsView', 'editThesisForm'];
         forms.forEach(formId => {
             const form = document.getElementById(formId);
-            if (form) form.style.display = 'none';
+            if (form) {
+                form.style.display = 'none';
+            }
         });
+        
+        console.log('All forms hidden'); // Debug log
     }
     
     function updateMainTitle(title) {
@@ -196,6 +431,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 form.reset();
                 hideAllForms();
                 updateMainTitle('Πίνακας Ελέγχου Καθηγητή');
+                
+                // Refresh available topics lists since we added a new topic
+                loadAvailableTopics();
+                loadAvailableTopicsForDisplay();
+                
+                // Also refresh my theses list
+                loadMyTheses();
             } else {
                 showAlert(data.message || 'Σφάλμα κατά τη δημιουργία του θέματος');
             }
@@ -269,49 +511,171 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Load professor's theses
     function loadMyTheses() {
+        console.log('Loading my theses...');
+        
         fetch('/api/professor/my-theses')
-        .then(response => response.json())
+        .then(response => {
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+            return response.json();
+        })
         .then(theses => {
+            console.log('Received theses:', theses);
             allTheses = theses;
-            displayTheses(theses);
+            
+            // Initially display all theses and update counters
+            displayTheses(theses, true);
+            
+            // Apply any existing filters
+            setTimeout(() => {
+                applyThesesFilters();
+            }, 100);
         })
         .catch(error => {
             console.error('Error loading theses:', error);
-            showAlert('Σφάλμα κατά τη φόρτωση των διπλωματικών');
+            
+            // Hide loading, show error
+            const loading = document.getElementById('thesesLoading');
+            const container = document.getElementById('thesesCardsContainer');
+            const noFound = document.getElementById('noThesesFound');
+            
+            if (loading) loading.style.display = 'none';
+            if (container) container.style.display = 'none';
+            if (noFound) {
+                noFound.style.display = 'block';
+                noFound.innerHTML = '<div class="text-center py-5"><i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i><h5>Σφάλμα φόρτωσης</h5><p>Δεν ήταν δυνατή η φόρτωση των διπλωματικών.</p><button class="btn btn-bordeaux" onclick="location.reload()">Ανανέωση</button></div>';
+            }
         });
     }
     
     // Display theses
-    function displayTheses(theses) {
-        const container = document.getElementById('thesesCardsContainer');
-        if (!container) return;
+    function displayTheses(theses, updateCounters = true) {
+        console.log('Displaying theses:', theses);
         
-        if (theses.length === 0) {
-            document.getElementById('thesesLoading').style.display = 'none';
-            document.getElementById('thesesCardsContainer').style.display = 'none';
-            document.getElementById('noThesesFound').style.display = 'block';
+        const container = document.getElementById('thesesCardsContainer');
+        const loadingElement = document.getElementById('thesesLoading');
+        const noThesesElement = document.getElementById('noThesesFound');
+        
+        if (!container) {
+            console.error('Theses cards container not found');
             return;
         }
         
-        document.getElementById('thesesLoading').style.display = 'none';
-        document.getElementById('thesesCardsContainer').style.display = 'block';
-        document.getElementById('noThesesFound').style.display = 'none';
+        // Update counters only if explicitly requested (e.g., on initial load)
+        if (updateCounters) {
+            updateThesesCounters(theses);
+        }
         
-        container.innerHTML = theses.map(thesis => `
-            <div class="card mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">${thesis.title}</h5>
-                    <p class="card-text">
-                        <strong>Φοιτητής:</strong> ${thesis.student || 'Μη ανατεθειμένη'}<br>
-                        <strong>Κατάσταση:</strong> <span class="badge ${getStatusBadgeClass(thesis.status)}">${thesis.status}</span><br>
-                        <strong>Ρόλος:</strong> <span class="badge ${getRoleBadgeClass(thesis.role)}">${getRoleText(thesis.role)}</span><br>
-                        ${thesis.assignDate ? `<strong>Ημερομηνία Ανάθεσης:</strong> ${formatDate(thesis.assignDate)}<br>` : ''}
-                        ${thesis.duration ? `<strong>Διάρκεια:</strong> ${formatDuration(thesis.duration)}` : ''}
-                    </p>
-                    ${thesis.pdfFile ? `<a href="/uploads/thesis-pdfs/${thesis.pdfFile}" target="_blank" class="btn btn-sm btn-outline-primary">Προβολή PDF</a>` : ''}
-                </div>
-            </div>
-        `).join('');
+        // Hide loading
+        if (loadingElement) {
+            loadingElement.style.display = 'none';
+        }
+        
+        if (!theses || theses.length === 0) {
+            container.style.display = 'none';
+            if (noThesesElement) {
+                noThesesElement.style.display = 'block';
+            }
+            return;
+        }
+        
+        // Show container
+        container.style.display = 'block';
+        if (noThesesElement) {
+            noThesesElement.style.display = 'none';
+        }
+        
+        // Generate HTML using proper string concatenation
+        let html = '';
+        
+        theses.forEach(function(thesis) {
+            html += '<div class="card mb-3">' +
+                '<div class="card-body">' +
+                '<div class="row align-items-center">' +
+                '<div class="col-md-8">' +
+                '<h5 class="card-title text-bordeaux mb-2">' + (thesis.title || 'Άγνωστος τίτλος') + '</h5>' +
+                '<div class="row">' +
+                '<div class="col-sm-6">' +
+                '<p class="mb-1"><strong>Φοιτητής:</strong> ' + (thesis.student || 'Μη ανατεθειμένη') + '</p>' +
+                '<p class="mb-1"><small class="text-muted">ΑΜ: ' + (thesis.studentId || 'Μη διαθέσιμο') + '</small></p>' +
+                '</div>' +
+                '<div class="col-sm-6">' +
+                '<p class="mb-1"><strong>Ανάθεση:</strong> ' + formatDate(thesis.assignDate) + '</p>' +
+                '<p class="mb-1"><strong>Διάρκεια:</strong> ' + formatDuration(thesis.duration) + '</p>' +
+                '</div>' +
+                '</div>' +
+                '</div>' +
+                '<div class="col-md-4 text-end">' +
+                '<div class="mb-2">' +
+                '<span class="badge ' + getStatusBadgeClass(thesis.status) + ' me-2">' +
+                (thesis.status || 'Άγνωστη κατάσταση') +
+                '</span>' +
+                '<span class="badge ' + getRoleBadgeClass(thesis.role) + '">' +
+                getRoleText(thesis.role) +
+                '</span>' +
+                '</div>' +
+                '<div class="btn-group btn-group-sm" role="group">' +
+                '<button type="button" class="btn btn-outline-bordeaux" title="Προβολή" onclick="viewThesisDetails(' + thesis.id + ')">' +
+                '<i class="fas fa-eye"></i>' +
+                '</button>';
+            
+            if (thesis.role === 'supervisor') {
+                html += '<button type="button" class="btn btn-outline-warning" title="Επεξεργασία" onclick="editThesis(' + thesis.id + ')">' +
+                    '<i class="fas fa-edit"></i>' +
+                    '</button>';
+                
+                // UC7: Cancel Initial Topic Assignment - Show cancel button for "Υπό Ανάθεση" status
+                if (thesis.status === 'Υπό Ανάθεση') {
+                    html += '<button type="button" class="btn btn-outline-danger" title="Ακύρωση Ανάθεσης" onclick="cancelAssignment(' + thesis.id + ')">' +
+                        '<i class="fas fa-times"></i>' +
+                        '</button>';
+                }
+            }
+            
+            html += '</div>' +
+                '</div>' +
+                '</div>' +
+                '</div>' +
+                '</div>';
+        });
+        
+        container.innerHTML = html;
+    }
+    
+    // Update theses counters (for initial load - shows all as both total and filtered)
+    function updateThesesCounters(allTheses) {
+        console.log('Updating counters on initial load - Count:', allTheses.length);
+        
+        const totalCount = allTheses.length;
+        const filteredCount = allTheses.length; // Initially, all theses are shown
+        
+        const totalElement = document.getElementById('totalThesesCount');
+        const filteredElement = document.getElementById('filteredThesesCount');
+        
+        if (totalElement) {
+            totalElement.textContent = totalCount;
+            console.log('Updated total count to:', totalCount);
+        } else {
+            console.warn('totalThesesCount element not found');
+        }
+        if (filteredElement) {
+            filteredElement.textContent = filteredCount;
+            console.log('Updated filtered count to:', filteredCount);
+        } else {
+            console.warn('filteredThesesCount element not found');
+        }
+    }
+    
+    // Get role display text
+    function getRoleText(role) {
+        const roleTexts = {
+            'supervisor': 'Επιβλέπων',
+            'member': 'Μέλος Επιτροπής',
+            'secretary': 'Γραμματέας'
+        };
+        return roleTexts[role] || 'Άγνωστος ρόλος';
     }
     
     // Helper functions for topic assignment
@@ -382,6 +746,13 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 showAlert('Το θέμα ανατέθηκε επιτυχώς!', 'success');
                 resetAssignmentForm();
+                
+                // Refresh available topics lists
+                loadAvailableTopics();
+                loadAvailableTopicsForDisplay();
+                
+                // Refresh my theses list
+                loadMyTheses();
             } else {
                 showAlert(data.message || 'Σφάλμα κατά την ανάθεση του θέματος');
             }
@@ -462,4 +833,1087 @@ document.addEventListener('DOMContentLoaded', function() {
         if (remainingDays === 0) return `${months} μήνες`;
         return `${months} μήνες, ${remainingDays} ημέρες`;
     }
+    
+    // Initialize thesis filters
+    function initializeThesesFilters() {
+        const statusFilter = document.getElementById('statusFilter');
+        const roleFilter = document.getElementById('roleFilter');
+        const searchInput = document.getElementById('thesesSearch');
+        const clearSearchBtn = document.getElementById('clearSearchBtn');
+        const exportCsvBtn = document.getElementById('exportCsvBtn'); // Add CSV export button
+        
+        if (statusFilter) {
+            statusFilter.addEventListener('change', applyThesesFilters);
+        }
+        
+        if (roleFilter) {
+            roleFilter.addEventListener('change', applyThesesFilters);
+        }
+        
+        if (searchInput) {
+            searchInput.addEventListener('input', applyThesesFilters);
+        }
+        
+        if (clearSearchBtn) {
+            clearSearchBtn.addEventListener('click', function() {
+                searchInput.value = '';
+                applyThesesFilters();
+            });
+        }
+        
+        // Add CSV export functionality
+        if (exportCsvBtn) {
+            exportCsvBtn.addEventListener('click', function() {
+                exportThesesToCsv();
+            });
+        }
+    }
+    
+    // Apply filters to theses list
+    function applyThesesFilters() {
+        let filteredTheses = allTheses;
+        
+        // Status filter
+        const statusFilter = document.getElementById('statusFilter');
+        if (statusFilter && statusFilter.value) {
+            filteredTheses = filteredTheses.filter(thesis => 
+                thesis.status === statusFilter.value
+            );
+        }
+        
+        // Role filter
+        const roleFilter = document.getElementById('roleFilter');
+        if (roleFilter && roleFilter.value) {
+            filteredTheses = filteredTheses.filter(thesis => 
+                thesis.role === roleFilter.value
+            );
+        }
+        
+        // Search filter
+        const searchInput = document.getElementById('thesesSearch');
+        if (searchInput && searchInput.value.trim()) {
+            const searchTerm = searchInput.value.trim().toLowerCase();
+            filteredTheses = filteredTheses.filter(thesis => 
+                (thesis.title && thesis.title.toLowerCase().includes(searchTerm)) ||
+                (thesis.student && thesis.student.toLowerCase().includes(searchTerm)) ||
+                (thesis.studentId && thesis.studentId.toString().includes(searchTerm))
+            );
+        }
+        
+        displayTheses(filteredTheses, false); // Don't update total counters, only display
+        updateThesesCountersWithFilter(filteredTheses); // Update counters with proper total vs filtered logic
+    }
+    
+    // Update counters with correct total vs filtered logic
+    function updateThesesCountersWithFilter(filteredTheses) {
+        console.log('Updating counters with filter - Total:', allTheses.length, 'Filtered:', filteredTheses.length);
+        
+        const totalCount = allTheses.length;
+        const filteredCount = filteredTheses.length;
+        
+        const totalElement = document.getElementById('totalThesesCount');
+        const filteredElement = document.getElementById('filteredThesesCount');
+        
+        if (totalElement) {
+            totalElement.textContent = totalCount;
+            console.log('Updated total count to:', totalCount);
+        } else {
+            console.warn('totalThesesCount element not found');
+        }
+        if (filteredElement) {
+            filteredElement.textContent = filteredCount;
+            console.log('Updated filtered count to:', filteredCount);
+        } else {
+            console.warn('filteredThesesCount element not found');
+        }
+    }
+    
+    // UC9: Thesis Details View Functions
+    async function loadThesisDetails(thesisId, editMode = false) {
+        const loadingDiv = document.getElementById('thesisDetailsLoading');
+        const contentDiv = document.getElementById('thesisDetailsContent');
+        
+        try {
+            loadingDiv.style.display = 'block';
+            contentDiv.style.display = 'none';
+            
+            console.log('Loading thesis details for ID:', thesisId);
+            const response = await fetch(`/api/professor/thesis-details/${thesisId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('Thesis details received:', data);
+            
+            if (data.success) {
+                displayThesisDetails(data.data);
+                loadingDiv.style.display = 'none';
+                contentDiv.style.display = 'block';
+                
+                // If edit mode is requested, automatically open edit form
+                if (editMode && data.data.my_role === 'supervisor') {
+                    setTimeout(() => {
+                        toggleEditMode();
+                    }, 500); // Small delay to ensure details are loaded
+                }
+            } else {
+                throw new Error(data.message || 'Failed to load thesis details');
+            }
+        } catch (error) {
+            console.error('Error loading thesis details:', error);
+            loadingDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Σφάλμα κατά τη φόρτωση των λεπτομερειών: ' + error.message + '</div>';
+        }
+    }
+
+    function displayThesisDetails(thesis) {
+        // Store thesis data globally for use in edit form
+        window.currentThesisData = thesis;
+        
+        // Basic Information
+        document.getElementById('thesisTitle').textContent = thesis.title || '';
+        document.getElementById('thesisDescription').textContent = thesis.description || '';
+        document.getElementById('thesisCode').textContent = thesis.code || '';
+        
+        // Status badge
+        const statusBadge = document.getElementById('thesisStatus');
+        statusBadge.textContent = getStatusText(thesis.status);
+        statusBadge.className = 'badge ' + getStatusBadgeClass(thesis.status);
+        
+        // Role badge
+        const roleBadge = document.getElementById('myRole');
+        roleBadge.textContent = getRoleText(thesis.my_role);
+        roleBadge.className = 'badge ' + getRoleBadgeClass(thesis.my_role);
+        
+        // Dates
+        document.getElementById('creationDate').textContent = formatDate(thesis.created_at);
+        document.getElementById('assignmentDate').textContent = formatDate(thesis.assigned_at);
+        document.getElementById('thesisDuration').textContent = formatDuration(thesis.created_at, thesis.assigned_at);
+        
+        // Student Information (only if assigned)
+        const studentSection = document.getElementById('studentInfoSection');
+        if (thesis.student_id && thesis.student_name) {
+            studentSection.style.display = 'block';
+            document.getElementById('studentName').textContent = thesis.student_name || '';
+            document.getElementById('studentNumber').textContent = thesis.student_number || '';
+            
+            const studentEmail = document.getElementById('studentEmail');
+            if (thesis.student_email) {
+                studentEmail.href = 'mailto:' + thesis.student_email;
+                studentEmail.textContent = thesis.student_email;
+            } else {
+                studentEmail.textContent = 'Δεν είναι διαθέσιμο';
+                studentEmail.removeAttribute('href');
+            }
+            
+            document.getElementById('studentPhone').textContent = thesis.student_phone || 'Δεν είναι διαθέσιμο';
+        } else {
+            studentSection.style.display = 'none';
+        }
+        
+        // Committee Information
+        displayCommitteeDetails(thesis.committee || []);
+        
+        // Timeline
+        displayThesisTimeline(thesis.events || []);
+        
+        // Final Grade Section
+        const gradeSection = document.getElementById('gradeSection');
+        if (thesis.final_grade && thesis.status === 'Περατωμένη') {
+            gradeSection.style.display = 'block';
+            document.getElementById('finalGrade').textContent = thesis.final_grade;
+            document.getElementById('examDate').textContent = formatDate(thesis.exam_date);
+            displayCommitteeComments(thesis.comments || []);
+        } else {
+            gradeSection.style.display = 'none';
+        }
+        
+        // Files
+        displayThesisFiles(thesis.files || [], thesis.pdf_file);
+        
+        // Action buttons
+        displayThesisActions(thesis);
+    }
+
+    function displayCommitteeDetails(committee) {
+        const container = document.getElementById('committeeDetails');
+        
+        if (!committee || committee.length === 0) {
+            container.innerHTML = '<p class="text-muted">Η επιτροπή δεν έχει οριστεί ακόμα.</p>';
+            return;
+        }
+        
+        let html = '';
+        committee.forEach((member, index) => {
+            const roleText = member.role === 'supervisor' ? 'Επιβλέπων' : 
+                           member.role === 'member' ? 'Μέλος' : 
+                           member.role === 'secretary' ? 'Γραμματέας' : member.role;
+            
+            const roleBadgeClass = member.role === 'supervisor' ? 'bg-success' : 
+                                 member.role === 'member' ? 'bg-primary' : 
+                                 member.role === 'secretary' ? 'bg-info' : 'bg-secondary';
+            
+            html += '<div class="committee-member">' +
+                    '<div class="d-flex justify-content-between align-items-center">' +
+                    '<div>' +
+                    '<strong>' + member.professor_name + '</strong><br>' +
+                    '<small class="text-muted">' + member.email + '</small>' +
+                    '</div>' +
+                    '<span class="badge ' + roleBadgeClass + '">' + roleText + '</span>' +
+                    '</div>' +
+                    '</div>';
+        });
+        
+        container.innerHTML = html;
+    }
+
+    function displayThesisTimeline(events) {
+        const container = document.getElementById('thesisTimeline');
+        
+        if (!events || events.length === 0) {
+            container.innerHTML = '<p class="text-muted">Δεν υπάρχουν καταγεγραμμένα γεγονότα.</p>';
+            return;
+        }
+        
+        // Sort events by date (newest first)
+        events.sort((a, b) => new Date(b.event_date) - new Date(a.event_date));
+        
+        let html = '<div class="timeline">';
+        events.forEach((event, index) => {
+            html += '<div class="timeline-item mb-3">' +
+                    '<div class="d-flex">' +
+                    '<div class="timeline-marker me-3">' +
+                    '<i class="fas fa-circle text-bordeaux"></i>' +
+                    '</div>' +
+                    '<div class="timeline-content">' +
+                    '<h6 class="fw-bold">' + event.event_type + '</h6>' +
+                    '<p class="text-muted mb-1">' + event.description + '</p>' +
+                    '<small class="text-muted">' + formatDate(event.event_date) + '</small>' +
+                    '</div>' +
+                    '</div>' +
+                    '</div>';
+        });
+        html += '</div>';
+        
+        container.innerHTML = html;
+    }
+
+    function displayCommitteeComments(comments) {
+        const container = document.getElementById('committeeComments');
+        
+        if (!comments || comments.length === 0) {
+            container.innerHTML = '<p class="text-muted">Δεν υπάρχουν σχόλια από την επιτροπή.</p>';
+            return;
+        }
+        
+        let html = '';
+        comments.forEach(comment => {
+            html += '<div class="border-start border-3 border-bordeaux ps-3 mb-3">' +
+                    '<h6 class="fw-bold">' + comment.author_name + '</h6>' +
+                    '<p>' + comment.comment + '</p>' +
+                    '<small class="text-muted">' + formatDate(comment.created_at) + '</small>' +
+                    '</div>';
+        });
+        
+        container.innerHTML = html;
+    }
+
+    function displayThesisFiles(files, pdfFile = null) {
+        const container = document.getElementById('thesisFiles');
+        
+        let allFiles = [];
+        
+        // Add the original PDF file if it exists
+        if (pdfFile) {
+            allFiles.push({
+                id: 'original-pdf',
+                original_name: 'Αρχικό PDF Διπλωματικής',
+                file_type: 'PDF',
+                uploaded_at: null, // We don't have upload date for original PDF
+                file_path: pdfFile,
+                isOriginalPdf: true
+            });
+        }
+        
+        // Add other files
+        if (files && files.length > 0) {
+            allFiles = allFiles.concat(files);
+        }
+        
+        if (allFiles.length === 0) {
+            container.innerHTML = '<p class="text-muted">Δεν υπάρχουν συνημμένα αρχεία.</p>';
+            return;
+        }
+        
+        let html = '<div class="row">';
+        allFiles.forEach(file => {
+            const iconClass = getFileIcon(file.file_type);
+            let downloadUrl = '';
+            let fileName = file.original_name;
+            let dateInfo = file.uploaded_at ? formatDate(file.uploaded_at) : 'Αρχικό αρχείο';
+            
+            if (file.isOriginalPdf) {
+                downloadUrl = '/uploads/thesis-pdfs/' + file.file_path;
+                fileName = '<span class="badge bg-info text-dark me-2">Αρχικό</span>' + fileName;
+            } else {
+                downloadUrl = '/api/thesis/file/' + file.id;
+            }
+            
+            html += '<div class="col-md-6 mb-2">' +
+                    '<div class="d-flex align-items-center p-2 border rounded">' +
+                    '<i class="' + iconClass + ' me-2 text-bordeaux"></i>' +
+                    '<div class="flex-grow-1">' +
+                    '<span class="fw-bold">' + fileName + '</span><br>' +
+                    '<small class="text-muted">' + file.file_type + ' • ' + dateInfo + '</small>' +
+                    '</div>' +
+                    '<a href="' + downloadUrl + '" class="btn btn-sm btn-outline-bordeaux" download>' +
+                    '<i class="fas fa-download"></i>' +
+                    '</a>' +
+                    '</div>' +
+                    '</div>';
+        });
+        html += '</div>';
+        
+        container.innerHTML = html;
+    }
+
+    function displayThesisActions(thesis) {
+        const container = document.getElementById('thesisActions');
+        let html = '';
+        
+        // Edit button (only for supervisors)
+        if (thesis.my_role === 'supervisor') {
+            html += '<button type="button" class="btn btn-warning" onclick="toggleEditMode()">' +
+                    '<i class="fas fa-edit me-2"></i>Επεξεργασία' +
+                    '</button>';
+        }
+        
+        // Export PDF button
+        html += '<button type="button" class="btn btn-outline-bordeaux" onclick="exportThesisPDF(' + thesis.id + ')">' +
+                '<i class="fas fa-file-pdf me-2"></i>Εξαγωγή PDF' +
+                '</button>';
+        
+        container.innerHTML = html;
+    }
+
+    function getFileIcon(fileType) {
+        const type = fileType.toLowerCase();
+        if (type.includes('pdf')) return 'fas fa-file-pdf';
+        if (type.includes('word') || type.includes('doc')) return 'fas fa-file-word';
+        if (type.includes('excel') || type.includes('sheet')) return 'fas fa-file-excel';
+        if (type.includes('image') || type.includes('png') || type.includes('jpg')) return 'fas fa-file-image';
+        return 'fas fa-file';
+    }
+
+    // Functions that might be called from HTML
+    window.viewThesisDetails = function(thesisId, editMode = false) {
+        console.log('View thesis details called with ID:', thesisId, 'Edit mode:', editMode);
+        
+        try {
+            // Find the elements
+            const myThesesList = document.getElementById('myThesesList');
+            const thesisDetailsView = document.getElementById('thesisDetailsView');
+            
+            if (!myThesesList) {
+                console.error('Element myThesesList not found');
+                showNotification('Σφάλμα: Δεν βρέθηκε η λίστα διπλωματικών', 'error');
+                return;
+            }
+            
+            if (!thesisDetailsView) {
+                console.error('Element thesisDetailsView not found');
+                showNotification('Σφάλμα: Δεν βρέθηκε η σελίδα λεπτομερειών', 'error');
+                return;
+            }
+            
+            console.log('Elements found, switching views...');
+            
+            // Hide the theses list and show details view
+            myThesesList.style.display = 'none';
+            thesisDetailsView.style.display = 'block';
+            
+            console.log('Views switched, loading thesis details...');
+            
+            // Load the thesis details
+            loadThesisDetails(thesisId, editMode);
+        } catch (error) {
+            console.error('Error in viewThesisDetails:', error);
+            showNotification('Σφάλμα κατά την προβολή λεπτομερειών: ' + error.message, 'error');
+        }
+    };
+    
+    window.editThesis = function(thesisId) {
+        console.log('Edit thesis:', thesisId);
+        // Go to thesis details and automatically open edit form
+        viewThesisDetails(thesisId, true); // true indicates edit mode
+    };
+
+    // UC7: Cancel Initial Topic Assignment
+    window.cancelAssignment = function(thesisId) {
+        console.log('Cancel assignment for thesis:', thesisId);
+        
+        // Show confirmation modal
+        const confirmationMessage = 'Είστε βέβαιοι ότι θέλετε να ακυρώσετε την ανάθεση αυτής της διπλωματικής;';
+        
+        if (confirm(confirmationMessage)) {
+            // Call the API to cancel assignment
+            cancelThesisAssignment(thesisId);
+        }
+    };
+
+    // API call to cancel thesis assignment
+    async function cancelThesisAssignment(thesisId) {
+        try {
+            showNotification('Ακύρωση ανάθεσης σε εξέλιξη...', 'info');
+            
+            const response = await fetch('/api/professor/cancel-assignment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ thesisId: thesisId })
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok && result.success) {
+                showNotification(result.message || 'Η ανάθεση ακυρώθηκε επιτυχώς!', 'success');
+                
+                // Reload the theses list to reflect changes with a small delay
+                setTimeout(() => {
+                    loadMyTheses();
+                    
+                    // Also refresh available topics since cancelled thesis becomes available again
+                    loadAvailableTopics();
+                    loadAvailableTopicsForDisplay();
+                }, 1000);
+            } else {
+                throw new Error(result.message || 'Σφάλμα κατά την ακύρωση ανάθεσης');
+            }
+        } catch (error) {
+            console.error('Error cancelling assignment:', error);
+            showNotification('Σφάλμα: ' + error.message, 'error');
+        }
+    }
+
+    // Back to list button handler
+    function setupThesisDetailsHandlers() {
+        const backBtn = document.getElementById('backToThesesList');
+        if (backBtn) {
+            backBtn.addEventListener('click', function() {
+                document.getElementById('thesisDetailsView').style.display = 'none';
+                document.getElementById('myThesesList').style.display = 'block';
+                
+                // Set "Οι Διπλωματικές Μου" as active
+                document.querySelectorAll('.nav-link').forEach(navLink => {
+                    navLink.classList.remove('active');
+                });
+                const myThesesLink = document.getElementById('myThesesLink');
+                if (myThesesLink) {
+                    myThesesLink.classList.add('active');
+                }
+            });
+        }
+    }
+
+    // Toggle edit mode
+    window.toggleEditMode = function() {
+        const editForm = document.getElementById('editThesisForm');
+        if (editForm.style.display === 'none' || !editForm.style.display) {
+            editForm.style.display = 'block';
+            // Populate edit form with current values
+            populateEditForm();
+            showNotification('Λειτουργία επεξεργασίας ενεργοποιήθηκε', 'info');
+            
+            // Scroll to the edit form
+            editForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+            editForm.style.display = 'none';
+            showNotification('Λειτουργία επεξεργασίας απενεργοποιήθηκε', 'info');
+        }
+    };
+
+    function populateEditForm() {
+        try {
+            // Use only authentic data from the API
+            if (window.currentThesisData) {
+                const thesis = window.currentThesisData;
+                
+                document.getElementById('editTitle').value = thesis.title || '';
+                document.getElementById('editDescription').value = thesis.description || '';
+                document.getElementById('editStatus').value = thesis.status || '';
+                
+                console.log('Edit form populated with authentic data:', {
+                    title: thesis.title,
+                    description: thesis.description,
+                    status: thesis.status
+                });
+            } else {
+                console.error('No authentic thesis data available for edit form');
+                showNotification('Σφάλμα: Δεν είναι διαθέσιμα τα δεδομένα της διπλωματικής', 'error');
+            }
+        } catch (error) {
+            console.error('Error populating edit form:', error);
+            showNotification('Σφάλμα κατά τη φόρτωση των στοιχείων επεξεργασίας', 'error');
+        }
+    }
+
+    // Export PDF functionality
+    window.exportThesisPDF = async function(thesisId) {
+        console.log('Export PDF for thesis:', thesisId);
+        
+        try {
+            showNotification('Προετοιμασία εξαγωγής PDF...', 'info');
+            
+            // Get current thesis data
+            const response = await fetch('/api/professor/thesis-details/' + thesisId);
+            const result = await response.json();
+            
+            if (!result.success) {
+                throw new Error(result.message || 'Αποτυχία λήψης δεδομένων');
+            }
+            
+            const thesis = result.data;
+            generateThesisPDF(thesis);
+            
+            showNotification('Το PDF εξήχθη επιτυχώς!', 'success');
+            
+        } catch (error) {
+            console.error('Error exporting PDF:', error);
+            showNotification('Σφάλμα κατά την εξαγωγή PDF: ' + error.message, 'error');
+        }
+    };
+    
+    function generateThesisPDF(thesis) {
+        // Create a new window with the thesis report
+        const printWindow = window.open('', '_blank');
+        
+        const pdfContent = generatePDFContent(thesis);
+        
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Αναφορά Διπλωματικής - ${thesis.title}</title>
+                <meta charset="utf-8">
+                <style>
+                    body { 
+                        font-family: Arial, sans-serif; 
+                        margin: 40px; 
+                        line-height: 1.6;
+                        color: #333;
+                    }
+                    .header { 
+                        text-align: center; 
+                        border-bottom: 2px solid #7d1935; 
+                        padding-bottom: 20px; 
+                        margin-bottom: 30px; 
+                    }
+                    .header h1 { 
+                        color: #7d1935; 
+                        margin: 0; 
+                        font-size: 24px;
+                    }
+                    .section { 
+                        margin-bottom: 25px; 
+                    }
+                    .section h2 { 
+                        color: #7d1935; 
+                        border-bottom: 1px solid #ddd; 
+                        padding-bottom: 5px; 
+                        font-size: 18px;
+                    }
+                    .info-grid { 
+                        display: grid; 
+                        grid-template-columns: 200px 1fr; 
+                        gap: 10px; 
+                        margin-bottom: 15px; 
+                    }
+                    .label { 
+                        font-weight: bold; 
+                        color: #555; 
+                    }
+                    .timeline-item { 
+                        border-left: 3px solid #7d1935; 
+                        padding-left: 15px; 
+                        margin-bottom: 15px; 
+                    }
+                    .committee-member { 
+                        background: #f8f9fa; 
+                        padding: 10px; 
+                        margin-bottom: 10px; 
+                        border-radius: 5px; 
+                    }
+                    .file-item { 
+                        background: #f1f3f4; 
+                        padding: 8px 12px; 
+                        margin-bottom: 8px; 
+                        border-radius: 3px; 
+                    }
+                    .comment { 
+                        background: #fff3cd; 
+                        border: 1px solid #ffeaa7; 
+                        padding: 12px; 
+                        margin-bottom: 10px; 
+                        border-radius: 5px; 
+                    }
+                    @media print {
+                        body { margin: 20px; }
+                        .no-print { display: none; }
+                    }
+                </style>
+            </head>
+            <body>
+                ${pdfContent}
+                <div class="no-print" style="text-align: center; margin-top: 30px;">
+                    <button onclick="window.print()" style="padding: 10px 20px; background: #7d1935; color: white; border: none; border-radius: 5px; cursor: pointer;">Εκτύπωση / Αποθήκευση ως PDF</button>
+                    <button onclick="window.close()" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px;">Κλείσιμο</button>
+                </div>
+            </body>
+            </html>
+        `);
+        
+        printWindow.document.close();
+    }
+    
+    function generatePDFContent(thesis) {
+        let content = `
+            <div class="header">
+                <h1>Αναφορά Διπλωματικής Εργασίας</h1>
+                <p>Σύστημα Διαχείρισης Διπλωματικών Εργασιών</p>
+                <p>Ημερομηνία εξαγωγής: ${formatDate(new Date())}</p>
+            </div>
+            
+            <div class="section">
+                <h2>Βασικά Στοιχεία</h2>
+                <div class="info-grid">
+                    <div class="label">Κωδικός:</div>
+                    <div>${thesis.code}</div>
+                    <div class="label">Τίτλος:</div>
+                    <div>${thesis.title}</div>
+                    <div class="label">Περιγραφή:</div>
+                    <div>${thesis.description}</div>
+                    <div class="label">Κατάσταση:</div>
+                    <div>${thesis.status}</div>
+                    <div class="label">Ημ. Δημιουργίας:</div>
+                    <div>${formatDate(thesis.created_at)}</div>
+                    <div class="label">Ημ. Ανάθεσης:</div>
+                    <div>${thesis.assigned_at ? formatDate(thesis.assigned_at) : 'Μη ανατεθειμένη'}</div>
+                    <div class="label">Διάρκεια:</div>
+                    <div>${thesis.duration ? thesis.duration + ' ημέρες' : 'Δεν υπολογίζεται'}</div>
+                </div>
+            </div>
+        `;
+        
+        // Student information
+        if (thesis.student_name) {
+            content += `
+                <div class="section">
+                    <h2>Στοιχεία Φοιτητή</h2>
+                    <div class="info-grid">
+                        <div class="label">Όνομα:</div>
+                        <div>${thesis.student_name}</div>
+                        <div class="label">Αρ. Μητρώου:</div>
+                        <div>${thesis.student_number || 'Δεν διατίθεται'}</div>
+                        <div class="label">Email:</div>
+                        <div>${thesis.student_email || 'Δεν διατίθεται'}</div>
+                        <div class="label">Τηλέφωνο:</div>
+                        <div>${thesis.student_phone || 'Δεν διατίθεται'}</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Committee information
+        if (thesis.committee && thesis.committee.length > 0) {
+            content += `
+                <div class="section">
+                    <h2>Εξεταστική Επιτροπή</h2>
+            `;
+            thesis.committee.forEach(member => {
+                content += `
+                    <div class="committee-member">
+                        <strong>${getRoleText(member.role)}:</strong> ${member.professor_name}<br>
+                        <small>Email: ${member.email}</small>
+                    </div>
+                `;
+            });
+            content += `</div>`;
+        }
+        
+        // Timeline
+        if (thesis.events && thesis.events.length > 0) {
+            content += `
+                <div class="section">
+                    <h2>Χρονολόγιο Γεγονότων</h2>
+            `;
+            thesis.events.forEach(event => {
+                content += `
+                    <div class="timeline-item">
+                        <strong>${event.event_type}</strong> - ${formatDate(event.event_date)}<br>
+                        <small>${event.description}</small>
+                    </div>
+                `;
+            });
+            content += `</div>`;
+        }
+        
+        // Files
+        if (thesis.files && thesis.files.length > 0) {
+            content += `
+                <div class="section">
+                    <h2>Συνημμένα Αρχεία</h2>
+            `;
+            thesis.files.forEach(file => {
+                content += `
+                    <div class="file-item">
+                        <strong>${file.original_name}</strong><br>
+                        <small>Τύπος: ${file.file_type} | Ημερομηνία: ${formatDate(file.uploaded_at)}</small>
+                    </div>
+                `;
+            });
+            content += `</div>`;
+        }
+        
+        // Comments
+        if (thesis.comments && thesis.comments.length > 0) {
+            content += `
+                <div class="section">
+                    <h2>Σχόλια Επιτροπής</h2>
+            `;
+            thesis.comments.forEach(comment => {
+                content += `
+                    <div class="comment">
+                        <strong>${comment.author_name}</strong> - ${formatDate(comment.created_at)}<br>
+                        ${comment.grade ? `<strong>Βαθμός:</strong> ${comment.grade}<br>` : ''}
+                        <p>${comment.comment}</p>
+                    </div>
+                `;
+            });
+            content += `</div>`;
+        }
+        
+        return content;
+    }
+
+    // Edit form handlers
+    function setupEditFormHandlers() {
+        const cancelBtn = document.getElementById('cancelEditBtn');
+        const saveAndReturnBtn = document.getElementById('saveAndReturnBtn');
+        
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', function() {
+                document.getElementById('editThesisForm').style.display = 'none';
+            });
+        }
+        
+        if (saveAndReturnBtn) {
+            saveAndReturnBtn.addEventListener('click', async function() {
+                await saveThesisChanges(); // Always save and return to list
+            });
+        }
+    }
+
+    async function saveThesisChanges() {
+        const thesisId = getCurrentThesisId();
+        if (!thesisId) {
+            showNotification('Σφάλμα: Δεν βρέθηκε το ID της διπλωματικής', 'error');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('title', document.getElementById('editTitle').value);
+        formData.append('description', document.getElementById('editDescription').value);
+        formData.append('status', document.getElementById('editStatus').value);
+        
+        // Add PDF file if uploaded
+        const pdfFile = document.getElementById('editPdf').files[0];
+        if (pdfFile) {
+            formData.append('pdf', pdfFile);
+        }
+        
+        try {
+            showNotification('Αποθήκευση αλλαγών...', 'info');
+            
+            const response = await fetch('/api/professor/update-thesis/' + thesisId, {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showNotification('Οι αλλαγές αποθηκεύτηκαν επιτυχώς!', 'success');
+                
+                // Hide edit form
+                document.getElementById('editThesisForm').style.display = 'none';
+                
+                // Return to list after save with a short delay to show success message
+                setTimeout(() => {
+                    returnToThesesList();
+                }, 1500);
+            } else {
+                showNotification('Σφάλμα: ' + (result.message || 'Αποτυχία αποθήκευσης'), 'error');
+            }
+        } catch (error) {
+            console.error('Error saving thesis changes:', error);
+            showNotification('Σφάλμα δικτύου κατά την αποθήκευση', 'error');
+        }
+    }
+    
+    function getCurrentThesisId() {
+        // Get thesis ID from the stored authentic data
+        if (window.currentThesisData && window.currentThesisData.id) {
+            return window.currentThesisData.id.toString();
+        }
+        
+        console.warn('No authentic thesis data available for getting thesis ID');
+        return null;
+    }    
+    // Return to theses list
+    function returnToThesesList() {
+        document.getElementById('thesisDetailsView').style.display = 'none';
+        document.getElementById('myThesesList').style.display = 'block';
+        
+        // Set "Οι Διπλωματικές Μου" as active
+        document.querySelectorAll('.nav-link').forEach(navLink => {
+            navLink.classList.remove('active');
+        });
+        const myThesesLink = document.getElementById('myThesesLink');
+        if (myThesesLink) {
+            myThesesLink.classList.add('active');
+        }
+        
+        // Refresh the list to show updated data
+        loadMyTheses();
+    }
+
+    // Initialize all event handlers
+    function initializeThesisDetailsHandlers() {
+        setupThesisDetailsHandlers();
+        setupEditFormHandlers();
+    }
+
+    // Call initialization
+    initializeThesisDetailsHandlers();
+    
+    // Test function for debugging
+    window.testViewThesisDetails = function() {
+        console.log('Testing viewThesisDetails function...');
+        console.log('Available elements:');
+        console.log('- myThesesList:', document.getElementById('myThesesList'));
+        console.log('- thesisDetailsView:', document.getElementById('thesisDetailsView'));
+        
+        // Test with thesis ID 1
+        viewThesisDetails(1);
+    };
+    
+    // Debug function to check if all required elements exist
+    window.debugElements = function() {
+        const elements = [
+            'myThesesList',
+            'thesisDetailsView',
+            'thesisDetailsLoading',
+            'thesisDetailsContent',
+            'backToThesesList'
+        ];
+        
+        console.log('Element check:');
+        elements.forEach(id => {
+            const element = document.getElementById(id);
+            console.log(`${id}:`, element ? 'Found' : 'NOT FOUND');
+        });
+    };
+    
+    // Export theses to CSV
+    function exportThesesToCsv() {
+        try {
+            showNotification('Προετοιμασία εξαγωγής CSV...', 'info');
+            
+            // Get currently filtered theses
+            let thesesToExport = allTheses;
+            
+            // Apply current filters to get the same data as displayed
+            const statusFilter = document.getElementById('statusFilter');
+            if (statusFilter && statusFilter.value) {
+                thesesToExport = thesesToExport.filter(thesis => 
+                    thesis.status === statusFilter.value
+                );
+            }
+            
+            const roleFilter = document.getElementById('roleFilter');
+            if (roleFilter && roleFilter.value) {
+                thesesToExport = thesesToExport.filter(thesis => 
+                    thesis.role === roleFilter.value
+                );
+            }
+            
+            const searchInput = document.getElementById('thesesSearch');
+            if (searchInput && searchInput.value.trim()) {
+                const searchTerm = searchInput.value.trim().toLowerCase();
+                thesesToExport = thesesToExport.filter(thesis => 
+                    (thesis.title && thesis.title.toLowerCase().includes(searchTerm)) ||
+                    (thesis.student && thesis.student.toLowerCase().includes(searchTerm)) ||
+                    (thesis.studentId && thesis.studentId.toString().includes(searchTerm))
+                );
+            }
+            
+            if (!thesesToExport || thesesToExport.length === 0) {
+                showNotification('Δεν υπάρχουν δεδομένα για εξαγωγή με τα τρέχοντα φίλτρα', 'warning');
+                return;
+            }
+            
+            // Generate CSV content
+            const csvContent = generateCsvContent(thesesToExport);
+            
+            // Create and download CSV file
+            downloadCsvFile(csvContent, `διπλωματικες_${formatDateForFilename(new Date())}.csv`);
+            
+            showNotification(`Εξάχθηκαν ${thesesToExport.length} διπλωματικές επιτυχώς!`, 'success');
+            
+        } catch (error) {
+            console.error('Error exporting CSV:', error);
+            showNotification('Σφάλμα κατά την εξαγωγή CSV: ' + error.message, 'error');
+        }
+    }
+    
+    // Generate CSV content from theses array
+    function generateCsvContent(theses) {
+        // Define CSV headers (in Greek)
+        const headers = [
+            'ID',
+            'Τίτλος',
+            'Κατάσταση',
+            'Ρόλος Μου',
+            'Φοιτητής',
+            'Αριθμός Μητρώου',
+            'Ημερομηνία Ανάθεσης',
+            'Διάρκεια (ημέρες)',
+            'Ημερομηνία Δημιουργίας'
+        ];
+        
+        // Create CSV rows
+        const csvRows = [];
+        
+        // Add headers
+        csvRows.push(headers.map(header => escapeCsvField(header)).join(','));
+        
+        // Add data rows
+        theses.forEach(thesis => {
+            const row = [
+                thesis.id || '',
+                thesis.title || '',
+                thesis.status || '',
+                getRoleText(thesis.role) || '',
+                thesis.student || 'Μη ανατεθειμένη',
+                thesis.studentId || thesis.student_number || '',
+                thesis.assignDate ? formatDateForCsv(thesis.assignDate) : (thesis.assigned_at ? formatDateForCsv(thesis.assigned_at) : ''),
+                thesis.duration || '',
+                thesis.created_at ? formatDateForCsv(thesis.created_at) : (thesis.createdAt ? formatDateForCsv(thesis.createdAt) : '')
+            ];
+            
+            csvRows.push(row.map(field => escapeCsvField(field.toString())).join(','));
+        });
+        
+        return csvRows.join('\n');
+    }
+    
+    // Escape CSV field (handle commas, quotes, newlines)
+    function escapeCsvField(field) {
+        if (field == null) return '';
+        
+        // Convert to string and handle special characters
+        const stringField = field.toString();
+        
+        // If field contains comma, quote, or newline, wrap in quotes and escape internal quotes
+        if (stringField.includes(',') || stringField.includes('"') || stringField.includes('\n') || stringField.includes('\r')) {
+            return '"' + stringField.replace(/"/g, '""') + '"';
+        }
+        
+        return stringField;
+    }
+    
+    // Format date for CSV (YYYY-MM-DD)
+    function formatDateForCsv(dateString) {
+        if (!dateString) return '';
+        try {
+            const date = new Date(dateString);
+            return date.toISOString().split('T')[0]; // YYYY-MM-DD
+        } catch (error) {
+            return dateString; // Return original if parsing fails
+        }
+    }
+    
+    // Format date for filename (YYYY-MM-DD_HH-MM)
+    function formatDateForFilename(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        
+        return `${year}-${month}-${day}_${hours}-${minutes}`;
+    }
+    
+    // Download CSV file
+    function downloadCsvFile(csvContent, filename) {
+        // Add BOM for proper UTF-8 encoding in Excel
+        const bom = '\uFEFF';
+        const csvData = bom + csvContent;
+        
+        // Create blob and download link
+        const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        
+        if (link.download !== undefined) {
+            // Create download link
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            
+            // Add to document and trigger download
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Clean up object URL
+            URL.revokeObjectURL(url);
+        } else {
+            // Fallback for older browsers
+            const url = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+            window.open(url);
+        }
+    }
+    
+    // Test function for debugging
+    window.testViewThesisDetails = function() {
+        console.log('Testing viewThesisDetails function...');
+        console.log('Available elements:');
+        console.log('- myThesesList:', document.getElementById('myThesesList'));
+        console.log('- thesisDetailsView:', document.getElementById('thesisDetailsView'));
+        
+        // Test with thesis ID 1
+        viewThesisDetails(1);
+    };
+    
+    // Test function for CSV export (for debugging)
+    window.testCsvExport = function() {
+        console.log('Testing CSV export...');
+        console.log('allTheses:', allTheses);
+        
+        if (allTheses && allTheses.length > 0) {
+            console.log('Sample thesis data:', allTheses[0]);
+            exportThesesToCsv();
+        } else {
+            console.log('No theses data available for testing');
+        }
+    };
 });

@@ -22,7 +22,7 @@ INSERT INTO thesis_topic (title, description, instructor_id, state, pdf) VALUES
 
 ('Σύστημα Διαχείρισης Βιβλιοθήκης με Web Interface', 
  'Ανάπτυξη πλήρους συστήματος διαχείρισης βιβλιοθήκης με δυνατότητες καταλογογράφησης, δανεισμού και επιστροφής βιβλίων.', 
- 1, 'Χωρίς Ανάθεση', NULL),
+ 1, 'Χωρίς Ανάθεση', 'thesis-sample-1701234567890.pdf'),
 
 ('Εφαρμογή IoT για Smart Home Automation', 
  'Σχεδιασμός και υλοποίηση συστήματος αυτοματισμού σπιτιού χρησιμοποιώντας αισθητήρες IoT και πλατφόρμες cloud computing.', 
@@ -30,7 +30,7 @@ INSERT INTO thesis_topic (title, description, instructor_id, state, pdf) VALUES
 
 ('Ανάλυση Δεδομένων Social Media με Big Data Τεχνικές', 
  'Μελέτη και ανάλυση δεδομένων από κοινωνικά δίκτυα για την εξαγωγή χρήσιμων συμπερασμάτων και τάσεων.', 
- 2, 'Υπό Ανάθεση', NULL),
+ 2, 'Υπό Ανάθεση', 'thesis-sample-1701234567891.pdf'),
 
 ('Blockchain System για Supply Chain Management', 
  'Υλοποίηση συστήματος blockchain για την παρακολούθηση και διαχείριση εφοδιαστικής αλυσίδας προϊόντων.', 

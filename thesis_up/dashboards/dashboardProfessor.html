@@ -107,9 +107,6 @@
 
     <!-- Main Content -->
     <div class="main-content" style="margin-left: 0; transition: margin-left 0.3s ease; width: 100%;">
-        <div class="container-fluid mt-4">
-            <h1 id="mainTitle">Hello world!</h1>
-        </div>
         
         <!-- Create Thesis Topic Form -->
         <div id="createTopicForm" style="display: none;" class="container-fluid mt-4">
@@ -180,23 +177,6 @@
                     </form>
                 </div>
             </div>
-            
-            <!-- Existing Topics List -->
-            <div class="card shadow-sm mt-4">
-                <div class="card-header bg-light border-0 py-3">
-                    <h4 class="card-title mb-0 text-bordeaux">
-                        <i class="fas fa-list me-2"></i>Τα Θέματά Μου
-                    </h4>
-                </div>
-                <div class="card-body">
-                    <div id="topicsContainer">
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            Εδώ θα εμφανίζονται τα θέματα που έχετε δημιουργήσει.
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
         
         <!-- Assign Topic Form -->
@@ -244,9 +224,31 @@
                         <button type="button" class="btn btn-bordeaux px-4" id="assignTopicBtn" disabled>
                             <i class="fas fa-check me-2"></i>Ανάθεση Θέματος
                         </button>
-                        <button type="button" class="btn btn-bordeaux px-4" id="confirmAssignBtn" disabled>
-                            <i class="fas fa-check me-2"></i>Επιβεβαίωση Ανάθεσης
-                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Available Topics List -->
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-light border-0 py-3">
+                    <h4 class="card-title mb-0 text-bordeaux">
+                        <i class="fas fa-list me-2"></i>Διαθέσιμα Θέματα
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div id="availableTopicsContainer">
+                        <div id="availableTopicsLoading" class="text-center py-4">
+                            <i class="fas fa-spinner fa-spin fa-2x text-bordeaux mb-3"></i>
+                            <p class="text-muted">Φόρτωση διαθέσιμων θεμάτων...</p>
+                        </div>
+                        <div id="availableTopicsContent" style="display: none;">
+                            <div id="availableTopicsCards"></div>
+                        </div>
+                        <div id="noAvailableTopics" style="display: none;" class="text-center py-5">
+                            <i class="fas fa-info-circle fa-3x text-info mb-3"></i>
+                            <h5>Δεν υπάρχουν διαθέσιμα θέματα</h5>
+                            <p class="text-muted">Δημιουργήστε νέα θέματα για να τα κάνετε διαθέσιμα για ανάθεση.</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -295,7 +297,7 @@
                         </label>
                         <div class="input-group">
                             <input type="text" id="thesesSearch" class="form-control" 
-                                   placeholder="Αναζήτηση κατά τίτλο ή φοιτητή...">
+                                   placeholder="Αναζήτηση κατά τίτλο ή αριθμό μητρώου...">
                             <button type="button" id="clearSearchBtn" class="btn btn-outline-secondary">
                                 <i class="fas fa-times"></i>
                             </button>
@@ -340,6 +342,206 @@
                         <button type="button" class="btn btn-outline-secondary px-4" id="backToMainFromTheses">
                             <i class="fas fa-arrow-left me-2"></i>Επιστροφή στην Αρχική
                         </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Thesis Details View Section (UC9) -->
+        <div id="thesisDetailsView" style="display: none;" class="container-fluid mt-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light border-0 py-3 d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0 text-bordeaux">
+                        <i class="fa-solid fa-info-circle me-2"></i>Λεπτομέρειες Διπλωματικής
+                    </h3>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="backToThesesList">
+                        <i class="fas fa-arrow-left me-2"></i>Επιστροφή στη Λίστα
+                    </button>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Loading state -->
+                    <div id="thesisDetailsLoading" class="text-center py-5">
+                        <i class="fas fa-spinner fa-spin fa-2x text-bordeaux"></i>
+                        <p class="mt-3 text-muted">Φόρτωση λεπτομερειών...</p>
+                    </div>
+                    
+                    <!-- Thesis Details Content -->
+                    <div id="thesisDetailsContent" style="display: none;">
+                        <!-- Basic Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body">
+                                        <h4 class="text-bordeaux mb-3">
+                                            <i class="fas fa-book me-2"></i>Βασικές Πληροφορίες
+                                        </h4>
+                                        <div class="row">
+                                            <div class="col-lg-8">
+                                                <h5 id="thesisTitle" class="text-dark mb-3"></h5>
+                                                <p id="thesisDescription" class="text-muted mb-3"></p>
+                                                
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <p><strong>Κωδικός:</strong> <span id="thesisCode"></span></p>
+                                                        <p><strong>Κατάσταση:</strong> <span id="thesisStatus" class="badge"></span></p>
+                                                        <p><strong>Ρόλος μου:</strong> <span id="myRole" class="badge"></span></p>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <p><strong>Ημερομηνία Δημιουργίας:</strong> <span id="creationDate"></span></p>
+                                                        <p><strong>Ημερομηνία Ανάθεσης:</strong> <span id="assignmentDate"></span></p>
+                                                        <p><strong>Διάρκεια:</strong> <span id="thesisDuration"></span></p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-4 text-center">
+                                                <div id="thesisActions" class="d-flex flex-column gap-2">
+                                                    <!-- Action buttons will be populated here -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Student Information -->
+                        <div class="row mb-4" id="studentInfoSection">
+                            <div class="col-md-6">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body">
+                                        <h5 class="text-bordeaux mb-3">
+                                            <i class="fas fa-user-graduate me-2"></i>Στοιχεία Φοιτητή
+                                        </h5>
+                                        <div id="studentDetails">
+                                            <p><strong><i class="fas fa-user me-2"></i>Όνομα:</strong> <span id="studentName"></span></p>
+                                            <p><strong><i class="fas fa-id-card me-2"></i>Αριθμός Μητρώου:</strong> <span id="studentNumber"></span></p>
+                                            <p><strong><i class="fas fa-envelope me-2"></i>Email:</strong> <a id="studentEmail" href=""></a></p>
+                                            <p><strong><i class="fas fa-phone me-2"></i>Τηλέφωνο:</strong> <span id="studentPhone"></span></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Committee Information -->
+                            <div class="col-md-6">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body">
+                                        <h5 class="text-bordeaux mb-3">
+                                            <i class="fas fa-users me-2"></i>Τριμελής Επιτροπή
+                                        </h5>
+                                        <div id="committeeDetails">
+                                            <!-- Committee members will be populated here -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Timeline/Chronology -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body">
+                                        <h5 class="text-bordeaux mb-3">
+                                            <i class="fas fa-clock me-2"></i>Χρονολόγιο Εξέλιξης
+                                        </h5>
+                                        <div id="thesisTimeline">
+                                            <!-- Timeline will be populated here -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Final Grade Section (if completed) -->
+                        <div class="row mb-4" id="gradeSection" style="display: none;">
+                            <div class="col-md-6">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body">
+                                        <h5 class="text-bordeaux mb-3">
+                                            <i class="fas fa-award me-2"></i>Τελικός Βαθμός
+                                        </h5>
+                                        <div class="text-center">
+                                            <div class="display-4 text-bordeaux fw-bold" id="finalGrade"></div>
+                                            <p class="text-muted">Βαθμός Διπλωματικής</p>
+                                            <p><strong>Ημερομηνία Εξέτασης:</strong> <span id="examDate"></span></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body">
+                                        <h5 class="text-bordeaux mb-3">
+                                            <i class="fas fa-comment me-2"></i>Σχόλια Επιτροπής
+                                        </h5>
+                                        <div id="committeeComments">
+                                            <!-- Comments will be populated here -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Files and Links -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body">
+                                        <h5 class="text-bordeaux mb-3">
+                                            <i class="fas fa-paperclip me-2"></i>Αρχεία & Σύνδεσμοι
+                                        </h5>
+                                        <div id="thesisFiles">
+                                            <!-- Files and links will be populated here -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Edit Form (only for supervisors) -->
+                        <div id="editThesisForm" style="display: none;" class="card border-warning">
+                            <div class="card-header bg-warning text-dark">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-edit me-2"></i>Επεξεργασία Διπλωματικής
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="thesisEditForm">
+                                    <div class="row">
+                                        <div class="col-md-12 mb-3">
+                                            <label for="editTitle" class="form-label fw-semibold">Τίτλος</label>
+                                            <input type="text" id="editTitle" name="title" class="form-control" maxlength="255">
+                                        </div>
+                                        <div class="col-md-12 mb-3">
+                                            <label for="editDescription" class="form-label fw-semibold">Περιγραφή</label>
+                                            <textarea id="editDescription" name="description" class="form-control" rows="4"></textarea>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="editStatus" class="form-label fw-semibold">Κατάσταση</label>
+                                            <select id="editStatus" name="status" class="form-select">
+                                                <option value="Ενεργή">Ενεργή</option>
+                                                <option value="Υπό Εξέταση">Υπό Εξέταση</option>
+                                                <option value="Περατωμένη">Περατωμένη</option>
+                                                <option value="Ακυρωμένη">Ακυρωμένη</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="editPdf" class="form-label fw-semibold">Νέο PDF αρχείο</label>
+                                            <input type="file" id="editPdf" name="pdf" class="form-control" accept=".pdf">
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-3 justify-content-end">
+                                        <button type="button" class="btn btn-outline-secondary" id="cancelEditBtn">
+                                            <i class="fas fa-times me-2"></i>Ακύρωση
+                                        </button>
+                                        <button type="button" class="btn btn-success" id="saveAndReturnBtn">
+                                            <i class="fas fa-save me-2"></i>Αποθήκευση & Επιστροφή
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
