@@ -83,7 +83,8 @@ router.post('/upload-user', upload.single('userAddingFile'), async (req, res) =>
                 }
             }
             // Send a response back to the client
-            res.status(200).json({addedStudents, addedProfessors, success: true, message: 'Users added successfully'});
+            res.status(200).json({addedStudents, addedProfessors, success: true, message: 'Users added successfully',   students: parsed.student || [],
+  professors: parsed.professor || []});
         } catch (parseError) {
             // If there is an error parsing the JSON data, send an error response
             res.status(400).json({error: 'Invalid JSON data in the uploaded file'});
@@ -94,8 +95,9 @@ router.post('/upload-user', upload.single('userAddingFile'), async (req, res) =>
     });
 });
 
-// To dynamically fetch the list of users from the database and display them on the dashboard
-// router.get('/api/users', async (req, res) => {
+// // To dynamically fetch the list of users from the database and display them on the dashboard
+// router.get('/upload-user', async (req, res) => {
+//     console.log('Fetching users from the database...');
 //     try {
 //         const [students] = await connection.promise().query(
 //             'SELECT student_number, name, surname, email FROM student'

@@ -16,6 +16,16 @@ app.use(require('./routes/public_endpoint.routes'));
 app.use(require('./routes/upload_users.routes'));
 app.use(require('./routes/thesis_topics.routes'));
 
+const updatePasswords = require('./scripts/updatePasswords');
+
+updatePasswords((err, count) => {
+  if (err) {
+    console.error('Error updating passwords:', err);
+  } else {
+    console.log(`Passwords updated for ${count} secretaries.`);
+  }
+});
+
 // Add thesis details routes separately
 try {
     app.use(require('./routes/thesis_details.routes'));
@@ -31,8 +41,6 @@ try {
 } catch (error) {
     console.error('Error loading professor routes:', error.message);
 }
-
-
 
 // Serve the login page at root URL, when someone accesses the root URL send them the public_endpoint.html file
 app.get('/', (req, res) => {
