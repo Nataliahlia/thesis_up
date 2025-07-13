@@ -99,12 +99,12 @@
         </div>
 
         <!-- Student chooses to see his/hers thesis information -->
-        <div id="thesisList" class="card p-4 mt-4 w-75" style="display: none;">
+        <div id="thesisList" class="card p-4 mt-4 w-100" style="display: none;">
             <div class="d-flex align-items-center">
                 <i class="fas fa-file-alt me-3 text-bordeaux fs-3"></i>
                 <h3 class="text-bordeaux menu-text mb-0">Πληροφορίες Διπλωματικής</h3>
             </div>
-            <ul id="myThesisList" class="list-group"></ul>
+            <div id="myThesis" class="list-group mt-4"></div>
         </div>
     </div>
 
@@ -194,26 +194,29 @@
                         }
                         return response.json(); // Convert the response to JSON
                     })
-                    .then(data => {
-                        const container = document.getElementById('myThesisList');
-                        const list = document.getElementById('thesisList'); // Your <ul> inside the card
-                        list.innerHTML = ''; // Clear old content
+                    .then(mythesis => {
+                        const thesis = mythesis[0]; // Array -> needs to access the elements
+                        console.log('Thesis details:', thesis.member1); // Log the thesis details for debugging
+                        const theThesis = document.getElementById('myThesis');
+                        theThesis.innerHTML = ''; // Clear old content
 
-                        if (data.length === 0) {
-                            list.innerHTML = '<li class="list-group-item">Δεν βρέθηκε διπλωματική εργασία.</li>';
-                        } else {
-                            const thesis = data[0]; // Assuming one thesis per student
-                            const li = document.createElement('li');
-                            li.className = 'list-group-item';
-                            li.innerHTML = `
-                                <strong>Τίτλος:</strong> ${thesis.title}<br>
-                                <strong>Περιγραφή:</strong> ${thesis.description}<br>
-                                <strong>Κατάσταση:</strong> ${thesis.state}
+                        const item = document.createElement('div');
+                        item.className = 'list-group-item';
+                        // No change when hovering ->  style="pointer-events: none;"
+                        item.innerHTML = `
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h3><strong>Θέμα:</strong> ${thesis.title}</h3>
+                                <span class="btn btn-outline-bordeaux btn-sm border border-bordeaux rounded-pill px-3 py-2" style="pointer-events: none;">${thesis.state}</span>
+                            </div>
+                            <hr class="my-3">
+                            <p><strong class="text-bordeaux">Περιγραφή:</strong><br> ${thesis.description}</p>
+                            <p><strong class="text-bordeaux">Συνημμένο Αρχείο Περιγραφής:</strong> ${thesis.pdf ? thesis.pdf : 'Δεν έχει υποβληθεί αρχείο'}</p>
+                            <p><strong class="text-bordeaux">Επιβλέπων Καθηγητής:</strong> ${thesis.full_instructor_name}</p>
+                            <p><strong class="text-bordeaux">Μέλη Τριμελούς:</strong> ${(thesis.member1 && thesis.member2) ? `${thesis.full_instructor_name} (Επιβλέπων), ${thesis.full_mentor_name}, ${thesis.full_mentortwo_name}` : 'Δεν έχουν ορισθεί μέλη τριμελούς'}</p>
+                            <p>${thesis.days_since_activation ? thesis.days_since_activation + ' ημέρες έχουν παρέλθει από την επίσημη ανάθεση' : 'Δεν έχει γίνει ακόμη επίσημη ανάθεση'}</p>
                         `;
-                        list.appendChild(li);
-                        }
-
-                        container.style.display = 'block'; // Make sure the div is visible
+                        theThesis.appendChild(item);
+                        theThesis.style.display = 'block'; // Make sure the div is visible
                 })
                 .catch(error => {
                     console.error('Fetch error:', error);
@@ -224,3 +227,8 @@
 
 </body>
 </html>
+
+<!-- 
+<p><strong class="text-bordeaux">Επιβλέπων Καθηγητής:</strong> ${mythesis.supervisor_name}</p>
+                            <p><strong class="text-bordeaux">Μέλη Τριμελούς:</strong> ${(mythesis.member1 && mythesis.member2) ? `${mythesis.full_instructor_name} (Επιβλέπων), ${mythesis.full_mentor_name}, ${mythesis.full_mentortwo_name}` : 'Δεν έχουν ορισθεί μέλη τριμελούς'}</p>
+                            <p>${mythesis.days_since_activation ? mythesis.days_since_activation + ' ημέρες έχουν παρέλθει από την επίσημη ανάθεση' : 'Δεν έχει γίνει ακόμη επίσημη ανάθεση'}</p> -->
