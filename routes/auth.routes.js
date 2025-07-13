@@ -42,8 +42,18 @@ router.post('/login', (req, res) => {
                     // If password does not match, redirect to login with error
                     return res.status(401).json({ error: 'Λάθος όνομα χρήστη ή κωδικός πρόσβασης' });
                 } else {
+                    // First, create a `user` object inside the session if it doesn't exist
+                    req.session.user = {
+                        user_id: user.user_id, 
+                        id: user.id, 
+                        name: user.name,
+                        surname: user.surname,
+                        role: user.role
+                    };
+
+                    console.log('User session:', req.session.user);
+                    // Redirect to dashboard if login successful
                     if (user.role == 'secretary') {
-                        // Redirect to dashboard if login successful
                         return res.status(200).send('/dashboards/dashboardSecretary');
                     } else if (user.role == 'professor') {
                         return res.status(200).send('/dashboards/dashboardProfessor');

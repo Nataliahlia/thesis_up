@@ -98,9 +98,9 @@
             </nav>
             
             <!-- Sidebar Footer -->
-            <div class="sidebar-footer">
-                <div class="text-muted small">Συνδεδεμένος ως:</div>
-                <div class="fw-bold">John Doe</div>
+            <div class="mt-auto p-3 border-top">
+                <div class="text-muted small">Συνδεδεμένος/η ως:</div>
+                <div class="text-bold small" id="connectedUserFullname">...</div>
             </div>
         </div>
     </div>
@@ -620,5 +620,23 @@
     
     <!-- Custom JavaScript -->
     <script src="../js/professor.js"></script>
+
+    <script>
+        // Fetch session info to display connected user
+        // Wait until the DOM is fully loaded
+        window.addEventListener('DOMContentLoaded', () => {
+            // Send a GET request to the session-info endpoint
+            fetch('/session-info')
+                .then(res => res.json()) // JSON format response
+                .then(data => {
+                    // Display the user's full name
+                    document.getElementById('connectedUserFullname').textContent = data.name + ' ' + data.surname; 
+            })
+            .catch(() => {
+                // If there's an error, display a default message
+                document.getElementById('connectedUserFullname').textContent = 'Επισκέπτης';
+            });
+        });
+    </script>
 </body>
 </html>

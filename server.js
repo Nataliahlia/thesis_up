@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const app = express();
+const session = require('express-session');
 
 // Middleware to parse form data, this middleware reads the body and turns it into a JavaScript object accessible via req.body
 app.use(express.urlencoded({ extended: true }));
@@ -9,12 +10,23 @@ app.use(express.json());
 // Serve static files, tells Express to serve static files from the current directory
 app.use(express.static(path.join(__dirname, 'thesis_up')));
 app.use('/uploads/thesis-pdfs', express.static(path.join(__dirname, 'uploads/thesis-pdfs')));
+app.use(session({
+  secret: 'secret-key',       // This should be a strong secret key - given it a simple value for now
+  resave: false,              // This option prevents resaving the session if it hasn't changed
+  saveUninitialized: false,   // This keeps the session from being saved if it is new but not modified
+  cookie: {                   // The cookie settings
+    secure: false,            // true only if HTTPS
+    maxAge: 1000 * 60 * 60    // 1 hour
+  }
+}));
 
 app.use(require('./routes/auth.routes'));
 app.use(require('./routes/dashboard.routes'));  
 app.use(require('./routes/public_endpoint.routes'));
 app.use(require('./routes/upload_users.routes'));
 app.use(require('./routes/thesis_topics.routes'));
+app.use(require('./routes/mythesis_details.routes'));
+app.use(require('./routes/session.routes'));
 
 const updatePasswords = require('./scripts/updatePasswords');
 
