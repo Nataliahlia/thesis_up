@@ -74,7 +74,7 @@
                     <i class="fas fa-file-alt me-3 text-bordeaux"></i>
                     <span class="text-bordeaux menu-text">Πληροφορίες Διπλωματικής</span>
                 </a>
-                <a class="nav-link text-bordeaux d-flex py-3 px-4" style="align-items: flex-start;" href="#">
+                <a id="editButton" class="nav-link text-bordeaux d-flex py-3 px-4" style="align-items: flex-start;" href="#">
                     <i class="fa-solid fa-pen-to-square me-3 text-bordeaux"></i>
                     <span class="text-bordeaux menu-text">Επεξεργασία Προφίλ</span>
                 </a>
@@ -105,6 +105,20 @@
                 <h3 class="text-bordeaux menu-text mb-0">Πληροφορίες Διπλωματικής</h3>
             </div>
             <div id="myThesis" class="list-group mt-4"></div>
+        </div>
+
+        <!-- Student chooses to edit his/hers profile -->
+        <div id="editProfile" style="display: none;" class="card p-4 mt-4">
+            <div class="d-flex align-items-center">
+                <i class="fa-solid fa-pen-to-square me-3 text-bordeaux fs-3"></i>
+                <h3 class="text-bordeaux menu-text mb-0">Επεξεργασία Προφίλ</h3>
+            </div>
+            <!-- File for editing the user data -->
+            <form id="editForm">
+                <div class="text-center">
+                    <button type="submit" class="btn btn-outline-bordeaux mt-3">Υποβολή Αλλαγών</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -141,7 +155,7 @@
     <script>
         function hideAllSections() {
             const allSections = [
-                document.getElementById('addUserForm'),
+                document.getElementById('editProfile'),
                 document.getElementById('thesisList'),
                 document.getElementById('dashboardTitle')
             ];
@@ -225,10 +239,28 @@
         });
     </script>
 
+     <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Step 1 -> Form, no data are send here
+            // Show the form when the button is clicked and later handle the form submission using AJAX
+            const button = document.getElementById("editButton");
+            const sidebar = document.getElementById("sidebar");
+            const form = document.getElementById("editForm");
+            const title = document.getElementById("dashboardTitle");
+            console.log("Script loaded and DOM is ready");
+
+            button.addEventListener('click', function(e) {
+                console.log("Button clicked");
+                e.preventDefault(); // Prevent page reload
+                hideAllSections(); // Hide all sections before showing the form
+                form.style.display = "block"; // Show the form
+                title.style.display = "none"; // Hide the heading
+                sidebar.style.left = "-250px"; // Move sidebar out of view
+                document.querySelector('.main-content').style.marginLeft = "0"; // Reset main content position, removes the margin that was applied when sidebar was visible
+            });
+
+        });
+    </script>
+
 </body>
 </html>
-
-<!-- 
-<p><strong class="text-bordeaux">Επιβλέπων Καθηγητής:</strong> ${mythesis.supervisor_name}</p>
-                            <p><strong class="text-bordeaux">Μέλη Τριμελούς:</strong> ${(mythesis.member1 && mythesis.member2) ? `${mythesis.full_instructor_name} (Επιβλέπων), ${mythesis.full_mentor_name}, ${mythesis.full_mentortwo_name}` : 'Δεν έχουν ορισθεί μέλη τριμελούς'}</p>
-                            <p>${mythesis.days_since_activation ? mythesis.days_since_activation + ' ημέρες έχουν παρέλθει από την επίσημη ανάθεση' : 'Δεν έχει γίνει ακόμη επίσημη ανάθεση'}</p> -->
