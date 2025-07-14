@@ -1,5 +1,8 @@
 // Professor Dashboard JavaScript - Clean Version
 document.addEventListener('DOMContentLoaded', function() {
+    // Check Chart.js availability
+    console.log('Chart.js availability:', typeof Chart !== 'undefined' ? 'Available' : 'Not available');
+    
     // Initialize variables
     let selectedTopic = null;
     let selectedStudent = null;
@@ -12,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeCreateTopic();
     initializeAssignTopic();
     initializeMyTheses();
+    initializeStatistics(); // Add UC12 Statistics functionality
     
     // ===== NOTIFICATION SYSTEM =====
     function showNotification(message, type = 'info') {
@@ -64,28 +68,29 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Adding click listener to toggle button');
             toggleBtn.addEventListener('click', function() {
                 console.log('Toggle button clicked!');
-                console.log('Current sidebar left:', sidebar ? sidebar.style.left : 'sidebar not found');
                 
-                if (sidebar) {
-                    // Check if sidebar is currently shown (left is 0px or empty/unset)
-                    const currentLeft = sidebar.style.left;
-                    const isVisible = currentLeft === '0px' || currentLeft === '';
+                if (sidebar && mainContent) {
+                    // Check current state by looking at the computed left position
+                    const currentLeft = window.getComputedStyle(sidebar).left;
+                    const isHidden = parseInt(currentLeft) < 0;
                     
-                    if (isVisible) {
-                        console.log('Hiding sidebar');
-                        sidebar.style.left = '-250px';
-                        if (mainContent) {
-                            mainContent.style.marginLeft = '0';
-                            mainContent.style.width = '100%';
-                        }
-                    } else {
+                    console.log('Current sidebar left:', currentLeft, 'Is hidden:', isHidden);
+                    
+                    if (isHidden) {
+                        // Show sidebar
                         console.log('Showing sidebar');
                         sidebar.style.left = '0px';
-                        if (mainContent) {
-                            mainContent.style.marginLeft = '250px';
-                            mainContent.style.width = 'calc(100% - 250px)';
-                        }
+                        mainContent.style.marginLeft = '250px';
+                        mainContent.style.width = 'calc(100% - 250px)';
+                    } else {
+                        // Hide sidebar
+                        console.log('Hiding sidebar');
+                        sidebar.style.left = '-250px';
+                        mainContent.style.marginLeft = '0';
+                        mainContent.style.width = '100%';
                     }
+                } else {
+                    console.error('Sidebar or main content element not found!');
                 }
             });
         } else {
@@ -133,9 +138,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         // Other navigation links that are not yet implemented
+        // Note: Statistics is handled by initializeStatistics(), so we exclude it here
         const notImplementedLinks = document.querySelectorAll('.nav-link[href="#"]:not([id])');
         notImplementedLinks.forEach(link => {
-            if (!link.textContent.includes('Αρχική')) {
+            if (!link.textContent.includes('Αρχική') && 
+                !link.textContent.includes('Στατιστικά') && 
+                !link.textContent.includes('Δημιουργία') && 
+                !link.textContent.includes('Ανάθεση') && 
+                !link.textContent.includes('Διπλωματικές')) {
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
                     hideAllForms();
@@ -419,7 +429,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // ===== UTILITY FUNCTIONS =====
     function hideAllForms() {
-        const forms = ['createTopicForm', 'assignTopicForm', 'myThesesList', 'thesisDetailsView', 'editThesisForm'];
+        const forms = ['createTopicForm', 'assignTopicForm', 'myThesesList', 'thesisDetailsView', 'editThesisForm', 'statisticsSection'];
         forms.forEach(formId => {
             const form = document.getElementById(formId);
             if (form) {
@@ -431,8 +441,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function updateMainTitle(title) {
-        const mainTitle = document.getElementById('mainTitle');
-        if (mainTitle) mainTitle.textContent = title;
+        // Try to find a title element - could be h1, h2, or specific ID
+        const mainTitle = document.getElementById('mainTitle') || 
+                         document.querySelector('.main-title') || 
+                         document.querySelector('h1') || 
+                         document.querySelector('h2');
+        if (mainTitle) {
+            mainTitle.textContent = title;
+        }
+        console.log('Updated main title to:', title);
     }
     
     function showAlert(message, type = 'danger') {
@@ -2093,4 +2110,476 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('No theses data available for testing');
         }
     };
+
+    // ===== UC12: STATISTICS FUNCTIONALITY =====
+    function initializeStatistics() {
+        console.log('Initializing statistics...'); // Debug log
+        const statisticsLink = document.getElementById('statisticsLink');
+        const statisticsSection = document.getElementById('statisticsSection');
+        const backToMainFromStats = document.getElementById('backToMainFromStats');
+        const retryStatsBtn = document.getElementById('retryStatsBtn');
+        
+        console.log('Statistics link element:', statisticsLink); // Debug log
+        console.log('Statistics section element:', statisticsSection); // Debug log
+        
+        // Statistics navigation
+        if (statisticsLink) {
+            console.log('Adding event listener to statistics link'); // Debug log
+            statisticsLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('Statistics link clicked!'); // Debug log
+                showStatisticsSection();
+                
+                // Set this as active
+                document.querySelectorAll('.nav-link').forEach(navLink => {
+                    navLink.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
+        } else {
+            console.error('Statistics link not found!'); // Debug log
+        }
+        
+        // Back to main button
+        if (backToMainFromStats) {
+            backToMainFromStats.addEventListener('click', function(e) {
+                e.preventDefault();
+                hideAllForms();
+                updateMainTitle('Πίνακας Ελέγχου Καθηγητή');
+                
+                // Set home as active
+                const homeLink = document.querySelector('.nav-link:not([id])');
+                if (homeLink && homeLink.textContent.includes('Αρχική')) {
+                    document.querySelectorAll('.nav-link').forEach(navLink => {
+                        navLink.classList.remove('active');
+                    });
+                    homeLink.classList.add('active');
+                }
+            });
+        }
+        
+        // Retry button
+        if (retryStatsBtn) {
+            retryStatsBtn.addEventListener('click', function() {
+                loadStatisticsData();
+            });
+        }
+    }
+    
+    function showStatisticsSection() {
+        console.log('showStatisticsSection called'); // Debug log
+        hideAllForms();
+        updateMainTitle('Στατιστικά Εποπτείας');
+        
+        const statisticsSection = document.getElementById('statisticsSection');
+        console.log('Statistics section element:', statisticsSection); // Debug log
+        if (statisticsSection) {
+            statisticsSection.style.display = 'block';
+            console.log('Statistics section displayed'); // Debug log
+            
+            // Scroll to the statistics section smoothly
+            statisticsSection.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start' 
+            });
+            
+            loadStatisticsData();
+        } else {
+            console.error('Statistics section not found!'); // Debug log
+        }
+    }
+    
+    let statusChart, monthlyChart; // Global chart variables
+    
+    function loadStatisticsData() {
+        console.log('loadStatisticsData called');
+        const loadingDiv = document.getElementById('statisticsLoading');
+        const contentDiv = document.getElementById('statisticsContent');
+        const errorDiv = document.getElementById('statisticsError');
+        
+        // Show loading state
+        if (loadingDiv) loadingDiv.style.display = 'block';
+        if (contentDiv) contentDiv.style.display = 'none';
+        if (errorDiv) errorDiv.style.display = 'none';
+        
+        console.log('Starting fetch request...');
+        fetch('/api/professor/statistics')
+            .then(response => {
+                console.log('Response received:', response);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Data received:', data);
+                if (data.success) {
+                    populateStatistics(data.data);
+                    if (loadingDiv) loadingDiv.style.display = 'none';
+                    if (contentDiv) contentDiv.style.display = 'block';
+                } else {
+                    throw new Error(data.message || 'Σφάλμα φόρτωσης στατιστικών');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading statistics:', error);
+                if (loadingDiv) loadingDiv.style.display = 'none';
+                if (errorDiv) errorDiv.style.display = 'block';
+                showNotification('Σφάλμα φόρτωσης στατιστικών: ' + error.message, 'error');
+            });
+    }
+    
+    function populateStatistics(stats) {
+        console.log('populateStatistics called with:', stats);
+        // Update overview cards
+        updateElement('totalThesesCount', stats.overview.totalTheses);
+        updateElement('completedThesesCount', stats.overview.statusDistribution.completed || 0);
+        updateElement('activeThesesCount', stats.overview.statusDistribution.active || 0);
+        updateElement('totalStudentsCount', stats.students.totalStudents);
+        
+        // Fix ID mismatch - use correct IDs from HTML
+        updateElement('totalTopicsCount', stats.overview.totalTheses);
+        updateElement('completedTopicsCount', stats.overview.statusDistribution.completed || 0);
+        updateElement('activeTopicsCount', stats.overview.statusDistribution.active || 0);
+        
+        console.log('Overview cards updated');
+        
+        // Update performance metrics
+        const avgMonths = stats.performance.averageCompletionMonths;
+        updateElement('avgCompletionTime', avgMonths > 0 ? `${avgMonths} μήνες` : '-');
+        updateElement('successRate', stats.performance.successRate > 0 ? `${stats.performance.successRate}%` : '-');
+        updateElement('supervisorCount', stats.overview.roleDistribution.supervisor || 0);
+        updateElement('committeeCount', stats.overview.roleDistribution.committee_member || 0);
+        updateElement('activeSupervisionsCount', stats.overview.statusDistribution.active || 0);
+        
+        // Calculate and update completion rate
+        const totalTheses = stats.overview.totalTheses;
+        const completedTheses = stats.overview.statusDistribution.completed || 0;
+        const completionRate = totalTheses > 0 ? Math.round((completedTheses / totalTheses) * 100) : 0;
+        updateElement('completionRate', `${completionRate}%`);
+        
+        console.log('Performance metrics updated');
+        
+        // Update progress bars
+        const completionProgress = document.getElementById('completionProgress');
+        const successProgress = document.getElementById('successProgress');
+        
+        if (completionProgress) {
+            completionProgress.style.width = `${completionRate}%`;
+            completionProgress.setAttribute('aria-valuenow', completionRate);
+        }
+        
+        if (successProgress && stats.performance.successRate > 0) {
+            successProgress.style.width = `${stats.performance.successRate}%`;
+            successProgress.setAttribute('aria-valuenow', stats.performance.successRate);
+        }
+        
+        console.log('Progress bars updated');
+        
+        // Create charts
+        console.log('Creating charts with data:', stats);
+        createStatusChart(stats.overview.statusDistribution);
+        createMonthlyChart(stats.trends.monthlyCreation);
+        
+        // Update recent activity
+        console.log('Updating recent activity');
+        updateRecentActivity(stats.recentActivity);
+        
+        console.log('Statistics population completed');
+    }
+    
+    function updateElement(id, value) {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = value;
+        }
+    }
+    
+    function createStatusChart(statusData) {
+        console.log('createStatusChart called with:', statusData);
+        const canvas = document.getElementById('statusChart');
+        if (!canvas) {
+            console.log('Canvas not found');
+            return;
+        }
+        
+        // Check if Chart.js is loaded
+        if (typeof Chart === 'undefined') {
+            console.error('Chart.js is not loaded, showing fallback');
+            // Show fallback content with actual data
+            const container = canvas.parentElement;
+            let fallbackHTML = '<div class="chart-fallback text-start"><h6 class="mb-3">Κατανομή Καταστάσεων:</h6><ul class="list-unstyled">';
+            
+            const statusLabels = {
+                'unassigned': 'Χωρίς Ανάθεση',
+                'under_assignment': 'Υπό Ανάθεση',
+                'active': 'Ενεργές',
+                'under_examination': 'Υπό Εξέταση',
+                'completed': 'Ολοκληρωμένες',
+                'cancelled': 'Ακυρωμένες'
+            };
+            
+            Object.keys(statusData).forEach(status => {
+                if (statusData[status] > 0) {
+                    const label = statusLabels[status] || status;
+                    fallbackHTML += `<li class="mb-2"><strong>${label}:</strong> ${statusData[status]}</li>`;
+                }
+            });
+            
+            fallbackHTML += '</ul></div>';
+            container.innerHTML = fallbackHTML;
+            return;
+        }
+        
+        console.log('Chart.js is available, creating chart...');
+        
+        // Destroy existing chart
+        if (statusChart) {
+            statusChart.destroy();
+        }
+        
+        const ctx = canvas.getContext('2d');
+        
+        // Prepare data with Greek labels
+        const statusLabels = {
+            'unassigned': 'Χωρίς Ανάθεση',
+            'under_assignment': 'Υπό Ανάθεση',
+            'active': 'Ενεργές',
+            'under_examination': 'Υπό Εξέταση',
+            'completed': 'Ολοκληρωμένες',
+            'cancelled': 'Ακυρωμένες'
+        };
+        
+        const statusColors = {
+            'unassigned': '#6c757d',
+            'under_assignment': '#ffc107',
+            'active': '#0d6efd',
+            'under_examination': '#fd7e14',
+            'completed': '#198754',
+            'cancelled': '#dc3545'
+        };
+        
+        const labels = [];
+        const data = [];
+        const colors = [];
+        
+        Object.keys(statusData).forEach(status => {
+            if (statusData[status] > 0) {
+                labels.push(statusLabels[status] || status);
+                data.push(statusData[status]);
+                colors.push(statusColors[status] || '#6c757d');
+            }
+        });
+        
+        console.log('Chart data prepared:', { labels, data, colors });
+        
+        try {
+            statusChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors,
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((context.parsed * 100) / total).toFixed(1);
+                                    return `${context.label}: ${context.parsed} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            console.log('Status chart created successfully');
+        } catch (error) {
+            console.error('Error creating status chart:', error);
+        }
+    }
+    
+    function createMonthlyChart(monthlyData) {
+        console.log('createMonthlyChart called with:', monthlyData);
+        const canvas = document.getElementById('monthlyChart');
+        if (!canvas) {
+            console.log('Monthly canvas not found');
+            return;
+        }
+        
+        // Check if Chart.js is loaded
+        if (typeof Chart === 'undefined') {
+            console.error('Chart.js is not loaded for monthly chart, showing fallback');
+            // Show fallback content with actual data
+            const container = canvas.parentElement;
+            let fallbackHTML = '<div class="chart-fallback text-start"><h6 class="mb-3">Μηνιαία Δημιουργία:</h6><ul class="list-unstyled">';
+            
+            monthlyData.forEach(item => {
+                fallbackHTML += `<li class="mb-2"><strong>${item.label}:</strong> ${item.count} θέματα</li>`;
+            });
+            
+            fallbackHTML += '</ul></div>';
+            container.innerHTML = fallbackHTML;
+            return;
+        }
+        
+        console.log('Chart.js is available for monthly chart, creating...');
+        
+        // Destroy existing chart
+        if (monthlyChart) {
+            monthlyChart.destroy();
+        }
+        
+        const ctx = canvas.getContext('2d');
+        
+        const labels = monthlyData.map(item => item.label);
+        const data = monthlyData.map(item => item.count);
+        
+        console.log('Monthly chart data:', { labels, data });
+        
+        try {
+            monthlyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Νέα Θέματα',
+                        data: data,
+                        borderColor: '#8B0000',
+                        backgroundColor: 'rgba(139, 0, 0, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#8B0000',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Νέα θέματα: ${context.parsed.y}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+            console.log('Monthly chart created successfully');
+        } catch (error) {
+            console.error('Error creating monthly chart:', error);
+        }
+    }
+    
+    function updateRecentActivity(activities) {
+        const container = document.getElementById('recentActivityList');
+        if (!container) return;
+        
+        if (!activities || activities.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-4">
+                    <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                    <p class="text-muted">Δεν υπάρχει πρόσφατη δραστηριότητα</p>
+                </div>
+            `;
+            return;
+        }
+        
+        const activityIcons = {
+            'created': 'fas fa-plus-circle text-success',
+            'assigned': 'fas fa-user-check text-primary',
+            'updated': 'fas fa-edit text-warning',
+            'completed': 'fas fa-check-circle text-success'
+        };
+        
+        let html = '';
+        activities.forEach((activity, index) => {
+            const icon = activityIcons[activity.activity_type] || 'fas fa-circle text-muted';
+            const actionText = getActivityText(activity.activity_type);
+            
+            html += `
+                <div class="activity-item d-flex align-items-start mb-3 pb-2 border-bottom">
+                    <div class="activity-icon me-3 mt-1">
+                        <i class="${icon}"></i>
+                    </div>
+                    <div class="activity-content flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <h6 class="fw-bold mb-0 text-bordeaux">
+                                ${actionText}
+                            </h6>
+                            <small class="text-muted">
+                                <i class="fas fa-calendar me-1"></i>
+                                ${activity.date}
+                            </small>
+                        </div>
+                        <p class="text-muted mb-0 small">
+                            ${activity.title.length > 60 ? 
+                                activity.title.substring(0, 60) + '...' : 
+                                activity.title}
+                        </p>
+                        ${activity.student_name ? `
+                            <div class="mt-1">
+                                <span class="badge bg-light text-dark small">
+                                    <i class="fas fa-user me-1"></i>${activity.student_name}
+                                </span>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    }
+    
+    function getActivityText(activityType) {
+        const activityTexts = {
+            'created': 'Δημιουργήθηκε νέο θέμα',
+            'assigned': 'Ανατέθηκε σε φοιτητή',
+            'updated': 'Ενημερώθηκε θέμα',
+            'completed': 'Ολοκληρώθηκε θέμα'
+        };
+        
+        return activityTexts[activityType] || 'Νέα δραστηριότητα';
+    }
 });

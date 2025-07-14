@@ -16,6 +16,24 @@
     color: #8B0000 !important;
 }
 
+/* Sidebar and Main Content Styles */
+.sidebar {
+    transition: left 0.3s ease !important;
+}
+
+.main-content {
+    transition: margin-left 0.3s ease, width 0.3s ease !important;
+    min-height: calc(100vh - 82px);
+}
+
+/* Ensure smooth transitions for responsive layout */
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+}
+
 .modal-content {
     border-radius: 15px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.3);
@@ -1013,4 +1031,39 @@ footer {
 /* Ensure equal height for both cards */
 #studentInfoSection {
     align-items: stretch;
+}
+
+/* Simple Statistics Section Styling */
+.card {
+    transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Simple progress bars */
+.progress {
+    background-color: #e9ecef;
+}
+
+.progress-bar {
+    background-color: #28a745;
+    transition: width 0.3s ease;
+}
+
+/* Activity list simple styling */
+.activity-item {
+    transition: background-color 0.2s ease;
+    border-radius: 4px;
+    padding: 0.5rem;
+}
+
+.activity-item:hover {
+    background-color: #f8f9fa;
+}
+
+/* Remove complex animations and keep it minimal */
+#statisticsContent {
+    animation: none;
 }

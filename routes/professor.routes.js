@@ -675,4 +675,265 @@ router.delete('/api/professor/delete-topic', (req, res) => {
     });
 });
 
+// ===== UC12: VIEW INSTRUCTOR STATISTICS =====
+router.get('/api/professor/statistics', (req, res) => {
+    // Use the logged-in professor ID (from session logs we see id: 1)
+    const professorId = 1;
+    
+    console.log('Statistics request - Professor ID:', professorId);
+    
+    if (!professorId) {
+        return res.status(401).json({ 
+            success: false, 
+            message: 'Μη εξουσιοδοτημένη πρόσβαση' 
+        });
+    }
+
+    // Parallel queries to get comprehensive statistics
+    const queries = {
+        // Basic counts by status
+        statusStats: `
+            SELECT 
+                state as status,
+                COUNT(*) as count
+            FROM thesis_topic 
+            WHERE instructor_id = ? OR thesis_id IN (
+                SELECT thesis_id FROM thesis_committee 
+                WHERE professor_id = ?
+            )
+            GROUP BY state
+        `,
+        
+        // Monthly thesis creation trend (last 12 months)
+        monthlyTrend: `
+            SELECT 
+                DATE_FORMAT(time_of_activation, '%Y-%m') as month,
+                COUNT(*) as count
+            FROM thesis_topic 
+            WHERE instructor_id = ? 
+                AND time_of_activation >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+                AND time_of_activation IS NOT NULL
+            GROUP BY DATE_FORMAT(time_of_activation, '%Y-%m')
+            ORDER BY month ASC
+        `,
+        
+        // Role distribution
+        roleDistribution: `
+            SELECT 
+                'supervisor' as role,
+                COUNT(*) as count
+            FROM thesis_topic 
+            WHERE instructor_id = ?
+            
+            UNION ALL
+            
+            SELECT 
+                'committee_member' as role,
+                COUNT(*) as count
+            FROM thesis_committee tc
+            JOIN thesis_topic t ON tc.thesis_id = t.thesis_id
+            WHERE tc.professor_id = ? AND t.instructor_id != ?
+        `,
+        
+        // Average completion time for completed theses
+        completionStats: `
+            SELECT 
+                AVG(DATEDIFF(
+                    CASE 
+                        WHEN state = 'Περατωμένη' THEN date_of_examination 
+                        ELSE NULL 
+                    END,
+                    time_of_activation
+                )) as avg_completion_days,
+                COUNT(CASE WHEN state = 'Περατωμένη' THEN 1 END) as completed_count,
+                COUNT(CASE WHEN state = 'Ενεργή' THEN 1 END) as active_count,
+                COUNT(CASE WHEN state = 'Υπό Εξέταση' THEN 1 END) as under_examination_count
+            FROM thesis_topic 
+            WHERE instructor_id = ? AND time_of_activation IS NOT NULL
+        `,
+        
+        // Student performance stats
+        studentStats: `
+            SELECT 
+                COUNT(DISTINCT s.student_number) as total_students,
+                COUNT(CASE WHEN t.state = 'Περατωμένη' THEN 1 END) as successful_students,
+                COUNT(CASE WHEN t.state = 'Ενεργή' THEN 1 END) as current_students,
+                COUNT(CASE WHEN t.state = 'Ακυρωμένη' THEN 1 END) as cancelled_students
+            FROM thesis_topic t
+            LEFT JOIN student s ON t.student_id = s.student_number
+            WHERE t.instructor_id = ? AND t.student_id IS NOT NULL
+        `,
+        
+        // Recent activity (last 30 days)
+        recentActivity: `
+            SELECT 
+                DATE(time_of_activation) as date,
+                title,
+                state as status,
+                'assigned' as activity_type
+            FROM thesis_topic 
+            WHERE instructor_id = ? 
+                AND time_of_activation >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                AND time_of_activation IS NOT NULL
+                
+            ORDER BY date DESC
+            LIMIT 10
+        `
+    };
+
+    // Execute all queries in parallel
+    const results = {};
+    let completed = 0;
+    const totalQueries = Object.keys(queries).length;
+
+    const executeQuery = (key, query, params) => {
+        connection.query(query, params, (err, rows) => {
+            if (err) {
+                console.error(`Error in ${key} query:`, err);
+                results[key] = [];
+            } else {
+                results[key] = rows;
+            }
+            
+            completed++;
+            if (completed === totalQueries) {
+                // Process and send results
+                processStatistics();
+            }
+        });
+    };
+
+    const processStatistics = () => {
+        // Process status statistics - map Greek states to English keys
+        const statusCounts = {
+            'unassigned': 0,
+            'under_assignment': 0,
+            'active': 0,
+            'under_examination': 0,
+            'completed': 0,
+            'cancelled': 0
+        };
+
+        const greekToEnglishStatus = {
+            'Χωρίς Ανάθεση': 'unassigned',
+            'Υπό Ανάθεση': 'under_assignment',
+            'Ενεργή': 'active',
+            'Υπό Εξέταση': 'under_examination',
+            'Περατωμένη': 'completed',
+            'Ακυρωμένη': 'cancelled'
+        };
+
+        results.statusStats.forEach(row => {
+            const englishStatus = greekToEnglishStatus[row.status];
+            if (englishStatus) {
+                statusCounts[englishStatus] = row.count;
+            }
+        });
+
+        // Calculate totals
+        const totalTheses = Object.values(statusCounts).reduce((sum, count) => sum + count, 0);
+        
+        // Process monthly trend data
+        const monthlyData = results.monthlyTrend.map(row => ({
+            month: row.month,
+            count: row.count,
+            label: formatMonthLabel(row.month)
+        }));
+
+        // Process role distribution
+        const roleStats = {
+            supervisor: 0,
+            committee_member: 0
+        };
+        
+        results.roleDistribution.forEach(row => {
+            if (row.role) {
+                roleStats[row.role] = row.count;
+            }
+        });
+
+        // Process completion statistics
+        const completion = results.completionStats[0] || {};
+        const avgCompletionDays = completion.avg_completion_days || 0;
+        const avgCompletionMonths = avgCompletionDays ? (avgCompletionDays / 30).toFixed(1) : 0;
+
+        // Process student statistics
+        const studentData = results.studentStats[0] || {};
+        
+        // Calculate success rate
+        const successRate = studentData.total_students > 0 ? 
+            ((studentData.successful_students / studentData.total_students) * 100).toFixed(1) : 0;
+
+        // Prepare final response
+        const statistics = {
+            overview: {
+                totalTheses,
+                statusDistribution: statusCounts,
+                roleDistribution: roleStats
+            },
+            performance: {
+                averageCompletionDays: Math.round(avgCompletionDays || 0),
+                averageCompletionMonths: avgCompletionMonths,
+                successRate: parseFloat(successRate),
+                activeTheses: completion.active_count || 0,
+                underExaminationTheses: completion.under_examination_count || 0
+            },
+            students: {
+                totalStudents: studentData.total_students || 0,
+                successfulStudents: studentData.successful_students || 0,
+                currentStudents: studentData.current_students || 0,
+                cancelledStudents: studentData.cancelled_students || 0
+            },
+            trends: {
+                monthlyCreation: monthlyData
+            },
+            recentActivity: results.recentActivity.map(activity => ({
+                ...activity,
+                date: formatDate(activity.date),
+                statusLabel: getStatusLabel(activity.status)
+            }))
+        };
+
+        res.json({
+            success: true,
+            data: statistics,
+            timestamp: new Date().toISOString()
+        });
+    };
+
+    // Helper functions
+    const formatMonthLabel = (monthStr) => {
+        const [year, month] = monthStr.split('-');
+        const monthNames = [
+            'Ιαν', 'Φεβ', 'Μαρ', 'Απρ', 'Μαι', 'Ιουν',
+            'Ιουλ', 'Αυγ', 'Σεπ', 'Οκτ', 'Νοε', 'Δεκ'
+        ];
+        return `${monthNames[parseInt(month) - 1]} ${year}`;
+    };
+
+    const formatDate = (date) => {
+        return new Date(date).toLocaleDateString('el-GR');
+    };
+
+    const getStatusLabel = (status) => {
+        const statusLabels = {
+            'Χωρίς Ανάθεση': 'Χωρίς Ανάθεση',
+            'Υπό Ανάθεση': 'Υπό Ανάθεση',
+            'Ενεργή': 'Ενεργή',
+            'Υπό Εξέταση': 'Υπό Εξέταση',
+            'Περατωμένη': 'Ολοκληρωμένη',
+            'Ακυρωμένη': 'Ακυρωμένη'
+        };
+        return statusLabels[status] || status;
+    };
+
+    // Execute all queries
+    executeQuery('statusStats', queries.statusStats, [professorId, professorId]);
+    executeQuery('monthlyTrend', queries.monthlyTrend, [professorId]);
+    executeQuery('roleDistribution', queries.roleDistribution, [professorId, professorId, professorId]);
+    executeQuery('completionStats', queries.completionStats, [professorId]);
+    executeQuery('studentStats', queries.studentStats, [professorId]);
+    executeQuery('recentActivity', queries.recentActivity, [professorId]);
+});
+
 module.exports = router;
