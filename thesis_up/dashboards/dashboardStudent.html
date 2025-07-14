@@ -107,6 +107,20 @@
             <div id="myThesis" class="list-group mt-4"></div>
         </div>
 
+        <!-- Custom Alert Modal -->
+        <!-- Background overlay -->
+        <div id="customAlert" class="custom-alert-backdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.4); z-index: 9999;">
+            <!-- This is the custom alert modal -->
+            <div style="background: white; padding: 2rem; border-radius: 10px; min-width: 300px; max-width: 90%;">
+                <!-- The message that will be displayed in the alert, it can be customized dynamically -->
+                <h5 id="customAlertMessage" class="text-center mb-4">Μήνυμα</h5>
+                <div class="text-center">
+                    <!-- The button that will close the alert -->
+                    <button id="customAlertOk" class="btn btn-outline-bordeaux">OK</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Student chooses to edit his/hers profile -->
         <div id="editProfile" style="display: none;" class="card p-4 mt-4">
             <div class="d-flex align-items-center">
@@ -114,11 +128,60 @@
                 <h3 class="text-bordeaux menu-text mb-0">Επεξεργασία Προφίλ</h3>
             </div>
             <!-- File for editing the user data -->
-            <form id="editForm">
-                <div class="text-center">
-                    <button type="submit" class="btn btn-outline-bordeaux mt-3">Υποβολή Αλλαγών</button>
-                </div>
-            </form>
+            <div class="d-flex justify-content-center w-100">
+                <form id="editForm" class="w-50">
+                    <!-- Name -> readonly -->
+                    <div class="mb-3 mt-4">
+                        <label for="editName" class="form-label">Όνομα</label>
+                        <input type="text" class="form-control bordeaux-outline" id="editName" name="name" disabled>
+                    </div>
+                    <!-- Surname -> readonly -->
+                    <div class="mb-3 mt-4">
+                        <label for="editSurname" class="form-label">Επίθετο</label>
+                        <input type="text" class="form-control bordeaux-outline" id="editSurname" name="surname" disabled>
+                    </div>
+                    <!-- Email -->
+                    <div class="mb-3 mt-4">
+                        <label for="editEmail" class="form-label">Email *</label>
+                        <input type="email" class="form-control" id="editEmail" name="email" required>
+                    </div>
+                    <!-- Landline Telephone -->
+                    <div class="mb-3 mt-4">
+                        <label for="editLandline" class="form-label">Σταθερό Τηλέφωνο *</label>
+                        <input type="tel" placeholder="Σταθερό Τηλέφωνο" class="form-control" id="editLandline" name="landlineTelephone" required>
+                    </div>
+                    <!-- Mobile Telephone -->
+                    <div class="mb-3 mt-4">
+                        <label for="editMobile" class="form-label">Κινητό Τηλέφωνο *</label>
+                        <input type="tel" placeholder="Κινητό Τηλέφωνο" class="form-control" id="editMobile" name="mobileTelephone" required>
+                    </div>
+                    <!-- Street -->
+                    <div class="mb-3 mt-4">
+                        <label for="editStreet" class="form-label">Οδός *</label>
+                        <input type="text" placeholder="Οδός" class="form-control" id="editStreet" name="street" required>
+                    </div>
+                    <!-- Street Number -->
+                    <div class="mb-3 mt-4">
+                        <label for="editStreetNumber" class="form-label">Αριθμός Οδού *</label>
+                        <input type="text" placeholder="Αριθμός Οδού" class="form-control" id="editStreetNumber" name="streetNumber" required>
+                    </div>
+                    <!-- City -->
+                    <div class="mb-3 mt-4">
+                        <label for="editCity" class="form-label">Πόλη *</label>
+                        <input type="text" placeholder="Πόλη" class="form-control" id="editCity" name="city" required>
+                    </div>
+                    <!-- Postal Code -->
+                    <div class="mb-3 mt-4">
+                        <label for="editPostalCode" class="form-label">Ταχυδρομικός Κώδικας *</label>
+                        <input type="text" placeholder="Ταχυδρομικός Κώδικας" class="form-control" id="editPostalCode" name="postalCode" required>
+                    </div>
+                    <!-- Submit Button -->
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-outline-bordeaux mt-3">Υποβολή Αλλαγών</button>
+                    </div>
+                </form>
+            </div>
+            <p class="text-muted mt-3">* Επεξεργασία Στοιχείων Επικοινωνίας. Μόνο στα πεδία με αστερίσκο μπορεί να γίνει επεξεργασία</p>
         </div>
     </div>
 
@@ -209,8 +272,14 @@
                         return response.json(); // Convert the response to JSON
                     })
                     .then(mythesis => {
+                        // Check to see if there is a thesis assigned to the student
+                        if (!mythesis || mythesis.length === 0) {
+                            // Message shown if no thesis is assigned
+                            showCustomAlert("Δεν έχει ορισθεί ακόμη διπλωματική εργασία.");
+                            return;
+                        }
+
                         const thesis = mythesis[0]; // Array -> needs to access the elements
-                        console.log('Thesis details:', thesis.member1); // Log the thesis details for debugging
                         const theThesis = document.getElementById('myThesis');
                         theThesis.innerHTML = ''; // Clear old content
 
@@ -219,13 +288,13 @@
                         // No change when hovering ->  style="pointer-events: none;"
                         item.innerHTML = `
                             <div class="d-flex justify-content-between align-items-center">
-                                <h3><strong>Θέμα:</strong> ${thesis.title}</h3>
+                                <h3><strong>Θέμα:</strong> ${thesis.title ? thesis.title : 'Δεν έχει ορισθεί θέμα'}</h3>
                                 <span class="btn btn-outline-bordeaux btn-sm border border-bordeaux rounded-pill px-3 py-2" style="pointer-events: none;">${thesis.state}</span>
                             </div>
                             <hr class="my-3">
-                            <p><strong class="text-bordeaux">Περιγραφή:</strong><br> ${thesis.description}</p>
+                            <p><strong class="text-bordeaux">Περιγραφή:</strong><br> ${thesis.description ? thesis.description : 'Δεν έχει ορισθεί περιγραφή'}</p>
                             <p><strong class="text-bordeaux">Συνημμένο Αρχείο Περιγραφής:</strong> ${thesis.pdf ? thesis.pdf : 'Δεν έχει υποβληθεί αρχείο'}</p>
-                            <p><strong class="text-bordeaux">Επιβλέπων Καθηγητής:</strong> ${thesis.full_instructor_name}</p>
+                            <p><strong class="text-bordeaux">Επιβλέπων Καθηγητής:</strong> ${thesis.full_instructor_name ? thesis.full_instructor_name : 'Δεν έχει ορισθεί επιβλέπων καθηγητής'}</p>
                             <p><strong class="text-bordeaux">Μέλη Τριμελούς:</strong> ${(thesis.member1 && thesis.member2) ? `${thesis.full_instructor_name} (Επιβλέπων), ${thesis.full_mentor_name}, ${thesis.full_mentortwo_name}` : 'Δεν έχουν ορισθεί μέλη τριμελούς'}</p>
                             <p>${thesis.days_since_activation ? thesis.days_since_activation + ' ημέρες έχουν παρέλθει από την επίσημη ανάθεση' : 'Δεν έχει γίνει ακόμη επίσημη ανάθεση'}</p>
                         `;
@@ -245,7 +314,7 @@
             // Show the form when the button is clicked and later handle the form submission using AJAX
             const button = document.getElementById("editButton");
             const sidebar = document.getElementById("sidebar");
-            const form = document.getElementById("editForm");
+            const editContainer = document.getElementById("editProfile");
             const title = document.getElementById("dashboardTitle");
             console.log("Script loaded and DOM is ready");
 
@@ -253,13 +322,92 @@
                 console.log("Button clicked");
                 e.preventDefault(); // Prevent page reload
                 hideAllSections(); // Hide all sections before showing the form
-                form.style.display = "block"; // Show the form
+                editContainer.style.display = "block"; // Show the form in the container
                 title.style.display = "none"; // Hide the heading
                 sidebar.style.left = "-250px"; // Move sidebar out of view
                 document.querySelector('.main-content').style.marginLeft = "0"; // Reset main content position, removes the margin that was applied when sidebar was visible
             });
 
+            // Fetch to get the data for the form
+            fetch('/myprofile-edit')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json(); // Convert the response to JSON
+                })
+                .then(studentInfo => {
+                    // Step 2 -> Populate the form with the fetched data
+                    document.getElementById("editName").value = studentInfo.name;
+                    document.getElementById("editSurname").value = studentInfo.surname;
+                    document.getElementById("editEmail").value = studentInfo.email;
+                    document.getElementById("editStreet").value = studentInfo.street;
+                    document.getElementById("editStreetNumber").value = studentInfo.streetNumber;
+                    document.getElementById("editPostalCode").value = studentInfo.postalCode;
+                    document.getElementById("editCity").value = studentInfo.city;
+                    document.getElementById("editMobile").value = studentInfo.mobileTelephone;
+                    document.getElementById("editLandline").value = studentInfo.landlineTelephone;
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                });
+
+            // Fetch to submit the form data
+            const editForm = document.getElementById("editForm"); // Reference to the form element
+            editForm.addEventListener('submit', function(e) {
+                e.preventDefault(); // Prevent the default form submission
+
+                // Collect form data
+                const formData = new FormData(editForm);                // Create a FormData object from the form, which collects all the inputs inside the form
+                const data = Object.fromEntries(formData.entries());    // Convert FormData to a regular object, lets the use of JSON.stringify
+
+                // Send a POST request to update the profile
+                fetch('/myprofile-edit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'              // Specify the content type as JSON
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json(); // Convert the response to JSON
+                })
+                .then(result => {
+                    console.log('Profile updated successfully:', result);
+                    // If the update is successful, show a custom alert
+                    if (result.success) {   // True as a response from the server -> success: true
+                        // Show custom alert
+                        showCustomAlert('Τα στοιχεία ενημερώθηκαν επιτυχώς!');  
+                    } else {
+                        // Show custom alert with error message
+                        showCustomAlert('Σφάλμα κατά την ενημέρωση των στοιχείων. Παρακαλώ δοκιμάστε ξανά.');
+                    }
+                })
+                .catch(error => {
+                    // Show custom alert
+                    showCustomAlert('Error updating profile. Please try again.');
+                });
+            });
         });
+    </script>
+
+    <script>
+    function showCustomAlert(message) {
+        const modal = document.getElementById('customAlert');               // Reference to the custom alert modal backdrop
+        const messageBox = document.getElementById('customAlertMessage');   // Reference to the message box inside the modal
+        const okBtn = document.getElementById('customAlertOk');             // Reference to the OK button inside the modal
+
+        messageBox.textContent = message;       // Set the message text
+        modal.style.display = 'flex';           // Show the modal by changing its display to flex
+
+        // Hide the modal when OK is clicked
+        okBtn.onclick = () => {
+            modal.style.display = 'none';
+        };
+    }
     </script>
 
 </body>

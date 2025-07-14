@@ -35,11 +35,13 @@ router.post('/upload-user', upload.single('userAddingFile'), async (req, res) =>
             }
             // Checks is it an array
             if (Array.isArray(parsed.student)) {
+                console.log('Processing students:', parsed.student.length);
                 // Process each user in the array
                 for (const student of parsed.student) {
                     // Increment the addedStudents counter
                     addedStudents++;
                     // process the student data
+                    console.log('Processing student:', student);
                     const { student_number, email, name, surname, street, number, city, postcode, father_name, landline_telephone, mobile_telephone } = student;
 
                     // Check if all required fields are present, if not error
@@ -54,8 +56,9 @@ router.post('/upload-user', upload.single('userAddingFile'), async (req, res) =>
                     const hashedPassword = await bcrypt.hash(rawPassword, saltRounds); // Hash the password using bcrypt
                     // Insert the student into the database
                     const sql = `INSERT INTO student (student_number, email, password_hash, name, surname, street, number, city, postcode, father_name, landline_telephone, mobile_telephone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+                    console.log('Inserting student:', student_number, email, name, surname);
                     // Wait until the query is done
-                    await connection.promise().query(sql, [student_number, email, hashedPassword, name, surname, street, number, city, postcode, father_name, landline_telephone, mobile_telephone]);
+                    await connection.promise().query(sql, [student_number, email, hashedPassword, name, surname, street ?? null, number ?? null, city ?? null, postcode ?? null, father_name, landline_telephone ?? null, mobile_telephone ?? null]);
                 }
             } 
             if (Array.isArray(parsed.professor)) {
@@ -83,10 +86,10 @@ router.post('/upload-user', upload.single('userAddingFile'), async (req, res) =>
                 }
             }
             // Send a response back to the client
-            res.status(200).json({addedStudents, addedProfessors, success: true, message: 'Users added successfully',   students: parsed.student || [],
-  professors: parsed.professor || []});
+            res.status(200).json({addedStudents, addedProfessors, success: true, message: 'Users added successfully',   students: parsed.student || [], professors: parsed.professor || []});
         } catch (parseError) {
             // If there is an error parsing the JSON data, send an error response
+            console.error('Error parsing JSON data:', parseError);
             res.status(400).json({error: 'Invalid JSON data in the uploaded file'});
         } finally {
             // Clean up the uploaded file after processing, prevents the server from filling up with old files

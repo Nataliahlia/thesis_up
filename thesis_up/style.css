@@ -25,6 +25,25 @@ a:hover .text-bordeaux {
   color: #fff;  /* white text when hovered */
 }
 
+/* Custom input field style for disabled fields */
+.bordeaux-outline {
+  border: 1px solid #6A1F2B;   /* Use same Bordeaux color as the buttons */
+  background-color: white;     /* Keep background white */
+  color: #212529;              /* Text color */
+  opacity: 1;                    /* Prevent Bootstrap from fading disabled input */
+  cursor: default;               /* Prevent text cursor */
+}
+
+.bordeaux-outline:disabled {
+  background-color: white;   /* Ensure background stays white when disabled */
+}
+
+.custom-alert-backdrop {
+  display: none;
+  justify-content: center;
+  align-items: center;
+}
+
 .bg-dark_gold {
   background-color: #AF8948; /* dark gold -> used for icons, boarders */
 }

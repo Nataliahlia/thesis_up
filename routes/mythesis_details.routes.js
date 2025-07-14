@@ -8,7 +8,6 @@ router.get('/mythesis-details', (req, res) => {
   }
 
   const studentId = req.session.user.id;
-  console.log('Fetching thesis details for student ID:', studentId);
   const query = `
     SELECT 
         tt.title, 
@@ -33,7 +32,6 @@ router.get('/mythesis-details', (req, res) => {
     LEFT JOIN professor m2 ON tt.member2 = m2.professor_id
     LEFT JOIN professor instructor ON tt.instructor_id = instructor.professor_id
     WHERE student_id = ?`;
-  console.log('Executing query:', query);
 
   connection.query(query, [studentId], (err, results) => {
     if (err) {

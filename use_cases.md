@@ -3,7 +3,7 @@ Expanded Use Cases for Thesis Support System
 Here's a breakdown of the system's functionalities into detailed use cases, categorized by user type.
 
 I. Core System Use Cases (Authentication & General)
-UC1: User Login
+✅ UC1: User Login
 •	Description: Allows an authenticated user (Instructor, Student, or Secretariat) to log into the system. 
 •	Actors: Instructor, Student, Secretariat 
 •	Preconditions: User has valid credentials (username/password).
@@ -14,6 +14,7 @@ UC1: User Login
 3.	System validates credentials. 
 4.	If valid, system grants access and redirects. 
 5.	If invalid, system displays error message.
+// If user is secretary data are imported through db
 
 UC2: User Logout
 •	Description: Allows a logged-in user to log out of the system. 
@@ -223,7 +224,7 @@ Extra added use case: Give Grade as a professor
 4.	System displays recorded grades from other members. -> αυτο θεωρω εαν εχουν βαλει τους βαθμους
 
 III. Student Use Cases
-UC19: View Current Thesis Information (Student)
+✅ UC19: View Current Thesis Information (Student)
 •	Description: A Student views the details and current status of their assigned thesis. 
 •	Actors: Student 
 •	Preconditions: Student is logged in and has an assigned thesis. 
@@ -233,7 +234,7 @@ UC19: View Current Thesis Information (Student)
 2.	System displays current thesis topic, description, status, and committee details. 
 3.	System displays time elapsed since official assignment. 
 
-UC20: Edit Student Profile
+✅ UC20: Edit Student Profile
 •	Description: A Student enters and manages their contact details. 
 •	Actors: Student 
 •	Preconditions: Student is logged in. 
@@ -242,6 +243,7 @@ UC20: Edit Student Profile
 1.	Student selects "Edit Profile". 
 2.	Student enters/modifies postal address, email, mobile, and landline phone. 
 3.	System validates and saves changes.
+// The email is only modified, it is used for the username
 
 UC21: Select Committee Members (Student)
 •	Description: A Student selects Instructors to invite as members of their Three-Member Committee. 
@@ -306,7 +308,7 @@ UC26: View Completed Thesis Information (Student)
 2.	System displays thesis information, status changes, and examination report. 
 
 IV. Secretariat Use Cases
-UC27: View Active and Under Examination Theses (Secretariat)
+✅ UC27: View Active and Under Examination Theses (Secretariat)
 •	Description: Secretariat views a list of all "Active" and "Under Examination" theses. 
 •	Actors: Secretariat 
 •	Preconditions: Secretariat is logged in. 
@@ -315,7 +317,7 @@ UC27: View Active and Under Examination Theses (Secretariat)
 1.	Secretariat selects "View Theses". 
 2.	System displays all "Active" and "Under Examination" theses. 
 
-UC28: View Thesis Details (Secretariat)
+✅ UC28: View Thesis Details (Secretariat)
 •	Description: Secretariat views detailed information for a selected thesis. 
 •	Actors: Secretariat 
 •	Preconditions: Secretariat is logged in and has selected a thesis from the list. 
@@ -324,7 +326,7 @@ UC28: View Thesis Details (Secretariat)
 1.	Secretariat selects a thesis from the displayed list. 
 2.	System displays topic, description, status, committee, and elapsed time. 
 
-UC29: Import User Data
+✅ UC29: Import User Data
 •	Description: Secretariat imports personal information of students and instructors from a JSON file. 
 •	Actors: Secretariat 
 •	Preconditions: Secretariat is logged in. A valid JSON file with user data is available. 
