@@ -7,6 +7,7 @@ describe thesis_up.professor;
 select * from thesis_up.student;
 select * from thesis_up.professor;
 describe thesis_topic;
+DESCRIBE student;
 select * from thesis_up.thesis_topic;
     SELECT 
         tt.title, 

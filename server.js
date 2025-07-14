@@ -28,6 +28,7 @@ app.use(require('./routes/thesis_topics.routes'));
 app.use(require('./routes/mythesis_details.routes'));
 app.use(require('./routes/session.routes'));
 app.use(require('./routes/myprofile_edit.route'));
+app.use(require('./routes/under_examination_update.route'));
 
 const updatePasswords = require('./scripts/updatePasswords');
 

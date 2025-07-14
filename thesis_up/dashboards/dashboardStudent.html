@@ -78,9 +78,9 @@
                     <i class="fa-solid fa-pen-to-square me-3 text-bordeaux"></i>
                     <span class="text-bordeaux menu-text">Επεξεργασία Προφίλ</span>
                 </a>
-                <a class="nav-link text-bordeaux d-flex py-3 px-4" style="align-items: flex-start;" href="#">
-                    <i class="fas fa-file-alt me-3 text-bordeaux"></i>
-                    <span class="text-bordeaux menu-text">Πληροφορίες Διπλωματικής</span>
+                <a id="manageThesis" class="nav-link text-bordeaux d-flex align-items-center py-3 px-4" href="#">
+                    <i class="fa-solid fa-list-check me-3 text-bordeaux"></i>
+                    <span class="text-bordeaux menu-text">Διαχείριση Διπλωματικής Εργασίας</span>
                 </a>
             </nav>
             
@@ -182,6 +182,33 @@
                 </form>
             </div>
             <p class="text-muted mt-3">* Επεξεργασία Στοιχείων Επικοινωνίας. Μόνο στα πεδία με αστερίσκο μπορεί να γίνει επεξεργασία</p>
+        </div>
+
+        <!-- Student chooses to manage his/hers thesis -->
+        <div id="thesisManagement" style="display: none;" class="card p-4 mt-4">
+            <div class="d-flex align-items-center">
+                <i class="fa-solid fa-list-check me-3 text-bordeaux fs-3"></i>
+                <h3 class="text-bordeaux menu-text mb-0">Διαχείριση Διπλωματικής Εργασίας</h3>
+            </div>
+            <!-- Form for file upload -->
+            <form id="thesisManagementForm" style="display: none;" class="card p-4 mt-4 w-50 mx-auto" enctype="multipart/form-data" method="POST">
+                <div class="d-flex flex-column align-items-center">
+                    <div class="mb-3 w-75">
+                        <p> Επισύναψη Πρόχειρου Αρχείου Διπλωματικής Εργασίας </p>
+                        <input type="file" name="progressFile" id="progressFile" class="form-control" required>
+                    </div>
+                    <!-- Adding the choice of links upload -->
+                    <div class="mb-3 w-75">
+                        <p class="text-muted mt-5"> Μπορείτε να επισυνάψετε χρήσιμο σύνδεσμο εάν το επιθυμείτε. </p>
+                        <label for="progressLink" class="form-label">Σύνδεσμος (π.χ. Google Drive Files, GitHub, YouTube)</label>
+                        <input type="url" name="progressLink" id="progressLink" class="form-control" placeholder="https://example.com">
+                    </div>
+                    <!-- Form Submit -->
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-outline-bordeaux mt-3">Υποβολή Αρχείου</button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -308,7 +335,7 @@
         });
     </script>
 
-     <script>
+    <script>
         document.addEventListener('DOMContentLoaded', function () {
             // Step 1 -> Form, no data are send here
             // Show the form when the button is clicked and later handle the form submission using AJAX
@@ -389,6 +416,78 @@
                 .catch(error => {
                     // Show custom alert
                     showCustomAlert('Error updating profile. Please try again.');
+                });
+            });
+        });
+    </script>
+
+     <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Step 1 -> Form, no data are send here
+            // Show the form when the button is clicked and later handle the form submission using AJAX
+            const button = document.getElementById("manageThesis");
+            const sidebar = document.getElementById("sidebar");
+            const div = document.getElementById("thesisManagement");
+            const title = document.getElementById("dashboardTitle");
+            console.log("Script loaded and DOM is ready");
+
+            button.addEventListener('click', function(e) {
+                console.log("Button clicked");
+                e.preventDefault(); // Prevent page reload
+                hideAllSections(); // Hide all sections before showing the form
+                div.style.display = "block"; // Show the form in the container
+                title.style.display = "none"; // Hide the heading
+                sidebar.style.left = "-250px"; // Move sidebar out of view
+                document.querySelector('.main-content').style.marginLeft = "0"; // Reset main content position, removes the margin that was applied when sidebar was visible
+            });
+
+            fetch('/mythesis-details')
+                    .then(response => {
+                        if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                        }
+                        return response.json(); // Convert the response to JSON
+                    })
+                    .then(mythesis => {
+                        // Check to see if there is a thesis assigned to the student
+                        if (!mythesis || mythesis.length === 0) {
+                            // Message shown if no thesis is assigned
+                            showCustomAlert("Δεν έχει ορισθεί ακόμη διπλωματική εργασία.");
+                            return;
+                        }
+                        const thesis = mythesis[0]; // Array -> needs to access the elements
+                        if (thesis.state === 'Υπό Εξέταση') {
+                            const form = document.getElementById('thesisManagementForm');
+                            form.style.display = 'block'; // Show the form if the thesis is under review
+                        }
+                    })
+                    .catch(error => {
+                        // Show custom alert
+                        showCustomAlert('Error updating profile. Please try again.');
+                    });
+            // Get reference to the form and handle submission
+            const form = document.getElementById('thesisManagementForm');
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                const formData = new FormData(form); // Συμπεριλαμβάνει αρχείο + σύνδεσμο
+
+                fetch('/under-examination-upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(result => {
+                    if (result.success) {
+                        showCustomAlert("Επιτυχής Υποβολή");
+                        form.reset(); // Καθαρισμός φόρμας μετά την επιτυχία
+                    } else {
+                        showCustomAlert("Αποτυχία αποθήκευσης. Δοκιμάστε ξανά.");
+                    }
+                })
+                .catch(err => {
+                    console.error('Upload error:', err);
+                    showCustomAlert("Σφάλμα κατά την αποστολή.");
                 });
             });
         });

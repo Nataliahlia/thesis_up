@@ -256,7 +256,7 @@ UC21: Select Committee Members (Student)
 3.	System sends invitations.
 4.	System monitors responses and automatically transitions thesis to "Active" when two accept and deletes the other requests
 
-UC22: Upload Thesis Draft and Supporting Material
+✅ UC22: Upload Thesis Draft and Supporting Material
 •	Description: A Student uploads the draft text of their thesis and links to supporting material. 
 •	Actors: Student 
 •	Preconditions: Student is logged in and thesis is "Under Examination". 
