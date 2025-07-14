@@ -287,10 +287,16 @@ document.addEventListener('DOMContentLoaded', function() {
         topics.forEach(topic => {
             html += `
                 <div class="col-lg-6 col-xl-4 mb-3">
-                    <div class="card h-100 border-0 shadow-sm">
+                    <div class="card h-100 border-0 shadow-sm position-relative">
+                        <button type="button" class="btn btn-outline-danger btn-sm position-absolute top-0 end-0 m-2" 
+                                style="z-index: 10; padding: 0.25rem 0.5rem;" 
+                                onclick="deleteTopic('${topic.thesis_id}', '${topic.title.replace(/'/g, "\\'")}')"
+                                title="Διαγραφή θέματος">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
                         <div class="card-body d-flex flex-column">
                             <div class="mb-3">
-                                <h6 class="card-title text-bordeaux fw-bold mb-2">${topic.title}</h6>
+                                <h6 class="card-title text-bordeaux fw-bold mb-2 pe-5">${topic.title}</h6>
                                 <p class="card-text text-muted small mb-2" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
                                     ${topic.description}
                                 </p>
@@ -339,6 +345,52 @@ document.addEventListener('DOMContentLoaded', function() {
             showNotification(`Θέμα "${topicTitle}" επιλέχθηκε για ανάθεση`, 'success');
         }
     };
+
+    // Delete topic function (called from onclick)
+    window.deleteTopic = function(topicId, topicTitle) {
+        // Show confirmation dialog
+        const confirmMessage = `Είστε βέβαιοι ότι θέλετε να διαγράψετε το θέμα "${topicTitle}"?\n\nΑυτή η ενέργεια δεν μπορεί να αναιρεθεί.`;
+        
+        if (confirm(confirmMessage)) {
+            deleteTopicFromServer(topicId, topicTitle);
+        }
+    };
+
+    // API call to delete topic
+    async function deleteTopicFromServer(topicId, topicTitle) {
+        try {
+            showNotification('Διαγραφή θέματος σε εξέλιξη...', 'info');
+            
+            const response = await fetch('/api/professor/delete-topic', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ topicId: topicId })
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok && result.success) {
+                showNotification(`Το θέμα "${topicTitle}" διαγράφηκε επιτυχώς!`, 'success');
+                
+                // Refresh available topics lists
+                loadAvailableTopics();
+                loadAvailableTopicsForDisplay();
+                
+                // Also refresh my theses list if it's currently displayed
+                const myThesesList = document.getElementById('myThesesList');
+                if (myThesesList && myThesesList.style.display !== 'none') {
+                    loadMyTheses();
+                }
+            } else {
+                throw new Error(result.message || 'Σφάλμα κατά τη διαγραφή θέματος');
+            }
+        } catch (error) {
+            console.error('Error deleting topic:', error);
+            showNotification('Σφάλμα: ' + error.message, 'error');
+        }
+    }
     
     // ===== MY THESES FUNCTIONALITY =====
     function initializeMyTheses() {
@@ -840,7 +892,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const roleFilter = document.getElementById('roleFilter');
         const searchInput = document.getElementById('thesesSearch');
         const clearSearchBtn = document.getElementById('clearSearchBtn');
-        const exportCsvBtn = document.getElementById('exportCsvBtn'); // Add CSV export button
+        const exportCsvOption = document.getElementById('exportCsvOption'); // CSV export option
+        const exportJsonOption = document.getElementById('exportJsonOption'); // JSON export option
         
         if (statusFilter) {
             statusFilter.addEventListener('change', applyThesesFilters);
@@ -861,10 +914,18 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
-        // Add CSV export functionality
-        if (exportCsvBtn) {
-            exportCsvBtn.addEventListener('click', function() {
+        // Add export functionality for dropdown options
+        if (exportCsvOption) {
+            exportCsvOption.addEventListener('click', function(e) {
+                e.preventDefault();
                 exportThesesToCsv();
+            });
+        }
+        
+        if (exportJsonOption) {
+            exportJsonOption.addEventListener('click', function(e) {
+                e.preventDefault();
+                exportThesesToJson();
             });
         }
     }
@@ -1776,11 +1837,63 @@ document.addEventListener('DOMContentLoaded', function() {
             // Create and download CSV file
             downloadCsvFile(csvContent, `διπλωματικες_${formatDateForFilename(new Date())}.csv`);
             
-            showNotification(`Εξάχθηκαν ${thesesToExport.length} διπλωματικές επιτυχώς!`, 'success');
+            showNotification(`Εξάχθηκαν ${thesesToExport.length} διπλωματικές σε CSV επιτυχώς!`, 'success');
             
         } catch (error) {
             console.error('Error exporting CSV:', error);
             showNotification('Σφάλμα κατά την εξαγωγή CSV: ' + error.message, 'error');
+        }
+    }
+
+    // Export theses to JSON
+    function exportThesesToJson() {
+        try {
+            showNotification('Προετοιμασία εξαγωγής JSON...', 'info');
+            
+            // Get currently filtered theses
+            let thesesToExport = allTheses;
+            
+            // Apply current filters to get the same data as displayed
+            const statusFilter = document.getElementById('statusFilter');
+            if (statusFilter && statusFilter.value) {
+                thesesToExport = thesesToExport.filter(thesis => 
+                    thesis.status === statusFilter.value
+                );
+            }
+            
+            const roleFilter = document.getElementById('roleFilter');
+            if (roleFilter && roleFilter.value) {
+                thesesToExport = thesesToExport.filter(thesis => 
+                    thesis.role === roleFilter.value
+                );
+            }
+            
+            const searchInput = document.getElementById('thesesSearch');
+            if (searchInput && searchInput.value.trim()) {
+                const searchTerm = searchInput.value.trim().toLowerCase();
+                thesesToExport = thesesToExport.filter(thesis => 
+                    (thesis.title && thesis.title.toLowerCase().includes(searchTerm)) ||
+                    (thesis.student && thesis.student.toLowerCase().includes(searchTerm)) ||
+                    (thesis.studentId && thesis.studentId.toString().includes(searchTerm))
+                );
+            }
+            
+            if (!thesesToExport || thesesToExport.length === 0) {
+                showNotification('Δεν υπάρχουν δεδομένα για εξαγωγή με τα τρέχοντα φίλτρα', 'warning');
+                return;
+            }
+            
+            // Generate JSON content
+            const jsonContent = generateJsonContent(thesesToExport);
+            
+            // Create and download JSON file
+            downloadJsonFile(jsonContent, `διπλωματικες_${formatDateForFilename(new Date())}.json`);
+            
+            showNotification(`Εξάχθηκαν ${thesesToExport.length} διπλωματικές σε JSON επιτυχώς!`, 'success');
+            
+        } catch (error) {
+            console.error('Error exporting JSON:', error);
+            showNotification('Σφάλμα κατά την εξαγωγή JSON: ' + error.message, 'error');
         }
     }
     
@@ -1889,6 +2002,70 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             // Fallback for older browsers
             const url = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+            window.open(url);
+        }
+    }
+
+    // Generate JSON content from theses array
+    function generateJsonContent(theses) {
+        // Create a structured JSON object with metadata and data
+        const exportData = {
+            exportInfo: {
+                exportDate: new Date().toISOString(),
+                exportFormat: 'JSON',
+                totalRecords: theses.length,
+                exportedBy: 'Professor Dashboard',
+                systemName: 'Thesis Management System'
+            },
+            filters: {
+                status: document.getElementById('statusFilter')?.value || 'all',
+                role: document.getElementById('roleFilter')?.value || 'all',
+                search: document.getElementById('thesesSearch')?.value || ''
+            },
+            theses: theses.map(thesis => ({
+                id: thesis.id || null,
+                title: thesis.title || '',
+                status: thesis.status || '',
+                role: getRoleText(thesis.role) || '',
+                student: {
+                    name: thesis.student || 'Μη ανατεθειμένη',
+                    studentId: thesis.studentId || thesis.student_number || null
+                },
+                dates: {
+                    assignDate: thesis.assignDate || thesis.assigned_at || null,
+                    createdAt: thesis.created_at || thesis.createdAt || null
+                },
+                duration: thesis.duration || 0,
+                pdfFile: thesis.pdfFile || null
+            }))
+        };
+        
+        return JSON.stringify(exportData, null, 2); // Pretty formatted JSON
+    }
+
+    // Download JSON file
+    function downloadJsonFile(jsonContent, filename) {
+        // Create blob and download link
+        const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8;' });
+        const link = document.createElement('a');
+        
+        if (link.download !== undefined) {
+            // Create download link
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            
+            // Add to document and trigger download
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Clean up object URL
+            URL.revokeObjectURL(url);
+        } else {
+            // Fallback for older browsers
+            const url = 'data:application/json;charset=utf-8,' + encodeURIComponent(jsonContent);
             window.open(url);
         }
     }

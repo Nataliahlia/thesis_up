@@ -310,9 +310,24 @@
                             <span class="text-muted">Εμφάνιση: <span id="filteredThesesCount">0</span> από <span id="totalThesesCount">0</span> διπλωματικές</span>
                         </div>
                         <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-outline-bordeaux btn-sm" id="exportCsvBtn">
-                                <i class="fas fa-file-csv me-2"></i>Εξαγωγή CSV
-                            </button>
+                            <!-- Export Dropdown -->
+                            <div class="dropdown">
+                                <button class="btn btn-outline-bordeaux btn-sm dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-download me-2"></i>Εξαγωγή
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                                    <li>
+                                        <a class="dropdown-item" href="#" id="exportCsvOption">
+                                            <i class="fas fa-file-csv me-2 text-success"></i>CSV Format
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="#" id="exportJsonOption">
+                                            <i class="fas fa-file-code me-2 text-primary"></i>JSON Format
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
 
