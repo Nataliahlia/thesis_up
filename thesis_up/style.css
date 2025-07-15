@@ -44,16 +44,34 @@ a:hover .text-bordeaux {
   align-items: center;
 }
 
-.bg-dark_gold {
-  background-color: #AF8948; /* dark gold -> used for icons, boarders */
+.link-card {
+  animation: fadein 0.3s ease-in;
+  border: 1px solid #dee2e6;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+  background-color: #f8f9fa;
+  position: relative;
 }
 
-.bg-beige {
-  background-color: #F7F1E1;/* light beige -> background in content areas */
+.link-card input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  outline: none;
 }
 
-.bg-dark_brown {
-  background-color: #3B2C2C;/* dark brown -> used for text */
+.remove-btn {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  color: #dc3545;
+  cursor: pointer;
+}
+
+@keyframes fadein {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .bg-white {

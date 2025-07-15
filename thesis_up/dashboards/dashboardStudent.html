@@ -190,25 +190,41 @@
                 <i class="fa-solid fa-list-check me-3 text-bordeaux fs-3"></i>
                 <h3 class="text-bordeaux menu-text mb-0">Διαχείριση Διπλωματικής Εργασίας</h3>
             </div>
-            <!-- Form for file upload -->
-            <form id="thesisManagementForm" style="display: none;" class="card p-4 mt-4 w-50 mx-auto" enctype="multipart/form-data" method="POST">
-                <div class="d-flex flex-column align-items-center">
-                    <div class="mb-3 w-75">
-                        <p> Επισύναψη Πρόχειρου Αρχείου Διπλωματικής Εργασίας </p>
-                        <input type="file" name="progressFile" id="progressFile" class="form-control" required>
+            <!-- Everything will be displayed using cards -->
+            <div class="card-body">
+                <!-- Form for file upload -->
+                <form id="thesisManagementForm" style="display: none;" class="card p-4 mt-4 w-100 mx-auto" enctype="multipart/form-data" method="POST">
+                    <div class="d-flex flex-column align-items-center">
+                        <div class="mb-3 w-100">
+                            <div class="d-flex align-items-center">
+                                <i class="fa fa-upload text-bordeaux me-2" aria-hidden="true"></i>
+                                <p class="mb-0">Επισύναψη Πρόχειρου Αρχείου Διπλωματικής Εργασίας</p>
+                            </div>
+                            <input type="file" name="progressFile" id="progressFile" class="form-control" required>
+                        </div>
+                        <!-- Adding the choice of links upload -->
+                        <div id="linksContainer" class="mb-3 w-100">
+                            <p class="mt-3"> Μπορείτε να επισυνάψετε χρήσιμο σύνδεσμο/ους εάν το επιθυμείτε </p>
+                            <div class="d-flex align-items-center">
+                                <i class="fa fa-link text-bordeaux me-2" aria-hidden="true"></i>
+                                <label class="form-label text-muted mb-1">Σύνδεσμος (π.χ. Google Drive Files, GitHub, YouTube)</label>
+                                <div class="d-flex justify-content-start mt-3"></div>
+                                    <button type="button" class="btn btn-sm btn-outline-dark mb-2 mt-2 ms-4" onclick="addLinkInput()">Προσθήκη Συνδέσμου</button>
+                                </div>
+                                <!-- Ιnputs will be inserted here dynamically -->
+                                <div id="dynamicLinksArea" class="mt-3"></div>
+                            </div>
+                        </div>
+                        <!-- Form Submit -->
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-outline-bordeaux mt-3">Τελική Υποβολή</button>
+                        </div>
                     </div>
-                    <!-- Adding the choice of links upload -->
-                    <div class="mb-3 w-75">
-                        <p class="text-muted mt-5"> Μπορείτε να επισυνάψετε χρήσιμο σύνδεσμο εάν το επιθυμείτε. </p>
-                        <label for="progressLink" class="form-label">Σύνδεσμος (π.χ. Google Drive Files, GitHub, YouTube)</label>
-                        <input type="url" name="progressLink" id="progressLink" class="form-control" placeholder="https://example.com">
-                    </div>
-                    <!-- Form Submit -->
-                    <div class="text-center">
-                        <button type="submit" class="btn btn-outline-bordeaux mt-3">Υποβολή Αρχείου</button>
-                    </div>
+                </form>
+                <div class="card-body">
+                    <!-- Student saves the date and the way of examination -->
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 
@@ -429,7 +445,6 @@
             const sidebar = document.getElementById("sidebar");
             const div = document.getElementById("thesisManagement");
             const title = document.getElementById("dashboardTitle");
-            console.log("Script loaded and DOM is ready");
 
             button.addEventListener('click', function(e) {
                 console.log("Button clicked");
@@ -442,35 +457,75 @@
             });
 
             fetch('/mythesis-details')
-                    .then(response => {
-                        if (!response.ok) {
+                .then(response => {
+                    if (!response.ok) {
                         throw new Error('Network response was not ok');
+                    }
+                    return response.json(); // Convert the response to JSON
+                })
+                .then(mythesis => {
+                    // Check to see if there is a thesis assigned to the student
+                    if (!mythesis || mythesis.length === 0) {
+                        // Message shown if no thesis is assigned
+                        showCustomAlert("Δεν έχει ορισθεί ακόμη διπλωματική εργασία.");
+                        return;
+                    }
+                    const thesis = mythesis[0]; // Array -> needs to access the elements
+                    window.currentThesis = thesis; // Store the thesis in a global variable for later use
+
+                    if (thesis.state === 'Υπό Εξέταση') {
+                        const form = document.getElementById('thesisManagementForm');
+                        form.style.display = 'block'; // Show the form if the thesis is under review
+
+                        // Check if the thesis has a draft file
+                        if (thesis.draft_file) {
+                            renderUploadedFile(thesis.draft_file); // Call the function to render the uploaded file
                         }
-                        return response.json(); // Convert the response to JSON
-                    })
-                    .then(mythesis => {
-                        // Check to see if there is a thesis assigned to the student
-                        if (!mythesis || mythesis.length === 0) {
-                            // Message shown if no thesis is assigned
-                            showCustomAlert("Δεν έχει ορισθεί ακόμη διπλωματική εργασία.");
-                            return;
-                        }
-                        const thesis = mythesis[0]; // Array -> needs to access the elements
-                        if (thesis.state === 'Υπό Εξέταση') {
-                            const form = document.getElementById('thesisManagementForm');
-                            form.style.display = 'block'; // Show the form if the thesis is under review
-                        }
-                    })
-                    .catch(error => {
-                        // Show custom alert
-                        showCustomAlert('Error updating profile. Please try again.');
-                    });
+                        // Check if the user has uploaded additional links
+                        if (thesis.additional_links) {
+                            let linksArray = [];
+                            try {
+                                linksArray = JSON.parse(thesis.additional_links);   // Convert the JSON string to an array
+                            } catch (err) {
+                                linksArray = [];
+                            }
+
+                            // If there are links
+                            if (Array.isArray(linksArray) && linksArray.length > 0) {
+                                // Call the function to render the submitted links
+                                renderSubmittedLinks(linksArray); 
+                            }
+                        } 
+                    }
+                })
+                .catch(error => {
+                    // Show custom alert
+                    showCustomAlert('Error updating profile. Please try again.');
+                });
+
             // Get reference to the form and handle submission
             const form = document.getElementById('thesisManagementForm');
             form.addEventListener('submit', function (e) {
-                e.preventDefault();
+                e.preventDefault();         // Prevent the default form submission
 
-                const formData = new FormData(form); // Συμπεριλαμβάνει αρχείο + σύνδεσμο
+                // Finds all the links the user has added in the form
+                const links = document.querySelectorAll('#dynamicLinksArea input[type="url"]');
+                // Check if at least one link is filled
+                const hasLinks = Array.from(links).some(link => link.value.trim() !== '');
+                // Check to see if a file is uploaded now or has been uploaded previously
+                const fileInput = document.getElementById('progressFile');
+                // Check if the student has uploaded a new file now
+                const fileUploadedNow = fileInput && fileInput.files.length > 0;
+                // Check if a file has been uploaded previously
+                const filePreviouslyUploaded = !!(window.currentThesis && window.currentThesis.draft_file);
+
+                // If no file is uploaded now and no file has been uploaded previously, and there are links, show an alert
+                if (!fileUploadedNow && !filePreviouslyUploaded && hasLinks) {
+                    showCustomAlert('Πρέπει πρώτα να υποβάλλεται αρχείο, πριν προσθέσετε σύνδεσμο/ους');
+                    return;
+                }
+
+                const formData = new FormData(form); // This is used to collect all the inputs inside the form, this data will be sent to the server
 
                 fetch('/under-examination-upload', {
                     method: 'POST',
@@ -480,7 +535,33 @@
                 .then(result => {
                     if (result.success) {
                         showCustomAlert("Επιτυχής Υποβολή");
-                        form.reset(); // Καθαρισμός φόρμας μετά την επιτυχία
+
+                        // Clear the dynamic links area
+                        const inputCards = document.querySelectorAll('#dynamicLinksArea .link-card');
+                        inputCards.forEach(card => card.remove());
+
+                        // Redo the fetch to update the thesis details, without reloading the page
+                        fetch('/mythesis-details')
+                            .then(res => res.json())
+                            .then(data => {
+                                const updatedThesis = data[0];
+                                window.currentThesis = updatedThesis;
+
+                                if (updatedThesis.additional_links) {
+                                    let linksArray = [];
+                                    try {
+                                        linksArray = JSON.parse(updatedThesis.additional_links);
+                                    } catch (err) {
+                                        linksArray = [];
+                                    }
+                                    // Call the function to render the submitted links
+                                    renderSubmittedLinks(linksArray); 
+                                }
+                                if (updatedThesis.draft_file) {
+                                    // Call the function to render the uploaded file
+                                    renderUploadedFile(updatedThesis.draft_file);
+                                }
+                            });
                     } else {
                         showCustomAlert("Αποτυχία αποθήκευσης. Δοκιμάστε ξανά.");
                     }
@@ -493,20 +574,115 @@
         });
     </script>
 
+    <!-- This is first created for the editing form, could/will be used for other cases as well -->
     <script>
-    function showCustomAlert(message) {
-        const modal = document.getElementById('customAlert');               // Reference to the custom alert modal backdrop
-        const messageBox = document.getElementById('customAlertMessage');   // Reference to the message box inside the modal
-        const okBtn = document.getElementById('customAlertOk');             // Reference to the OK button inside the modal
+        function showCustomAlert(message) {
+            const modal = document.getElementById('customAlert');               // Reference to the custom alert modal backdrop
+            const messageBox = document.getElementById('customAlertMessage');   // Reference to the message box inside the modal
+            const okBtn = document.getElementById('customAlertOk');             // Reference to the OK button inside the modal
 
-        messageBox.textContent = message;       // Set the message text
-        modal.style.display = 'flex';           // Show the modal by changing its display to flex
+            messageBox.textContent = message;       // Set the message text
+            modal.style.display = 'flex';           // Show the modal by changing its display to flex
 
-        // Hide the modal when OK is clicked
-        okBtn.onclick = () => {
-            modal.style.display = 'none';
-        };
-    }
+            // Hide the modal when OK is clicked
+            okBtn.onclick = () => {
+                modal.style.display = 'none';
+            };
+        }
+    </script>
+
+    <script>
+        // This is the function for the file upload
+        function renderUploadedFile(filename) {
+            const fileInput = document.getElementById('progressFile');  // Find the file element in the form in order to handle it handle it
+
+            // Remove previous display, to avoid duplicates, for the button and the text that informs the student about the uploaded file
+            const oldInfo = document.querySelector('#progressFileInfo');
+            if (oldInfo) oldInfo.remove();
+            const oldBtn = document.querySelector('#changeFileButton');
+            if (oldBtn) oldBtn.remove();
+
+            // Next line ensures that the note to enter file will not appear now
+            fileInput.removeAttribute('required');              // Remove the required attribute since a file has already been uploaded
+            fileInput.required = false;                         // Ensure the file input is not required if a file has been uploaded
+            fileInput.parentElement.style.display = 'none';     // Hide the file input field since a file has already been uploaded 
+                
+            const realName = filename.split('-').slice(1).join('-');   // Remove the prefix that is added during storing the file
+            // Handles the text that will inform the student for the current uploaded file           
+            const info = document.createElement('p');
+            info.id = 'progressFileInfo';
+            info.className = 'text-muted mt-2';
+            info.innerHTML = `Έχετε ήδη ανεβάσει το αρχείο: <strong>${realName}</strong>`;
+
+            // Create the button that lets the student upload a new file
+            const changeBtn = document.createElement('button');
+            changeBtn.type = 'button';
+            changeBtn.id = 'changeFileButton';
+            changeBtn.className = 'btn btn-sm btn-outline-bordeaux mt-2'; // Add a class for styling
+            changeBtn.textContent = 'Αλλαγή Ανεβασμένου Αρχείου';
+
+            // Handles the file upload when the student clicks to change the file
+            changeBtn.onclick = () => {
+                fileInput.parentElement.style.display = 'block';            // Reveal the file input field
+                fileInput.required = true;                                  // Make field required again
+                info.remove();                                              // Remove the info message
+                changeBtn.remove();                                        // Remove the change button
+            };
+
+            // Add the info and change button to the file input's parent element
+            fileInput.parentElement.parentElement.prepend(info, changeBtn);
+        }
+        function renderSubmittedLinks(linksArray) {
+            // Finds the container where the links will be displayed
+            const container = document.getElementById('dynamicLinksArea');
+            container.innerHTML = ''; // Clear the container to remove old links
+            // Create a title for the links section and some styling
+            const title = document.createElement('p');
+            title.className = 'text-muted';
+            title.textContent = 'Υποβεβλημένοι Σύνδεσμοι:';
+            container.appendChild(title);
+
+            // Loop through the links and create the elements
+            linksArray.forEach(link => {
+                const linkElement = document.createElement('a');      // a: clickable hyperlink element
+                linkElement.href = link;
+                linkElement.target = '_blank';                        // If pressed it will open in a new tab
+                linkElement.className = 'd-block mb-1 text-bordeaux'; // Add a class for styling
+                linkElement.innerHTML = `<i class="fas fa-link me-2"></i>${link}`;
+                container.appendChild(linkElement);
+            });
+        }
+
+        // This is created for the additional links
+        function addLinkInput() {
+            // The container where the new link input will be added
+            const container = document.getElementById('dynamicLinksArea');
+
+            // The new div where each new link will be added
+            const card = document.createElement('div');
+            card.className = 'link-card w-50';                      // Add a class for styling, from the css file
+
+            const icon = document.createElement('i');               // Create the icon object
+            icon.className = 'fas fa-link text-bordeaux me-2';      // Add the icon class and color
+
+            const input = document.createElement('input');          // Create the input element
+            input.type = 'url';
+            input.name = 'progressLinks[]';                          // All the inputs will be send as an array       
+            input.placeholder = 'https://upatras.com';              // Placeholder text
+
+            const removeBtn = document.createElement('span');       // Create the remove button
+            removeBtn.innerHTML = '&times;';                        // This creates the x symbol
+            removeBtn.className = 'remove-btn';                     // Add a class for styling
+            removeBtn.onclick = () => card.remove();                // Remove the card when clicked
+
+            // Add the created elements to the card
+            card.appendChild(icon);
+            card.appendChild(input);
+            card.appendChild(removeBtn);
+
+            // Add the card to the container
+            container.appendChild(card);
+        }
     </script>
 
 </body>

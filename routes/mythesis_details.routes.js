@@ -14,6 +14,8 @@ router.get('/mythesis-details', (req, res) => {
         tt.description, 
         tt.pdf, 
         tt.state,
+        tt.draft_file,
+        tt.additional_links,
         tt.member1,
         tt.member2,
         tt.instructor_id,
