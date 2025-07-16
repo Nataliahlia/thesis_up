@@ -983,6 +983,50 @@
         </div>
     </div>
 
+    <!-- Custom Cancel Assignment Confirmation Modal -->
+    <div class="modal fade" id="cancelAssignmentModal" tabindex="-1" aria-labelledby="cancelAssignmentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title text-danger fw-bold" id="cancelAssignmentModalLabel">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Επιβεβαίωση Ακύρωσης Ανάθεσης
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-times-circle text-danger" style="font-size: 3rem;"></i>
+                    </div>
+                    <p class="fs-5 mb-3">Είστε βέβαιοι ότι θέλετε να ακυρώσετε την ανάθεση;</p>
+                    <div class="alert alert-warning border-0 rounded-3 mb-3">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-info-circle text-warning me-2 mt-1"></i>
+                            <div class="text-start">
+                                <strong>Τι θα συμβεί:</strong>
+                                <ul class="mb-0 mt-2 ps-3">
+                                    <li>Η διπλωματική θα επιστρέψει στην κατάσταση "Χωρίς Ανάθεση"</li>
+                                    <li>Θα είναι διαθέσιμη για νέα ανάθεση</li>
+                                    <li>Ο φοιτητής θα ειδοποιηθεί για την ακύρωση</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-muted small" id="cancelAssignmentThesisInfo">
+                        <!-- Thesis info will be populated here -->
+                    </p>
+                </div>
+                <div class="modal-footer border-0 justify-content-center">
+                    <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
+                        <i class="fas fa-arrow-left me-2"></i>Πίσω
+                    </button>
+                    <button type="button" class="btn btn-danger px-4" id="confirmCancelAssignment">
+                        <i class="fas fa-times me-2"></i>Ακύρωση Ανάθεσης
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="bg-bordeaux border-top text-center text-lg-start">
         <div class="text-center p-3"> 

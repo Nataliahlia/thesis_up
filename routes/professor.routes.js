@@ -609,10 +609,24 @@ router.get('/api/professor/thesis-details/:thesisId', (req, res) => {
                             return res.status(500).json({ success: false, message: 'Database error' });
                         }
 
+                        // Determine professor's role in this thesis
+                        let myRole = 'other';
+                        if (thesis.instructor_id === professorId) {
+                            myRole = 'supervisor';
+                        } else {
+                            // Check if professor is in committee
+                            const isCommitteeMember = committeeResult.some(member => 
+                                member.professor_id === professorId
+                            );
+                            if (isCommitteeMember) {
+                                myRole = 'member';
+                            }
+                        }
+
                         // Combine all data
                         const result = {
                             success: true,
-                            thesis: {
+                            data: {
                                 id: thesis.thesis_id,
                                 title: thesis.title,
                                 description: thesis.description,
@@ -620,6 +634,7 @@ router.get('/api/professor/thesis-details/:thesisId', (req, res) => {
                                 pdf: thesis.pdf,
                                 assignDate: thesis.time_of_activation,
                                 duration: thesis.duration_days,
+                                my_role: myRole,
                                 student: thesis.student_name && thesis.student_surname ? {
                                     name: `${thesis.student_name} ${thesis.student_surname}`,
                                     email: thesis.student_email,

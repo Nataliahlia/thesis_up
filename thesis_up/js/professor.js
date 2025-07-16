@@ -52,6 +52,79 @@ document.addEventListener('DOMContentLoaded', function() {
     // Make showNotification globally available
     window.showNotification = showNotification;
 
+    // ===== CUSTOM CONFIRMATION MODAL =====
+    function showCustomConfirmation(options) {
+        const {
+            title = 'Επιβεβαίωση',
+            message = 'Είστε βέβαιοι;',
+            icon = 'fas fa-question-circle',
+            iconColor = 'text-warning',
+            confirmText = 'Επιβεβαίωση',
+            confirmClass = 'btn-danger',
+            cancelText = 'Ακύρωση',
+            thesisInfo = '',
+            onConfirm = () => {},
+            onCancel = () => {}
+        } = options;
+
+        return new Promise((resolve) => {
+            const modal = document.getElementById('cancelAssignmentModal');
+            if (!modal) {
+                console.error('Cancel assignment modal not found');
+                resolve(false);
+                return;
+            }
+
+            // Update modal content
+            const modalTitle = modal.querySelector('#cancelAssignmentModalLabel');
+            const modalIcon = modal.querySelector('.modal-body .fas');
+            const modalMessage = modal.querySelector('.fs-5');
+            const modalThesisInfo = modal.querySelector('#cancelAssignmentThesisInfo');
+            const confirmBtn = modal.querySelector('#confirmCancelAssignment');
+            const cancelBtn = modal.querySelector('[data-bs-dismiss="modal"]');
+
+            if (modalTitle) modalTitle.innerHTML = `<i class="${icon} me-2"></i>${title}`;
+            if (modalIcon) modalIcon.className = icon + ' ' + iconColor;
+            if (modalMessage) modalMessage.textContent = message;
+            if (modalThesisInfo) modalThesisInfo.innerHTML = thesisInfo;
+            if (confirmBtn) {
+                confirmBtn.innerHTML = `<i class="fas fa-times me-2"></i>${confirmText}`;
+                confirmBtn.className = `btn px-4 ${confirmClass}`;
+            }
+            if (cancelBtn) {
+                cancelBtn.innerHTML = `<i class="fas fa-arrow-left me-2"></i>${cancelText}`;
+            }
+
+            // Handle confirmation
+            const handleConfirm = () => {
+                modal.removeEventListener('hidden.bs.modal', handleCancel);
+                confirmBtn.removeEventListener('click', handleConfirm);
+                onConfirm();
+                resolve(true);
+                bootstrap.Modal.getInstance(modal).hide();
+            };
+
+            // Handle cancellation
+            const handleCancel = () => {
+                confirmBtn.removeEventListener('click', handleConfirm);
+                modal.removeEventListener('hidden.bs.modal', handleCancel);
+                onCancel();
+                resolve(false);
+            };
+
+            // Add event listeners
+            confirmBtn.addEventListener('click', handleConfirm);
+            modal.addEventListener('hidden.bs.modal', handleCancel);
+
+            // Show modal
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
+        });
+    }
+
+    // Make custom confirmation globally available
+    window.showCustomConfirmation = showCustomConfirmation;
+
     // ===== SIDEBAR FUNCTIONALITY =====
     function initializeSidebar() {
         console.log('Initializing sidebar...');
@@ -463,6 +536,18 @@ document.addEventListener('DOMContentLoaded', function() {
         // Find a suitable container for the alert
         const container = document.querySelector('.main-content') || document.body;
         container.insertAdjacentHTML('afterbegin', alertHtml);
+        
+        // Auto-dismiss success messages after 3 seconds
+        if (type === 'success') {
+            setTimeout(() => {
+                const alertElement = container.querySelector('.alert-success');
+                if (alertElement) {
+                    // Use Bootstrap's alert dismissal
+                    const bsAlert = new bootstrap.Alert(alertElement);
+                    bsAlert.close();
+                }
+            }, 3000);
+        }
     }
     
     function debounce(func, wait) {
@@ -666,10 +751,10 @@ document.addEventListener('DOMContentLoaded', function() {
         let html = '';
         
         theses.forEach(function(thesis) {
-            html += '<div class="card mb-3">' +
+            html += '<div class="card mb-3 thesis-card-clickable" onclick="viewThesisDetails(' + thesis.id + ')" style="cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform=\'translateY(-2px)\'; this.style.boxShadow=\'0 4px 12px rgba(0,0,0,0.15)\'" onmouseout="this.style.transform=\'translateY(0)\'; this.style.boxShadow=\'0 2px 4px rgba(0,0,0,0.1)\'">' +
                 '<div class="card-body">' +
                 '<div class="row align-items-center">' +
-                '<div class="col-md-8">' +
+                '<div class="col-md-10">' +
                 '<h5 class="card-title text-bordeaux mb-2">' + (thesis.title || 'Άγνωστος τίτλος') + '</h5>' +
                 '<div class="row">' +
                 '<div class="col-sm-6">' +
@@ -682,7 +767,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 '</div>' +
                 '</div>' +
                 '</div>' +
-                '<div class="col-md-4 text-end">' +
+                '<div class="col-md-2 text-end">' +
                 '<div class="mb-2">' +
                 '<span class="badge ' + getStatusBadgeClass(thesis.status) + ' me-2">' +
                 (thesis.status || 'Άγνωστη κατάσταση') +
@@ -691,25 +776,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 getRoleText(thesis.role) +
                 '</span>' +
                 '</div>' +
-                '<div class="btn-group btn-group-sm" role="group">' +
-                '<button type="button" class="btn btn-outline-bordeaux" title="Προβολή" onclick="viewThesisDetails(' + thesis.id + ')">' +
-                '<i class="fas fa-eye"></i>' +
-                '</button>';
-            
-            if (thesis.role === 'supervisor') {
-                html += '<button type="button" class="btn btn-outline-warning" title="Επεξεργασία" onclick="editThesis(' + thesis.id + ')">' +
-                    '<i class="fas fa-edit"></i>' +
-                    '</button>';
-                
-                // UC7: Cancel Initial Topic Assignment - Show cancel button for "Υπό Ανάθεση" status
-                if (thesis.status === 'Υπό Ανάθεση') {
-                    html += '<button type="button" class="btn btn-outline-danger" title="Ακύρωση Ανάθεσης" onclick="cancelAssignment(' + thesis.id + ')">' +
-                        '<i class="fas fa-times"></i>' +
-                        '</button>';
-                }
-            }
-            
-            html += '</div>' +
+                '<div class="text-muted small">' +
+                '<i class="fas fa-eye me-1"></i>Κλικ για προβολή' +
+                '</div>' +
                 '</div>' +
                 '</div>' +
                 '</div>' +
@@ -1279,6 +1348,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     '</button>';
         }
         
+        // Cancel assignment button (only for "Υπό Ανάθεση" status and supervisors)
+        if (thesis.my_role === 'supervisor' && thesis.status === 'Υπό Ανάθεση') {
+            html += '<button type="button" class="btn btn-danger" onclick="cancelThesisAssignmentFromDetails(' + thesis.id + ')" title="Ακύρωση ανάθεσης διπλωματικής">' +
+                    '<i class="fas fa-times me-2"></i>Ακύρωση Ανάθεσης' +
+                    '</button>';
+        }
+        
         // Export PDF button
         html += '<button type="button" class="btn btn-outline-bordeaux" onclick="exportThesisPDF(' + thesis.id + ')">' +
                 '<i class="fas fa-file-pdf me-2"></i>Εξαγωγή PDF' +
@@ -1343,13 +1419,32 @@ document.addEventListener('DOMContentLoaded', function() {
     window.cancelAssignment = function(thesisId) {
         console.log('Cancel assignment for thesis:', thesisId);
         
-        // Show confirmation modal
-        const confirmationMessage = 'Είστε βέβαιοι ότι θέλετε να ακυρώσετε την ανάθεση αυτής της διπλωματικής;';
+        // Find thesis information from allTheses array
+        const thesis = allTheses.find(t => t.id == thesisId);
+        let thesisInfoHtml = '';
         
-        if (confirm(confirmationMessage)) {
-            // Call the API to cancel assignment
-            cancelThesisAssignment(thesisId);
+        if (thesis) {
+            thesisInfoHtml = `
+                <strong>Θέμα:</strong> ${thesis.title}<br>
+                <strong>Φοιτητής:</strong> ${thesis.student || 'Δεν είναι διαθέσιμο'}<br>
+                <strong>ΑΜ:</strong> ${thesis.studentId || 'Δεν είναι διαθέσιμο'}
+            `;
         }
+        
+        // Show custom confirmation modal
+        showCustomConfirmation({
+            title: 'Επιβεβαίωση Ακύρωσης Ανάθεσης',
+            message: 'Είστε βέβαιοι ότι θέλετε να ακυρώσετε την ανάθεση αυτής της διπλωματικής;',
+            icon: 'fas fa-exclamation-triangle',
+            iconColor: 'text-danger',
+            confirmText: 'Ακύρωση Ανάθεσης',
+            confirmClass: 'btn-danger',
+            cancelText: 'Πίσω',
+            thesisInfo: thesisInfoHtml,
+            onConfirm: () => {
+                cancelThesisAssignment(thesisId);
+            }
+        });
     };
 
     // API call to cancel thesis assignment
@@ -1383,6 +1478,85 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Error cancelling assignment:', error);
+            showNotification('Σφάλμα: ' + error.message, 'error');
+        }
+    }
+
+    // Cancel thesis assignment from details view
+    window.cancelThesisAssignmentFromDetails = function(thesisId) {
+        console.log('Cancel assignment from details for thesis:', thesisId);
+        
+        // Get thesis information from current data
+        const currentThesis = window.currentThesisData;
+        let thesisInfoHtml = '';
+        
+        if (currentThesis) {
+            thesisInfoHtml = `
+                <strong>Θέμα:</strong> ${currentThesis.title}<br>
+                <strong>Φοιτητής:</strong> ${currentThesis.student_name || 'Δεν είναι διαθέσιμο'}<br>
+                <strong>ΑΜ:</strong> ${currentThesis.student_number || 'Δεν είναι διαθέσιμο'}
+            `;
+        }
+        
+        // Show custom confirmation modal
+        showCustomConfirmation({
+            title: 'Επιβεβαίωση Ακύρωσης Ανάθεσης',
+            message: 'Είστε βέβαιοι ότι θέλετε να ακυρώσετε την ανάθεση αυτής της διπλωματικής;',
+            icon: 'fas fa-exclamation-triangle',
+            iconColor: 'text-danger',
+            confirmText: 'Ακύρωση Ανάθεσης',
+            confirmClass: 'btn-danger',
+            cancelText: 'Πίσω',
+            thesisInfo: thesisInfoHtml,
+            onConfirm: () => {
+                cancelThesisAssignmentFromDetailsAPI(thesisId);
+            }
+        });
+    };
+
+    // API call to cancel thesis assignment from details view
+    async function cancelThesisAssignmentFromDetailsAPI(thesisId) {
+        try {
+            showNotification('Ακύρωση ανάθεσης σε εξέλιξη...', 'info');
+            
+            const response = await fetch('/api/professor/cancel-assignment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ thesisId: thesisId })
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok && result.success) {
+                showNotification(result.message || 'Η ανάθεση ακυρώθηκε επιτυχώς!', 'success');
+                
+                // Close thesis details view and go back to list
+                setTimeout(() => {
+                    document.getElementById('thesisDetailsView').style.display = 'none';
+                    document.getElementById('myThesesList').style.display = 'block';
+                    
+                    // Set "Οι Διπλωματικές Μου" as active
+                    document.querySelectorAll('.nav-link').forEach(navLink => {
+                        navLink.classList.remove('active');
+                        if (navLink.getAttribute('data-section') === 'myThesesList') {
+                            navLink.classList.add('active');
+                        }
+                    });
+                    
+                    // Reload the theses list to reflect changes
+                    loadMyTheses();
+                    
+                    // Also refresh available topics since cancelled thesis becomes available again
+                    loadAvailableTopics();
+                    loadAvailableTopicsForDisplay();
+                }, 1500);
+            } else {
+                throw new Error(result.message || 'Σφάλμα κατά την ακύρωση ανάθεσης');
+            }
+        } catch (error) {
+            console.error('Error cancelling assignment from details:', error);
             showNotification('Σφάλμα: ' + error.message, 'error');
         }
     }
