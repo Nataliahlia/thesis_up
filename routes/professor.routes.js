@@ -371,6 +371,122 @@ router.post('/api/professor/cancel-assignment', (req, res) => {
     });
 });
 
+// Update thesis details (UC9 - Edit functionality)
+router.post('/api/professor/update-thesis/:id', uploadPDF.single('pdf'), (req, res) => {
+    const thesisId = req.params.id;
+    const { title, description, status } = req.body;
+    const professorId = 1; // Mock professor ID for testing
+    
+    // Validation
+    if (!thesisId) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Το ID της διπλωματικής είναι υποχρεωτικό' 
+        });
+    }
+    
+    if (!title || !description) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Τίτλος και περιγραφή είναι υποχρεωτικά' 
+        });
+    }
+    
+    if (title.length > 150) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Ο τίτλος δεν πρέπει να υπερβαίνει τους 150 χαρακτήρες' 
+        });
+    }
+    
+    // Check if thesis exists and professor has permission to edit
+    const checkQuery = `
+        SELECT thesis_id, title, state, instructor_id 
+        FROM thesis_topic 
+        WHERE thesis_id = ? AND instructor_id = ?
+    `;
+    
+    connection.query(checkQuery, [thesisId, professorId], (err, checkResult) => {
+        if (err) {
+            console.error('Error checking thesis ownership:', err);
+            return res.status(500).json({ success: false, message: 'Database error' });
+        }
+        
+        if (checkResult.length === 0) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Η διπλωματική δεν βρέθηκε ή δεν έχετε δικαιώματα επεξεργασίας' 
+            });
+        }
+        
+        const currentThesis = checkResult[0];
+        
+        // Prepare update query
+        let updateQuery = `
+            UPDATE thesis_topic 
+            SET title = ?, description = ?
+        `;
+        let queryParams = [title, description];
+        
+        // Add status update if provided and different
+        if (status && status !== currentThesis.state) {
+            updateQuery += ', state = ?';
+            queryParams.push(status);
+        }
+        
+        // Add PDF file if uploaded
+        if (req.file) {
+            updateQuery += ', pdf = ?';
+            queryParams.push(req.file.filename);
+        }
+        
+        updateQuery += ' WHERE thesis_id = ? AND instructor_id = ?';
+        queryParams.push(thesisId, professorId);
+        
+        // Execute update
+        connection.query(updateQuery, queryParams, (updateErr, updateResult) => {
+            if (updateErr) {
+                console.error('Error updating thesis:', updateErr);
+                return res.status(500).json({ 
+                    success: false, 
+                    message: 'Σφάλμα κατά την ενημέρωση της διπλωματικής' 
+                });
+            }
+            
+            if (updateResult.affectedRows === 0) {
+                return res.status(404).json({ 
+                    success: false, 
+                    message: 'Δεν βρέθηκε διπλωματική προς ενημέρωση' 
+                });
+            }
+            
+            // Log the update
+            console.log(`Professor ${professorId} updated thesis ${thesisId}: "${title}"`);
+            
+            // Record the update in thesis events table
+            const eventQuery = `
+                INSERT INTO thesis_events (thesis_id, event_type, description, event_date, created_by)
+                VALUES (?, 'update', ?, NOW(), ?)
+            `;
+            
+            const eventDescription = `Ενημέρωση στοιχείων διπλωματικής: ${title}`;
+            
+            connection.query(eventQuery, [thesisId, eventDescription, professorId], (eventErr) => {
+                if (eventErr) {
+                    console.error('Error recording thesis event:', eventErr);
+                    // Don't fail the main operation, just log the error
+                }
+            });
+            
+            res.json({ 
+                success: true,
+                message: 'Η διπλωματική ενημερώθηκε επιτυχώς',
+                thesisId: thesisId
+            });
+        });
+    });
+});
+
 // Get detailed thesis information (UC9)
 router.get('/api/professor/thesis-details/:thesisId', (req, res) => {
     const thesisId = req.params.thesisId;
@@ -504,9 +620,6 @@ router.get('/api/professor/thesis-details/:thesisId', (req, res) => {
                                 pdf: thesis.pdf,
                                 assignDate: thesis.time_of_activation,
                                 duration: thesis.duration_days,
-                                examinationDate: thesis.date_of_examination,
-                                examinationTime: thesis.time_of_examination,
-                                examinationMethod: thesis.way_of_examination,
                                 student: thesis.student_name && thesis.student_surname ? {
                                     name: `${thesis.student_name} ${thesis.student_surname}`,
                                     email: thesis.student_email,
@@ -740,18 +853,14 @@ router.get('/api/professor/statistics', (req, res) => {
         // Average completion time for completed theses
         completionStats: `
             SELECT 
-                AVG(DATEDIFF(
-                    CASE 
-                        WHEN state = 'Περατωμένη' THEN date_of_examination 
-                        ELSE NULL 
-                    END,
-                    time_of_activation
-                )) as avg_completion_days,
                 COUNT(CASE WHEN state = 'Περατωμένη' THEN 1 END) as completed_count,
                 COUNT(CASE WHEN state = 'Ενεργή' THEN 1 END) as active_count,
-                COUNT(CASE WHEN state = 'Υπό Εξέταση' THEN 1 END) as under_examination_count
+                COUNT(CASE WHEN state = 'Υπό Εξέταση' THEN 1 END) as under_examination_count,
+                COUNT(CASE WHEN state = 'Υπό Ανάθεση' THEN 1 END) as under_assignment_count,
+                COUNT(CASE WHEN state = 'Χωρίς Ανάθεση' THEN 1 END) as unassigned_count,
+                COUNT(CASE WHEN state = 'Ακυρωμένη' THEN 1 END) as cancelled_count
             FROM thesis_topic 
-            WHERE instructor_id = ? AND time_of_activation IS NOT NULL
+            WHERE instructor_id = ?
         `,
         
         // Student performance stats
@@ -856,14 +965,21 @@ router.get('/api/professor/statistics', (req, res) => {
 
         // Process completion statistics
         const completion = results.completionStats[0] || {};
-        const avgCompletionDays = completion.avg_completion_days || 0;
-        const avgCompletionMonths = avgCompletionDays ? (avgCompletionDays / 30).toFixed(1) : 0;
+        
+        // Calculate thesis completion rate based on completed vs total assigned theses
+        const totalAssignedTheses = (completion.completed_count || 0) + 
+                                  (completion.active_count || 0) + 
+                                  (completion.under_examination_count || 0) + 
+                                  (completion.cancelled_count || 0);
+        
+        const thesisCompletionRate = totalAssignedTheses > 0 ? 
+            ((completion.completed_count || 0) / totalAssignedTheses * 100).toFixed(1) : 0;
 
         // Process student statistics
         const studentData = results.studentStats[0] || {};
         
-        // Calculate success rate
-        const successRate = studentData.total_students > 0 ? 
+        // Calculate student success rate
+        const studentSuccessRate = studentData.total_students > 0 ? 
             ((studentData.successful_students / studentData.total_students) * 100).toFixed(1) : 0;
 
         // Prepare final response
@@ -874,17 +990,17 @@ router.get('/api/professor/statistics', (req, res) => {
                 roleDistribution: roleStats
             },
             performance: {
-                averageCompletionDays: Math.round(avgCompletionDays || 0),
-                averageCompletionMonths: avgCompletionMonths,
-                successRate: parseFloat(successRate),
+                completionRate: parseFloat(thesisCompletionRate),
                 activeTheses: completion.active_count || 0,
-                underExaminationTheses: completion.under_examination_count || 0
+                underExaminationTheses: completion.under_examination_count || 0,
+                completedTheses: completion.completed_count || 0
             },
             students: {
                 totalStudents: studentData.total_students || 0,
                 successfulStudents: studentData.successful_students || 0,
                 currentStudents: studentData.current_students || 0,
-                cancelledStudents: studentData.cancelled_students || 0
+                cancelledStudents: studentData.cancelled_students || 0,
+                successRate: parseFloat(studentSuccessRate)
             },
             trends: {
                 monthlyCreation: monthlyData
