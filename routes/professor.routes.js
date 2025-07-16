@@ -82,7 +82,7 @@ router.get('/api/professor/available-topics', (req, res) => {
     });
 });
 
-// Search students for topic assignment
+// Search students for topic assignment (only available students without thesis)
 router.get('/api/professor/search-students', (req, res) => {
     const searchTerm = req.query.term;
     
@@ -91,17 +91,19 @@ router.get('/api/professor/search-students', (req, res) => {
     }
     
     const query = `
-        SELECT student_number, name, surname, email 
-        FROM student 
-        WHERE student_number LIKE ? OR name LIKE ? OR surname LIKE ? OR email LIKE ?
-        ORDER BY student_number
+        SELECT s.student_number, s.name, s.surname, s.email 
+        FROM student s
+        LEFT JOIN thesis_topic t ON s.student_number = t.student_id
+        WHERE (s.student_number LIKE ? OR s.name LIKE ? OR s.surname LIKE ? OR s.email LIKE ?)
+        AND t.student_id IS NULL
+        ORDER BY s.student_number
         LIMIT 10
     `;
     
     const searchPattern = `%${searchTerm}%`;
     connection.query(query, [searchPattern, searchPattern, searchPattern, searchPattern], (err, results) => {
         if (err) {
-            console.error('Error searching students:', err);
+            console.error('Error searching available students:', err);
             return res.status(500).json({ error: 'Database error' });
         }
         res.json(results);

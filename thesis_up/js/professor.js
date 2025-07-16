@@ -545,7 +545,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Search students
+    // Search students (only available students without thesis)
     function searchStudents() {
         const searchTerm = document.getElementById('studentSearch').value;
         
@@ -560,7 +560,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const resultsContainer = document.getElementById('searchResults');
             if (resultsContainer) {
                 if (students.length === 0) {
-                    resultsContainer.innerHTML = '<p class="text-muted">Δεν βρέθηκαν φοιτητές</p>';
+                    resultsContainer.innerHTML = `
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Δεν βρέθηκαν διαθέσιμοι φοιτητές με αυτόν τον όρο αναζήτησης.
+                            <br><small class="text-muted">Εμφανίζονται μόνο φοιτητές που δεν έχουν ήδη ανατεθεί θέμα διπλωματικής.</small>
+                        </div>
+                    `;
                 } else {
                     resultsContainer.innerHTML = students.map(student => `
                         <div class="student-result p-2 border rounded mb-2" style="cursor: pointer;" 
