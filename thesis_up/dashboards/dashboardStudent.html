@@ -217,12 +217,46 @@
                         </div>
                         <!-- Form Submit -->
                         <div class="text-center">
-                            <button type="submit" class="btn btn-outline-bordeaux mt-3">Τελική Υποβολή</button>
+                            <button id="submitThesisManagement" type="submit" class="btn btn-outline-bordeaux mt-3">Τελική Υποβολή</button>
                         </div>
                     </div>
                 </form>
                 <div class="card-body">
-                    <!-- Student saves the date and the way of examination -->
+                    <form id="timeOfExaminationForm" style="display: none;" class="card p-4 mt-2 w-100 mx-auto">
+                        <!-- Student saves the date and the way of examination -->
+                        <div class="mb-3 w-100">
+                            <div class="d-flex align-items-center">
+                                <i class="fa-solid fa-calendar-days text-bordeaux me-2" aria-hidden="true"></i>
+                                <p class="mb-0">Πληροφορίες Εξέτασης</p>
+                            </div>
+                            <div class="mb-3 mt-2">
+                                <label for="dateOfExamination" class="form-label">Ημερομηνία Εξέτασης</label>
+                                <input type="date" class="form-control" id="dateOfExamination" name="dateOfExamination" required>
+                            </div>  
+                            <div class="mb-3 mt-2">
+                                <label for="timeOfExamination" class="form-label">Ώρα Εξέτασης</label>
+                                <input type="time" class="form-control" id="timeOfExamination" name="timeOfExamination" required>
+                            </div>
+                            <div class="mb-3 mt-2">
+                                <label for="examinationType" class="form-label">Επιλογή Τρόπου Εξέτασης</label>
+                                <select class="form-select" id="examinationType" name="examinationType" required>
+                                    <option value="" selected disabled>Επιλέξτε τρόπο εξέτασης</option>
+                                    <option value="Διά Ζώσης">Διά Ζώσης</option>
+                                    <option value="Διαδικτυακά">Διαδικτυακά</option>
+                                </select>
+                            </div>
+                            <div id="examinationDetailsContainer" class="mb-3 mt-2"></div>
+                            <!-- Form Submit -->
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-outline-bordeaux mt-3">Αποθήκευση Πληροφοριών Εξέτασης</button>
+                            </div>
+                            <div class="text-center">
+                                <button type="button" id="editExaminationButton" class="btn btn-outline-bordeaux mt-3" style="display: none;">
+                                Αλλαγή Στοιχείων
+                                </button>
+                            </div>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -438,6 +472,7 @@
     </script>
 
      <script>
+        let hasExaminationInfo = false;     // This is the variable that will be used to check if the datetime info has been uploaded
         document.addEventListener('DOMContentLoaded', function () {
             // Step 1 -> Form, no data are send here
             // Show the form when the button is clicked and later handle the form submission using AJAX
@@ -454,54 +489,198 @@
                 title.style.display = "none"; // Hide the heading
                 sidebar.style.left = "-250px"; // Move sidebar out of view
                 document.querySelector('.main-content').style.marginLeft = "0"; // Reset main content position, removes the margin that was applied when sidebar was visible
-            });
 
-            fetch('/mythesis-details')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json(); // Convert the response to JSON
-                })
-                .then(mythesis => {
-                    // Check to see if there is a thesis assigned to the student
-                    if (!mythesis || mythesis.length === 0) {
-                        // Message shown if no thesis is assigned
-                        showCustomAlert("Δεν έχει ορισθεί ακόμη διπλωματική εργασία.");
-                        return;
-                    }
-                    const thesis = mythesis[0]; // Array -> needs to access the elements
-                    window.currentThesis = thesis; // Store the thesis in a global variable for later use
-
-                    if (thesis.state === 'Υπό Εξέταση') {
-                        const form = document.getElementById('thesisManagementForm');
-                        form.style.display = 'block'; // Show the form if the thesis is under review
-
-                        // Check if the thesis has a draft file
-                        if (thesis.draft_file) {
-                            renderUploadedFile(thesis.draft_file); // Call the function to render the uploaded file
+                fetch('/mythesis-details')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
                         }
-                        // Check if the user has uploaded additional links
-                        if (thesis.additional_links) {
-                            let linksArray = [];
-                            try {
-                                linksArray = JSON.parse(thesis.additional_links);   // Convert the JSON string to an array
-                            } catch (err) {
-                                linksArray = [];
-                            }
+                        return response.json(); // Convert the response to JSON
+                    })
+                    .then(mythesis => {
+                        // Check to see if there is a thesis assigned to the student
+                        if (!mythesis || mythesis.length === 0) {
+                            // Message shown if no thesis is assigned
+                            showCustomAlert("Δεν έχει ορισθεί ακόμη διπλωματική εργασία.");
+                            return;
+                        }
+                        const thesis = mythesis[0]; // Array -> needs to access the elements
+                        window.currentThesis = thesis; // Store the thesis in a global variable for later use
 
-                            // If there are links
-                            if (Array.isArray(linksArray) && linksArray.length > 0) {
-                                // Call the function to render the submitted links
-                                renderSubmittedLinks(linksArray); 
+                        if (thesis.state === 'Υπό Εξέταση') {
+                            // Handle the file and links upload
+                            const form = document.getElementById('thesisManagementForm');
+                            form.style.display = 'block'; // Show the form if the thesis is under review
+                            const timeForm = document.getElementById("timeOfExaminationForm");  
+                            timeForm.style.display = 'block'; // Show the time of examination form  
+
+                            // Check if the thesis has a draft file
+                            if (thesis.draft_file) {
+                                renderUploadedFile(thesis.draft_file); // Call the function to render the uploaded file
                             }
-                        } 
-                    }
+                            // Check if the user has uploaded additional links
+                            if (thesis.additional_links) {
+                                let linksArray = [];
+                                try {
+                                    linksArray = JSON.parse(thesis.additional_links);   // Convert the JSON string to an array
+                                } catch (err) {
+                                    linksArray = [];
+                                }
+
+                                // If there are links
+                                if (Array.isArray(linksArray) && linksArray.length > 0) {
+                                    // Call the function to render the submitted links
+                                    renderSubmittedLinks(linksArray); 
+                                }
+                            } 
+
+                            // Handle the details of the examination form
+                            timeForm.addEventListener('submit', function (e) {   // When submitting the form do the following
+                                e.preventDefault();     // Prevent the default form submission
+
+                                // Get the values from the form inputs
+                                const date = document.getElementById('dateOfExamination').value;
+                                const type = document.getElementById('examinationType').value;
+                                const time = document.getElementById('timeOfExamination').value;
+                                // Get the thesis ID from the global variable
+                                const thesisId = thesis.thesis_id; 
+                                const detailsContainer = document.getElementById('examinationDetailsContainer');    // No .value here, because it is a container for the inputs and not an input
+                                const room = document.getElementById('examinationRoom')?.value;
+                                const link = document.getElementById('examinationLink')?.value;
+                                const location_or_link = type === 'Διά Ζώσης' ? document.getElementById('examinationRoom')?.value : document.getElementById('examinationLink')?.value;
+
+                                // Check to see if there is a missing field
+                                if (!date || !thesisId || !type || !time || !location_or_link ) {
+                                    showCustomAlert('Παρακαλώ συμπληρώστε όλα τα πεδία.');
+                                    return;
+                                }
+
+                                // Prepare the data to be sent, prepare the JSON object
+                                const data = {
+                                    thesis_id: thesisId, 
+                                    date: date,
+                                    time: time,
+                                    type: type,
+                                    location_or_link : location_or_link 
+                                };
+
+                                // According to if the info has been uploaded before and its just a change - update
+                                const url = hasExaminationInfo ? '/update-examination-info' : '/submit-examination-info';
+                                // The post request to submit the examination information
+                                fetch(url, {
+                                        method: 'POST',
+                                        headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify(data)
+                                })
+                                .then(res => res.json())
+                                .then(result => {
+                                    if (result.success) {
+                                        hasExaminationInfo = true; // Set the flag to true after successful submission
+                                        showCustomAlert('Η ημερομηνία και ο τρόπος εξέτασης αποθηκεύτηκαν.');
+                                        lockExaminationFields();    // Lock the fields after submission -> user can't change them 
+
+                                    } else {
+                                        showCustomAlert('Αποτυχία αποθήκευσης. Προσπαθήστε ξανά.');
+                                    }
+                                })
+                                .catch(err => {
+                                        console.error(err);
+                                        showCustomAlert('Σφάλμα κατά την αποστολή των δεδομένων.');
+                                });
+                            });
+
+                            // Used to get the date, time etc that the user previously uploaded
+                            fetch(`/get-examination-info/${thesis.thesis_id}`)
+                                .then(res => {
+                                    if (!res.ok) throw new Error('Network response was not ok');
+                                    return res.json();
+                                })
+                                .then(result => {
+                                    if (!result || !result.data) {
+                                        // Because this is the point where the check happens
+                                        // Here we check if the user has uploaded exam info before
+                                        console.log('Δεν υπάρχουν ακόμη στοιχεία εξέτασης.');
+                                        return;
+                                    }
+
+                                    // Set the flag to true if examination info is available//
+                                    // if the examination info is available it will be true for sure
+                                    hasExaminationInfo = true; 
+
+                                    const { date, time, type, location_or_link } = result.data;     // Get the server answer    
+                                    document.getElementById('dateOfExamination').value = date.split('T')[0];    // Extract just the date, not the time
+                                    document.getElementById('timeOfExamination').value = time;
+                                    document.getElementById('examinationType').value = type;
+                                    const event = new Event('change');   // This is used to trigger the change event on the select element
+                                    // Dispatch the event to trigger the change event listener, used to add the inputs dynamically 
+                                    document.getElementById('examinationType').dispatchEvent(event);
+
+                                    // Gets the type and shows the correct field -> location_or_link
+                                    setTimeout(() => {
+                                        if (type === 'Διά Ζώσης') {
+                                            document.getElementById('examinationRoom').value = location_or_link;
+                                            lockExaminationFields();
+                                        } else if (type === 'Διαδικτυακά') {
+                                            document.getElementById('examinationLink').value = location_or_link;
+                                        }
+                                    }, 100);
+                                })
+                                .catch(err => {
+                                    console.error('Σφάλμα κατά το fetch των στοιχείων εξέτασης:', err);
+                                });
+                            } 
+                    });
+                    // The variables that will be used
+                    const type = document.getElementById('examinationType');
+                    const detailsContainer = document.getElementById('examinationDetailsContainer');
+                    // Add a listener for the event change on the type select element
+                    type.addEventListener('change', () => {
+                        const selectedValue = type.value;       // Get the value of the selected option
+                        detailsContainer.innerHTML = '';        // Clear previous content
+
+                        if (selectedValue === 'Διά Ζώσης') {
+                            // Add room input
+                            const label = document.createElement('label');
+                            label.setAttribute('for', 'examinationRoom');
+                            label.className = 'form-label';
+                            label.textContent = 'Αίθουσα Εξέτασης';
+
+                            // Create the input element for the room
+                            const input = document.createElement('input');
+                            input.type = 'text';
+                            input.id = 'examinationRoom';
+                            input.name = 'examinationRoom';
+                            input.className = 'form-control';
+                            input.placeholder = 'π.χ. Αίθουσα Β1';
+                            input.required = true;
+
+                            // Append the label and input to the details container
+                            detailsContainer.appendChild(label);
+                            detailsContainer.appendChild(input);
+                        } else if (selectedValue === 'Διαδικτυακά') {
+                            // Add online link input
+                            const label = document.createElement('label');
+                            label.setAttribute('for', 'examinationLink');
+                            label.className = 'form-label';
+                            label.textContent = 'Σύνδεσμος Εξέτασης';
+
+                            // Create the input element for the link
+                            const input = document.createElement('input');
+                            input.type = 'url';
+                            input.id = 'examinationLink';
+                            input.name = 'examinationLink';
+                            input.className = 'form-control';
+                            input.placeholder = 'π.χ. https://upatras.zoom.us/...';
+                            input.required = true;
+
+                            // Append the label and input to the details container
+                            detailsContainer.appendChild(label);
+                            detailsContainer.appendChild(input);
+                        }
+                    });
                 })
-                .catch(error => {
-                    // Show custom alert
-                    showCustomAlert('Error updating profile. Please try again.');
-                });
 
             // Get reference to the form and handle submission
             const form = document.getElementById('thesisManagementForm');
@@ -526,7 +705,7 @@
                 }
 
                 const formData = new FormData(form); // This is used to collect all the inputs inside the form, this data will be sent to the server
-
+                
                 fetch('/under-examination-upload', {
                     method: 'POST',
                     body: formData
@@ -571,6 +750,14 @@
                     showCustomAlert("Σφάλμα κατά την αποστολή.");
                 });
             });
+        });
+
+        // Used to handle the button that enables the editing of the examination info   
+        document.addEventListener('DOMContentLoaded', () => {
+            const editBtn = document.getElementById('editExaminationButton');
+            if (editBtn) {
+                editBtn.addEventListener('click', enableExaminationEdit);
+            }
         });
     </script>
 
@@ -682,6 +869,56 @@
 
             // Add the card to the container
             container.appendChild(card);
+        }
+
+        // Function for the successful submission of the thesis
+        function lockExaminationFields() {
+            const fields = ['dateOfExamination', 'timeOfExamination', 'examinationType']; // Array with the forms 'fields
+            // Loop through the fields and disable them, also add styling
+            fields.forEach(id => {
+                const input = document.getElementById(id);
+                if (input) {
+                    input.setAttribute('disabled', true);
+                    input.classList.add('bordeaux-outline');
+                }
+            });
+
+            // Do the same for the dynamically shown field of link or room
+            const type = document.getElementById('examinationType').value;
+            const extraId = type === 'Διά Ζώσης' ? 'examinationRoom' : 'examinationLink';
+            const extraInput = document.getElementById(extraId);
+            if (extraInput) {
+                extraInput.setAttribute('disabled', true);
+                extraInput.classList.add('bordeaux-outline');
+            }
+
+            document.querySelector('#timeOfExaminationForm button[type="submit"]').style.display = 'none';  // Hide the submit button after submission
+            document.getElementById('editExaminationButton').style.display = 'inline-block';                // Show the edit button after submission
+        }
+
+        // Function to edit the examination details
+        function enableExaminationEdit() {
+            const fields = ['dateOfExamination', 'timeOfExamination', 'examinationType']; // Array with the forms 'fields
+            // Loop through the fields and disable them, also add styling
+            fields.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.disabled = false;
+                    el.classList.remove('bordeaux-outline');
+                }
+            });
+
+            // Do the same for the dynamically shown field of link or room
+            const type = document.getElementById('examinationType').value;
+            const extraId = type === 'Διά Ζώσης' ? 'examinationRoom' : 'examinationLink';
+            const extra = document.getElementById(extraId);
+            if (extra) {
+                extra.disabled = false;
+                extra.classList.remove('bordeaux-outline');
+            }
+
+            document.querySelector('#timeOfExaminationForm button[type="submit"]').style.display = 'inline-block';  // Show the submit button when editing
+            document.getElementById('editExaminationButton').style.display = 'none';                                // Hide the edit button when editing
         }
     </script>
 

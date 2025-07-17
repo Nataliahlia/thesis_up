@@ -10,6 +10,7 @@ router.get('/mythesis-details', (req, res) => {
   const studentId = req.session.user.id;
   const query = `
     SELECT 
+        tt.thesis_id,
         tt.title, 
         tt.description, 
         tt.pdf, 

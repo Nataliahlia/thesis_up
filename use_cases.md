@@ -267,7 +267,7 @@ UC21: Select Committee Members (Student)
 3.	Student provides links to other material. 
 4.	System stores the files/links.
 
-UC23: Record Presentation Details
+✅ UC23: Record Presentation Details
 •	Description: A Student records the date, time, and location/link for their thesis examination. 
 •	Actors: Student 
 •	Preconditions: Student is logged in and thesis is "Under Examination". 
