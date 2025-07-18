@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let selectedTopic = null;
     let selectedStudent = null;
     let allTheses = [];
+    let currentUserRole = null; // User's role for the current thesis (supervisor, committee_member, etc.)
     
     // Initialize components
     initializeSidebar();
@@ -1108,6 +1109,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (data.success) {
                 displayThesisDetails(data.data);
+                
+                // Initialize UC13 Notes system
+                initializeThesisDetailsWithNotes(data.data.thesis_id);
+                
                 loadingDiv.style.display = 'none';
                 contentDiv.style.display = 'block';
                 
@@ -1129,6 +1134,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function displayThesisDetails(thesis) {
         // Store thesis data globally for use in edit form
         window.currentThesisData = thesis;
+        
+        // Store current user role for UC13 Notes system
+        currentUserRole = thesis.my_role;
         
         // Basic Information
         document.getElementById('thesisTitle').textContent = thesis.title || '';
@@ -1193,6 +1201,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Action buttons
         displayThesisActions(thesis);
+        
+        // Initialize Notes System (UC13)
+        initializeThesisDetailsWithNotes(thesis.id);
     }
 
     function displayCommitteeDetails(committee) {
@@ -2903,4 +2914,338 @@ document.addEventListener('DOMContentLoaded', function() {
         
         return activityTexts[activityType] || 'Νέα δραστηριότητα';
     }
+
+    // ===== UC13 NOTES FUNCTIONALITY =====
+    function initializeNotesSystem() {
+        // Initialize event listeners for notes
+        const addNoteBtn = document.getElementById('addNoteBtn');
+        const cancelNoteBtn = document.getElementById('cancelNoteBtn');
+        const noteForm = document.getElementById('noteForm');
+        const addNoteForm = document.getElementById('addNoteForm');
+
+        if (addNoteBtn) {
+            addNoteBtn.addEventListener('click', showAddNoteForm);
+        }
+
+        if (cancelNoteBtn) {
+            cancelNoteBtn.addEventListener('click', hideAddNoteForm);
+        }
+
+        if (noteForm) {
+            noteForm.addEventListener('submit', handleNoteSubmit);
+        }
+    }
+
+    function showAddNoteForm() {
+        const addNoteForm = document.getElementById('addNoteForm');
+        const addNoteBtn = document.getElementById('addNoteBtn');
+        
+        if (addNoteForm && addNoteBtn) {
+            addNoteForm.style.display = 'block';
+            addNoteBtn.style.display = 'none';
+            
+            // Focus on the title input
+            const titleInput = document.getElementById('noteTitle');
+            if (titleInput) {
+                titleInput.focus();
+            }
+        }
+    }
+
+    function hideAddNoteForm() {
+        const addNoteForm = document.getElementById('addNoteForm');
+        const addNoteBtn = document.getElementById('addNoteBtn');
+        const noteForm = document.getElementById('noteForm');
+        
+        if (addNoteForm && addNoteBtn) {
+            addNoteForm.style.display = 'none';
+            addNoteBtn.style.display = 'inline-block';
+            
+            // Reset form
+            if (noteForm) {
+                noteForm.reset();
+            }
+        }
+    }
+
+    async function handleNoteSubmit(event) {
+        event.preventDefault();
+        
+        const thesisId = getCurrentThesisId();
+        
+        const formData = new FormData(event.target);
+        const noteData = {
+            thesis_id: thesisId,
+            title: formData.get('title'),
+            content: formData.get('content'),
+            type: formData.get('type')
+        };
+
+        // Check if thesisId is valid
+        if (!thesisId) {
+            console.error('Cannot submit note: thesisId is not set');
+            showNotification('Σφάλμα: Δεν έχει επιλεγεί διπλωματική', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/notes', {
+                method: 'POST',
+                credentials: 'same-origin', // Include session cookies
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(noteData)
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                showNotification('Η σημείωση αποθηκεύτηκε επιτυχώς!', 'success');
+                hideAddNoteForm();
+                
+                // Only reload if thesisId is valid
+                if (thesisId) {
+                    await loadThesisNotes(thesisId); // Reload notes
+                }
+            } else {
+                throw new Error('Σφάλμα κατά την αποθήκευση της σημείωσης');
+            }
+        } catch (error) {
+            console.error('Error saving note:', error);
+            showNotification('Σφάλμα κατά την αποθήκευση της σημείωσης', 'error');
+        }
+    }
+
+    async function loadThesisNotes(thesisId) {
+        const notesLoading = document.getElementById('notesLoading');
+        const notesList = document.getElementById('notesList');
+        const noNotesMessage = document.getElementById('noNotesMessage');
+        
+        // Check if thesisId is valid
+        if (!thesisId || thesisId === 'undefined') {
+            console.warn('loadThesisNotes called with invalid thesisId:', thesisId);
+            return;
+        }
+        
+        if (!notesList) return;
+
+        // Show loading state
+        if (notesLoading) {
+            notesLoading.style.display = 'block';
+        }
+        
+        if (noNotesMessage) {
+            noNotesMessage.style.display = 'none';
+        }
+
+        try {
+            const response = await fetch(`/api/notes/${thesisId}`, {
+                method: 'GET',
+                credentials: 'same-origin', // Include session cookies
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                
+                if (result.success) {
+                    renderNotes(result.data);
+                } else {
+                    console.error('API returned success: false', result);
+                    throw new Error(result.message || 'Failed to load notes');
+                }
+            } else {
+                throw new Error('Failed to load notes');
+            }
+        } catch (error) {
+            console.error('Error loading notes:', error);
+            showNotification('Σφάλμα κατά τη φόρτωση των σημειώσεων', 'error');
+            
+            if (noNotesMessage) {
+                noNotesMessage.innerHTML = `
+                    <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                    <p class="text-muted mb-0">Σφάλμα φόρτωσης σημειώσεων</p>
+                `;
+                noNotesMessage.style.display = 'block';
+            }
+        } finally {
+            if (notesLoading) {
+                notesLoading.style.display = 'none';
+            }
+        }
+    }
+
+    function renderNotes(notes) {
+        const notesList = document.getElementById('notesList');
+        const noNotesMessage = document.getElementById('noNotesMessage');
+        const notesLoading = document.getElementById('notesLoading');
+        
+        if (!notesList) {
+            console.error('notesList element not found');
+            return;
+        }
+
+        // Clear existing content except loading and no notes message
+        const existingNotes = notesList.querySelectorAll('.note-item');
+        existingNotes.forEach(note => note.remove());
+
+        if (notes && notes.length > 0) {
+            if (noNotesMessage) {
+                noNotesMessage.style.display = 'none';
+            }
+
+            notes.forEach((note) => {
+                const noteElement = createNoteElement(note);
+                notesList.appendChild(noteElement);
+            });
+        } else {
+            if (noNotesMessage) {
+                noNotesMessage.style.display = 'block';
+            }
+        }
+    }
+
+    function createNoteElement(note) {
+        const noteDiv = document.createElement('div');
+        noteDiv.className = 'note-item';
+        noteDiv.dataset.noteId = note.id;
+
+        const typeClass = `note-type-${note.comment_type}`;
+        const typeLabel = getNoteTypeLabel(note.comment_type);
+        const formattedDate = formatNoteDate(note.comment_date);
+        const canEdit = note.professor_id === getCurrentUserId(); // Using professor_id instead of author_id
+
+        noteDiv.innerHTML = `
+            <div class="note-header">
+                <div class="note-title">${escapeHtml(note.title || 'Χωρίς τίτλο')}</div>
+                <div class="note-meta">
+                    <span class="note-type-badge ${typeClass}">${typeLabel}</span>
+                    <div class="note-date">${formattedDate}</div>
+                </div>
+                ${canEdit ? `
+                    <div class="note-actions">
+                        <button type="button" class="btn btn-outline-secondary btn-sm me-1" onclick="editNote(${note.id})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="deleteNote(${note.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                ` : ''}
+            </div>
+            <div class="note-content">${escapeHtml(note.comment || '')}</div>
+            <div class="note-author">
+                <small class="text-muted">
+                    <i class="fas fa-user me-1"></i>
+                    ${escapeHtml(note.author_full_name || note.author_name || 'Άγνωστος χρήστης')}
+                </small>
+            </div>
+        `;
+
+        return noteDiv;
+    }
+
+    function getNoteTypeLabel(type) {
+        const labels = {
+            'general': 'Γενική',
+            'progress': 'Πρόοδος',
+            'meeting': 'Συνάντηση',
+            'deadline': 'Προθεσμία',
+            'issue': 'Πρόβλημα',
+            'achievement': 'Επίτευγμα'
+        };
+        return labels[type] || 'Γενική';
+    }
+
+    function formatNoteDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('el-GR', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function getCurrentUserId() {
+        // This should return the current user's ID
+        // You might get this from a global variable, local storage, or JWT token
+        return window.currentUserId || null;
+    }
+
+    // Global functions for note actions (called from HTML)
+    window.editNote = async function(noteId) {
+        // Implementation for editing notes
+        console.log('Edit note:', noteId);
+        // You can show a modal or inline edit form
+        showNotification('Λειτουργία επεξεργασίας σημείωσης σε ανάπτυξη', 'info');
+    };
+
+    window.deleteNote = async function(noteId) {
+        if (!confirm('Είστε σίγουροι ότι θέλετε να διαγράψετε αυτή τη σημείωση;')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/notes/${noteId}`, {
+                method: 'DELETE',
+                credentials: 'same-origin', // Include session cookies
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                showNotification('Η σημείωση διαγράφηκε επιτυχώς!', 'success');
+                
+                // Get current thesis ID and reload notes if valid
+                const thesisId = getCurrentThesisId();
+                if (thesisId) {
+                    await loadThesisNotes(thesisId); // Reload notes
+                }
+            } else {
+                throw new Error('Σφάλμα κατά τη διαγραφή της σημείωσης');
+            }
+        } catch (error) {
+            console.error('Error deleting note:', error);
+            showNotification('Σφάλμα κατά τη διαγραφή της σημείωσης', 'error');
+        }
+    };
+
+    // Initialize notes system when thesis details are loaded
+    function initializeThesisDetailsWithNotes(thesisId) {
+        // Just validate the thesisId parameter and initialize the system
+        if (!thesisId) {
+            console.warn('initializeThesisDetailsWithNotes called with invalid thesisId:', thesisId);
+            return;
+        }
+        
+        initializeNotesSystem();
+        loadThesisNotes(thesisId);
+        
+        // Show add note button only for supervisors
+        const addNoteBtn = document.getElementById('addNoteBtn');
+        const userRole = getCurrentUserRole();
+        
+        if (addNoteBtn && userRole === 'supervisor') {
+            addNoteBtn.style.display = 'inline-block';
+        }
+    }
+
+    function getCurrentUserRole() {
+        // Return the current user's role for the specific thesis
+        return currentUserRole || 'member';
+    }
+
+    // Make sure to call initializeThesisDetailsWithNotes when loading thesis details
+    // This should be integrated with your existing loadThesisDetails function
 });

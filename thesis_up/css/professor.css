@@ -1067,3 +1067,118 @@ footer {
 #statisticsContent {
     animation: none;
 }
+
+/* Notes Section Styles (UC13) */
+.note-item {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background-color: #ffffff;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.note-item:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-color: #8B0000;
+}
+
+.note-header {
+    display: flex;
+    justify-content: between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+    gap: 1rem;
+}
+
+.note-title {
+    font-weight: 600;
+    color: #8B0000;
+    margin-bottom: 0.25rem;
+    flex-grow: 1;
+}
+
+.note-meta {
+    font-size: 0.875rem;
+    color: #6c757d;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.note-type-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    margin-bottom: 0.25rem;
+    font-weight: 500;
+}
+
+.note-type-general { background-color: #e7f3ff; color: #0066cc; }
+.note-type-progress { background-color: #e8f5e8; color: #28a745; }
+.note-type-meeting { background-color: #fff3cd; color: #856404; }
+.note-type-deadline { background-color: #f8d7da; color: #721c24; }
+.note-type-issue { background-color: #f5c2c7; color: #842029; }
+.note-type-achievement { background-color: #d1ecf1; color: #0c5460; }
+
+.note-content {
+    color: #495057;
+    line-height: 1.5;
+    margin-bottom: 0.75rem;
+    white-space: pre-wrap;
+}
+
+.note-actions {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.note-item:hover .note-actions {
+    opacity: 1;
+}
+
+.note-date {
+    font-size: 0.8rem;
+    color: #adb5bd;
+}
+
+#addNoteForm {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+/* Notes loading and empty states */
+#notesLoading, #noNotesMessage {
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+}
+
+/* Responsive notes design */
+@media (max-width: 768px) {
+    .note-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .note-meta {
+        align-items: flex-start;
+        text-align: left;
+        flex-direction: row;
+        gap: 0.5rem;
+    }
+    
+    .note-actions {
+        position: static;
+        opacity: 1;
+        margin-top: 0.5rem;
+    }
+}

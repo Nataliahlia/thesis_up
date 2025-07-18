@@ -456,6 +456,75 @@
                             </div>
                         </div>
 
+                        <!-- Notes Section (UC13) -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h5 class="text-bordeaux mb-0">
+                                                <i class="fas fa-sticky-note me-2"></i>Σημειώσεις Εποπτείας
+                                            </h5>
+                                            <!-- Add Note Button (only for supervisors) -->
+                                            <button type="button" class="btn btn-outline-bordeaux btn-sm" id="addNoteBtn" style="display: none;">
+                                                <i class="fas fa-plus me-2"></i>Προσθήκη Σημείωσης
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- Notes List -->
+                                        <div id="notesList">
+                                            <!-- Notes will be populated here -->
+                                            <div id="notesLoading" style="display: none;" class="text-center py-3">
+                                                <i class="fas fa-spinner fa-spin text-bordeaux"></i>
+                                                <span class="ms-2 text-muted">Φόρτωση σημειώσεων...</span>
+                                            </div>
+                                            
+                                            <div id="noNotesMessage" style="display: none;" class="text-center py-4">
+                                                <i class="fas fa-sticky-note fa-2x text-muted mb-2"></i>
+                                                <p class="text-muted mb-0">Δεν υπάρχουν σημειώσεις για αυτή τη διπλωματική</p>
+                                            </div>
+                                        </div>
+
+                                        <!-- Add Note Form (hidden by default) -->
+                                        <div id="addNoteForm" style="display: none;" class="mt-3 border-top pt-3">
+                                            <form id="noteForm">
+                                                <div class="mb-3">
+                                                    <label for="noteTitle" class="form-label fw-semibold">Τίτλος Σημείωσης</label>
+                                                    <input type="text" id="noteTitle" name="title" class="form-control" 
+                                                           placeholder="Εισάγετε τίτλο σημείωσης..." maxlength="100" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="noteContent" class="form-label fw-semibold">Περιεχόμενο</label>
+                                                    <textarea id="noteContent" name="content" class="form-control" rows="4" 
+                                                              placeholder="Εισάγετε το περιεχόμενο της σημείωσης..." required></textarea>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="noteType" class="form-label fw-semibold">Τύπος Σημείωσης</label>
+                                                    <select id="noteType" name="type" class="form-select" required>
+                                                        <option value="">-- Επιλέξτε τύπο --</option>
+                                                        <option value="general">Γενική Σημείωση</option>
+                                                        <option value="progress">Πρόοδος</option>
+                                                        <option value="meeting">Συνάντηση</option>
+                                                        <option value="deadline">Προθεσμία</option>
+                                                        <option value="issue">Πρόβλημα</option>
+                                                        <option value="achievement">Επίτευγμα</option>
+                                                    </select>
+                                                </div>
+                                                <div class="d-flex gap-2 justify-content-end">
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="cancelNoteBtn">
+                                                        <i class="fas fa-times me-2"></i>Ακύρωση
+                                                    </button>
+                                                    <button type="submit" class="btn btn-bordeaux btn-sm">
+                                                        <i class="fas fa-save me-2"></i>Αποθήκευση
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Timeline/Chronology -->
                         <div class="row mb-4">
                             <div class="col-12">
