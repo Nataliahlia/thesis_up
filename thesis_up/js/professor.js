@@ -1355,12 +1355,30 @@ document.addEventListener('DOMContentLoaded', function() {
                     '</button>';
         }
         
+        // Cancel active thesis button (only for "Ενεργή" status, supervisors, and after 2 years)
+        if (thesis.my_role === 'supervisor' && thesis.status === 'Ενεργή' && isThesisEligibleForCancellation(thesis)) {
+            html += '<button type="button" class="btn btn-danger" onclick="cancelActiveThesis(' + thesis.id + ')" title="Ακύρωση ενεργής διπλωματικής (μετά από 2 έτη)">' +
+                    '<i class="fas fa-ban me-2"></i>Ακύρωση Ενεργής Διπλωματικής' +
+                    '</button>';
+        }
+        
         // Export PDF button
         html += '<button type="button" class="btn btn-outline-bordeaux" onclick="exportThesisPDF(' + thesis.id + ')">' +
                 '<i class="fas fa-file-pdf me-2"></i>Εξαγωγή PDF' +
                 '</button>';
         
         container.innerHTML = html;
+    }
+
+    // Check if thesis is eligible for cancellation (2 years after assignment)
+    function isThesisEligibleForCancellation(thesis) {
+        if (!thesis.assigned_at) return false;
+        
+        const assignmentDate = new Date(thesis.assigned_at);
+        const currentDate = new Date();
+        const twoYearsInMs = 2 * 365 * 24 * 60 * 60 * 1000; // 2 years in milliseconds
+        
+        return (currentDate - assignmentDate) >= twoYearsInMs;
     }
 
     function getFileIcon(fileType) {
@@ -1557,6 +1575,129 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Error cancelling assignment from details:', error);
+            showNotification('Σφάλμα: ' + error.message, 'error');
+        }
+    }
+
+    // Cancel active thesis (after 2 years with assembly decision)
+    window.cancelActiveThesis = function(thesisId) {
+        console.log('Cancel active thesis for ID:', thesisId);
+        
+        // Get thesis information from current data
+        const currentThesis = window.currentThesisData;
+        
+        if (!currentThesis) {
+            showNotification('Σφάλμα: Δεν βρέθηκαν στοιχεία διπλωματικής', 'error');
+            return;
+        }
+        
+        // Check if thesis is eligible for cancellation
+        if (!isThesisEligibleForCancellation(currentThesis)) {
+            showNotification('Σφάλμα: Η διπλωματική δεν είναι επιλέξιμη για ακύρωση (δεν έχουν παρέλθει 2 έτη)', 'error');
+            return;
+        }
+        
+        // Populate thesis info in modal
+        const thesisInfoContainer = document.getElementById('activeThesisInfo');
+        if (thesisInfoContainer) {
+            const assignmentDate = formatDate(currentThesis.assigned_at);
+            const yearsElapsed = Math.floor((new Date() - new Date(currentThesis.assigned_at)) / (365 * 24 * 60 * 60 * 1000));
+            
+            thesisInfoContainer.innerHTML = `
+                <h6 class="fw-bold text-bordeaux">${currentThesis.title}</h6>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <p class="mb-2"><strong>Φοιτητής:</strong> ${currentThesis.student_name || 'Δεν είναι διαθέσιμο'}</p>
+                        <p class="mb-2"><strong>ΑΜ:</strong> ${currentThesis.student_number || 'Δεν είναι διαθέσιμο'}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-2"><strong>Ημ. Ανάθεσης:</strong> ${assignmentDate}</p>
+                        <p class="mb-2"><strong>Έτη από ανάθεση:</strong> <span class="badge bg-success">${yearsElapsed} έτη</span></p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Set current year as default
+        const currentYear = new Date().getFullYear();
+        const assemblyYearInput = document.getElementById('assemblyYear');
+        if (assemblyYearInput) {
+            assemblyYearInput.value = currentYear;
+        }
+        
+        // Clear assembly number
+        const assemblyNumberInput = document.getElementById('assemblyNumber');
+        if (assemblyNumberInput) {
+            assemblyNumberInput.value = '';
+        }
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('cancelActiveThesisModal'));
+        modal.show();
+        
+        // Handle confirmation
+        const confirmBtn = document.getElementById('confirmCancelActiveThesis');
+        const handleConfirm = function() {
+            const assemblyNumber = document.getElementById('assemblyNumber').value;
+            const assemblyYear = document.getElementById('assemblyYear').value;
+            
+            if (!assemblyNumber || !assemblyYear) {
+                showNotification('Παρακαλώ συμπληρώστε τον αριθμό και το έτος της Γενικής Συνέλευσης', 'error');
+                return;
+            }
+            
+            cancelActiveThesisAPI(thesisId, assemblyNumber, assemblyYear);
+            confirmBtn.removeEventListener('click', handleConfirm);
+            modal.hide();
+        };
+        
+        confirmBtn.addEventListener('click', handleConfirm);
+    };
+
+    // API call to cancel active thesis
+    async function cancelActiveThesisAPI(thesisId, assemblyNumber, assemblyYear) {
+        try {
+            showNotification('Ακύρωση ενεργής διπλωματικής σε εξέλιξη...', 'info');
+            
+            const response = await fetch('/api/professor/cancel-active-thesis', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    thesisId: thesisId,
+                    assemblyNumber: assemblyNumber,
+                    assemblyYear: assemblyYear,
+                    reason: 'από Διδάσκοντα'
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok && result.success) {
+                showNotification('Η ενεργή διπλωματική ακυρώθηκε επιτυχώς!', 'success');
+                
+                // Go back to thesis list after successful cancellation
+                setTimeout(() => {
+                    document.getElementById('thesisDetailsView').style.display = 'none';
+                    document.getElementById('myThesesList').style.display = 'block';
+                    
+                    // Set "Οι Διπλωματικές Μου" as active
+                    document.querySelectorAll('.nav-link').forEach(navLink => {
+                        navLink.classList.remove('active');
+                        if (navLink.getAttribute('data-section') === 'myThesesList') {
+                            navLink.classList.add('active');
+                        }
+                    });
+                    
+                    // Reload the theses list to reflect changes
+                    loadMyTheses();
+                }, 1500);
+            } else {
+                throw new Error(result.message || 'Σφάλμα κατά την ακύρωση της ενεργής διπλωματικής');
+            }
+        } catch (error) {
+            console.error('Error cancelling active thesis:', error);
             showNotification('Σφάλμα: ' + error.message, 'error');
         }
     }
