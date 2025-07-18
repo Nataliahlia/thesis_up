@@ -11,42 +11,21 @@ DESCRIBE student;
 select * from thesis_up.thesis_topic;
 select * from thesis_up.thesis_topic;
     SELECT 
-        tt.title, 
-        tt.description, 
-        tt.pdf, 
-        tt.state,
-        DATEDIFF(NOW(), tt.time_of_activation) as days_since_activation,
-        instructor.name as instructor_name,
-        instructor.surname as instructor_surname,
-        m1.name as mentor_name,
-        m1.surname as mentor_surname,
-        m2.name as mentortwo_name,
-        m2.surname as mentortwo_surname,
-        CONCAT(m1.name, ' ', m1.surname) as full_mentor_name,
-        CONCAT(m2.name, ' ', m2.surname) as full_mentortwo_name,
-        CONCAT(instructor.name, ' ', instructor.surname) as full_instructor_name
-    FROM thesis_topic tt
-    LEFT JOIN professor m1 ON tt.member1 = m1.professor_id
-    LEFT JOIN professor m2 ON tt.member2 = m2.professor_id
-    LEFT JOIN professor instructor ON tt.instructor_id = instructor.professor_id
-    WHERE student_id = 10002;
-    SELECT 
-        tt.title, 
-        tt.description, 
-        tt.pdf, 
-        tt.state,
-        DATEDIFF(NOW(), tt.time_of_activation) as days_since_activation,
-        instructor.name as instructor_name,
-        instructor.surname as instructor_surname,
-        m1.name as mentor_name,
-        m1.surname as mentor_surname,
-        m2.name as mentortwo_name,
-        m2.surname as mentortwo_surname,
-        CONCAT(m1.name, ' ', m1.surname) as full_mentor_name,
-        CONCAT(m2.name, ' ', m2.surname) as full_mentortwo_name,
-        CONCAT(instructor.name, ' ', instructor.surname) as full_instructor_name
-    FROM thesis_topic tt
-    LEFT JOIN professor m1 ON tt.member1 = m1.professor_id
-    LEFT JOIN professor m2 ON tt.member2 = m2.professor_id
-    LEFT JOIN professor instructor ON tt.instructor_id = instructor.professor_id
-    WHERE student_id = 10003;
+      a.id, 
+      a.thesis_id, 
+      a.date, 
+      a.time, 
+      a.type, 
+      a.location_or_link,
+      t.title AS thesis_title,
+      p.name AS instructor_name,
+      p.surname AS instructor_surname,
+      s.name AS student_name,
+      s.surname AS student_surname,
+      CONCAT(p.name, ' ', p.surname) AS instructor_full_name,
+      CONCAT(s.name, ' ', s.surname) AS student_full_name
+    FROM announcements a
+    JOIN thesis_topic t ON a.thesis_id = t.thesis_id
+    JOIN professor p ON t.instructor_id = p.professor_id
+    JOIN student s ON t.student_id = s.student_number
+    WHERE t.state = 'Υπό Εξέταση'

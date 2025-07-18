@@ -26,7 +26,7 @@ UC2: User Logout
 2.	System terminates session. 
 3.	System redirects to login page. 
 
-UC3: View Public Thesis Presentation Announcements 
+✅ UC3: View Public Thesis Presentation Announcements 
 •	Description: Allows unauthenticated users to view announcements for thesis presentations within a specified time range. 
 •	Actors: Public User (unauthenticated) 
 •	Preconditions: None.

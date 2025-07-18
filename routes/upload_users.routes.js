@@ -25,6 +25,10 @@ router.post('/upload-user', upload.single('userAddingFile'), async (req, res) =>
         let addedStudents = 0;
         let addedProfessors = 0;
 
+        // Variables used to store skipped users, used for the error message 
+        let skippedStudents = [];
+        let skippedProfessors = [];
+
         try {
             const parsed = JSON.parse(jsonData); // Parse the JSON data from the file
             // Wrap single student object into array - to handle both single and multiple student uploads
@@ -38,18 +42,18 @@ router.post('/upload-user', upload.single('userAddingFile'), async (req, res) =>
                 console.log('Processing students:', parsed.student.length);
                 // Process each user in the array
                 for (const student of parsed.student) {
-                    // Increment the addedStudents counter
-                    addedStudents++;
                     // process the student data
                     console.log('Processing student:', student);
                     const { student_number, email, name, surname, street, number, city, postcode, father_name, landline_telephone, mobile_telephone } = student;
-
                     // Check if all required fields are present, if not error
                     if (!student_number || !email || !name || !surname) {
                         console.error('Missing required fields for user:', student);
+                        skippedStudents.push(student);
                         continue;
                     }
 
+                    // Increment the addedStudents counter
+                    addedStudents++;
                     // Auto-generate password
                     const rawPassword = `stud${student_number}@2025`; 
                     // Hash the password using bcrypt
@@ -64,16 +68,16 @@ router.post('/upload-user', upload.single('userAddingFile'), async (req, res) =>
             if (Array.isArray(parsed.professor)) {
                 // Process each user in the array
                 for (const professor of parsed.professor) {
-                    // Increment the addedProfessors counter
-                    addedProfessors++;
                     // process the professor data
                     const { email, name, surname, topic, department, university, landline, mobile } = professor;
-
                     // Check if all required fields are present, if not error
                     if (!email || !name || !surname) {
+                        skippedProfessors.push(professor);
                         console.error('Missing required fields for user:', professor);
                         continue;
                     }
+                    // Increment the addedProfessors counter
+                    addedProfessors++;
 
                     // Auto-generate password
                     const rawPassword = `prof_${email.split('@')[0]}@2025`;
@@ -85,8 +89,18 @@ router.post('/upload-user', upload.single('userAddingFile'), async (req, res) =>
                     await connection.promise().query(sql, [email, hashedPassword, name, surname, topic, department, university, landline, mobile]);
                 }
             }
-            // Send a response back to the client
-            res.status(200).json({addedStudents, addedProfessors, success: true, message: 'Users added successfully',   students: parsed.student || [], professors: parsed.professor || []});
+            if (addedStudents === 0 && addedProfessors === 0) {
+                return res.status(400).json({ error: 'Δεν προστέθηκε κανένας χρήστης. Ελέγξτε ότι τα δεδομένα που εισάγονται είναι σωστά.' });
+            }
+            // Send a response back to the client that contains the number of added students and professors
+            res.status(200).json({
+                addedStudents,
+                addedProfessors,
+                success: true,
+                message: 'Users processed',
+                students: parsed.student || [],
+                professors: parsed.professor || []
+            });
         } catch (parseError) {
             // If there is an error parsing the JSON data, send an error response
             console.error('Error parsing JSON data:', parseError);
@@ -97,29 +111,5 @@ router.post('/upload-user', upload.single('userAddingFile'), async (req, res) =>
         }
     });
 });
-
-// // To dynamically fetch the list of users from the database and display them on the dashboard
-// router.get('/upload-user', async (req, res) => {
-//     console.log('Fetching users from the database...');
-//     try {
-//         const [students] = await connection.promise().query(
-//             'SELECT student_number, name, surname, email FROM student'
-//         );
-//         const [professors] = await connection.promise().query(
-//             'SELECT professor_id, name, surname, email FROM professor'
-//         );
-
-//         // Ενοποίηση των 2 πινάκων σε έναν πίνακα χρηστών
-//         const users = [
-//             ...students.map(s => ({ ...s, professor_id: null })), // για να υπάρχει το πεδίο
-//             ...professors.map(p => ({ ...p, student_number: null })) // για να υπάρχει το πεδίο
-//         ];
-
-//         res.json(users);
-//     } catch (err) {
-//         console.error('Σφάλμα βάσης:', err);
-//         res.status(500).json({ error: 'Σφάλμα βάσης δεδομένων.' });
-//     }
-// });
 
 module.exports = router; // Export the router to be used in server.js

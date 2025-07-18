@@ -86,29 +86,75 @@ a:hover .text-bordeaux {
   overflow: hidden;
   width: 100%;
   background: #f8f9fa;
+  position: relative;
+  margin-bottom: 50px;
 }
 
 .carousel-track {
   display: flex;
-  gap: 2rem;
-  animation: scroll 30s linear infinite;
+   /* margin-right: 2rem;
+   animation: scroll 30s linear infinite; */
 }
 
 .carousel-track > .card {
   min-width: 250px;
+  margin-right: 2rem;
   flex: 0 0 auto;
+  height: 250px;           /* bigger height */
+  width: 400px;          /* wider fixed width */
+  display: inline-block;
+  flex-direction: column;
+  justify-content: space-between;  /* ή center ή flex-start */
+  padding: 1rem;
+}
+#carouselContainer {
+  display: flex;
+  overflow-x: hidden;
+  white-space: nowrap;
 }
 
-@keyframes scroll {
+.card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #6b131f;     /* το μπορντό σου */
+  line-height: 1.3;
+  margin-bottom: 1rem;
+  white-space: normal;         /* ✅ επιτρέπει το τύλιγμα */
+  overflow: visible;           /* ✅ επιτρέπει ανάπτυξη */
+  text-overflow: unset;        /* ✅ κανένα κόψιμο */
+}
+
+/* .card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 300px;
+  width: 300px;
+  flex: 0 0 auto;
+  margin-right: 2rem;
+} */
+
+#dateRangeFilter {
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 768px) {
+  #dateRangeFilter {
+    flex-direction: column;
+  }
+}
+
+/* @keyframes scroll {
   0%   { transform: translateX(0); }
   100% { transform: translateX(-50%); }
-}
+} */
 
 .nav-link i {
   font-size: 1.2rem;
   width: 20px;        
   text-align: center; 
 }
+
 
 html, body {
   height: 100%;
