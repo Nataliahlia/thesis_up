@@ -1027,6 +1027,85 @@
         </div>
     </div>
 
+    <!-- Cancel Active Thesis Modal -->
+    <div class="modal fade" id="cancelActiveThesisModal" tabindex="-1" aria-labelledby="cancelActiveThesisModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title text-danger fw-bold" id="cancelActiveThesisModalLabel">
+                        <i class="fas fa-ban me-2"></i>Ακύρωση Ενεργής Διπλωματικής
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                    </div>
+                    
+                    <div class="alert alert-info border-0 rounded-3 mb-4">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-info-circle text-info me-2 mt-1"></i>
+                            <div class="text-start">
+                                <strong>Προϋποθέσεις ακύρωσης:</strong>
+                                <ul class="mb-0 mt-2 ps-3">
+                                    <li>Έχουν παρέλθει τουλάχιστον 2 έτη από την οριστική ανάθεση</li>
+                                    <li>Απαιτείται απόφαση Γενικής Συνέλευσης</li>
+                                    <li>Λόγος ακύρωσης: "από Διδάσκοντα"</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="assemblyNumber" class="form-label fw-bold">Αριθμός Γενικής Συνέλευσης *</label>
+                                <input type="number" class="form-control" id="assemblyNumber" placeholder="π.χ. 123" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="assemblyYear" class="form-label fw-bold">Έτος Γενικής Συνέλευσης *</label>
+                                <input type="number" class="form-control" id="assemblyYear" placeholder="π.χ. 2024" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="cancellationReason" class="form-label fw-bold">Λόγος Ακύρωσης</label>
+                        <input type="text" class="form-control" id="cancellationReason" value="από Διδάσκοντα" readonly>
+                    </div>
+
+                    <div class="alert alert-warning border-0 rounded-3 mb-3">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-exclamation-triangle text-warning me-2 mt-1"></i>
+                            <div class="text-start">
+                                <strong>Συνέπειες ακύρωσης:</strong>
+                                <ul class="mb-0 mt-2 ps-3">
+                                    <li>Η διπλωματική θα μεταβεί στην κατάσταση "Ακυρωμένη"</li>
+                                    <li>Ο φοιτητής θα ειδοποιηθεί για την ακύρωση</li>
+                                    <li>Η ενέργεια δεν μπορεί να αναιρεθεί</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border rounded-3 p-3 bg-light" id="activeThesisInfo">
+                        <!-- Thesis info will be populated here -->
+                    </div>
+                </div>
+                <div class="modal-footer border-0 justify-content-center">
+                    <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
+                        <i class="fas fa-arrow-left me-2"></i>Ακύρωση
+                    </button>
+                    <button type="button" class="btn btn-danger px-4" id="confirmCancelActiveThesis">
+                        <i class="fas fa-ban me-2"></i>Ακύρωση Διπλωματικής
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="bg-bordeaux border-top text-center text-lg-start">
         <div class="text-center p-3"> 

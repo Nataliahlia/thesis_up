@@ -371,6 +371,152 @@ router.post('/api/professor/cancel-assignment', (req, res) => {
     });
 });
 
+// Cancel active thesis (after 2 years with assembly decision)
+router.post('/api/professor/cancel-active-thesis', (req, res) => {
+    const { thesisId, assemblyNumber, assemblyYear, reason } = req.body;
+    const professorId = 1; // Mock professor ID for testing
+    
+    // Validation
+    if (!thesisId || !assemblyNumber || !assemblyYear || !reason) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Όλα τα στοιχεία (ID διπλωματικής, αριθμός συνέλευσης, έτος, λόγος) είναι υποχρεωτικά' 
+        });
+    }
+    
+    // Check if thesis belongs to professor and is active
+    const checkQuery = `
+        SELECT 
+            tt.thesis_id, 
+            tt.title, 
+            tt.student_id, 
+            tt.state,
+            tt.time_of_activation as assigned_at,
+            u.name as student_name,
+            u.surname as student_surname
+        FROM thesis_topic tt
+        LEFT JOIN users u ON tt.student_id = u.id
+        WHERE tt.thesis_id = ? AND tt.instructor_id = ? AND tt.state = 'Ενεργή'
+    `;
+    
+    connection.query(checkQuery, [thesisId, professorId], (err, checkResult) => {
+        if (err) {
+            console.error('Error checking thesis for active cancellation:', err);
+            return res.status(500).json({ success: false, message: 'Database error' });
+        }
+        
+        if (checkResult.length === 0) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Η διπλωματική δεν βρέθηκε ή δεν είναι ενεργή' 
+            });
+        }
+        
+        const thesis = checkResult[0];
+        
+        // Check if 2 years have passed since assignment
+        const assignmentDate = new Date(thesis.assigned_at);
+        const currentDate = new Date();
+        const twoYearsInMs = 2 * 365 * 24 * 60 * 60 * 1000;
+        
+        if ((currentDate - assignmentDate) < twoYearsInMs) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Δεν έχουν παρέλθει 2 έτη από την ανάθεση της διπλωματικής' 
+            });
+        }
+        
+        // Start transaction to cancel active thesis
+        connection.beginTransaction((transErr) => {
+            if (transErr) {
+                console.error('Transaction start error:', transErr);
+                return res.status(500).json({ success: false, message: 'Database error' });
+            }
+            
+            // Update thesis state to cancelled
+            const updateThesisQuery = `
+                UPDATE thesis_topic 
+                SET state = 'Ακυρωμένη'
+                WHERE thesis_id = ?
+            `;
+            
+            connection.query(updateThesisQuery, [thesisId], (err, result) => {
+                if (err) {
+                    return connection.rollback(() => {
+                        console.error('Error updating thesis state:', err);
+                        res.status(500).json({ success: false, message: 'Database error' });
+                    });
+                }
+                
+                if (result.affectedRows === 0) {
+                    return connection.rollback(() => {
+                        res.status(400).json({ 
+                            success: false, 
+                            message: 'Η διπλωματική δεν μπόρεσε να ακυρωθεί' 
+                        });
+                    });
+                }
+                
+                // Insert cancellation record in canceled_thesis table
+                const insertCancelQuery = `
+                    INSERT INTO canceled_thesis (
+                        id, reason, cancelled_at, assembly_number, assembly_year, 
+                        professor_id, student_id, thesis_title
+                    ) VALUES (?, ?, NOW(), ?, ?, ?, ?, ?)
+                `;
+                
+                connection.query(insertCancelQuery, [
+                    thesisId, 
+                    reason, 
+                    assemblyNumber, 
+                    assemblyYear, 
+                    professorId,
+                    thesis.student_id,
+                    thesis.title
+                ], (insertErr) => {
+                    if (insertErr) {
+                        return connection.rollback(() => {
+                            console.error('Error inserting cancellation record:', insertErr);
+                            res.status(500).json({ success: false, message: 'Database error' });
+                        });
+                    }
+                    
+                    // Log the cancellation event (optional)
+                    const logQuery = `
+                        INSERT INTO thesis_events (thesis_id, event_type, description, event_date, created_by)
+                        VALUES (?, 'Ακύρωση', ?, NOW(), ?)
+                    `;
+                    
+                    const logDescription = `Ακύρωση ενεργής διπλωματικής από Διδάσκοντα. Γ.Σ. ${assemblyNumber}/${assemblyYear}`;
+                    
+                    connection.query(logQuery, [thesisId, logDescription, professorId], (logErr) => {
+                        if (logErr) {
+                            console.warn('Warning: Could not log cancellation event:', logErr);
+                            // Continue anyway, don't fail the transaction
+                        }
+                        
+                        // Commit transaction
+                        connection.commit((commitErr) => {
+                            if (commitErr) {
+                                return connection.rollback(() => {
+                                    console.error('Transaction commit error:', commitErr);
+                                    res.status(500).json({ success: false, message: 'Database error' });
+                                });
+                            }
+                            
+                            console.log(`Professor ${professorId} cancelled active thesis ${thesisId} with assembly ${assemblyNumber}/${assemblyYear}`);
+                            res.json({ 
+                                success: true,
+                                message: `Η ενεργή διπλωματική "${thesis.title}" ακυρώθηκε επιτυχώς`
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
 // Update thesis details (UC9 - Edit functionality)
 router.post('/api/professor/update-thesis/:id', uploadPDF.single('pdf'), (req, res) => {
     const thesisId = req.params.id;
