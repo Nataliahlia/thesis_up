@@ -84,12 +84,18 @@ CREATE TABLE thesis_topic (
 );
 
 CREATE TABLE canceled_thesis (
-	submission_id INT AUTO_INCREMENT PRIMARY KEY,
+	  submission_id INT AUTO_INCREMENT PRIMARY KEY,
     id INT NOT NULL,
     state ENUM('ακυρωμένη') DEFAULT 'ακυρωμένη',
     reason ENUM('από Διδάσκοντα', 'κατόπιν αίτησης Φοιτητή/τριας') NOT NULL,
     FOREIGN KEY (id) REFERENCES thesis_topic(thesis_id)
 );
+
+ALTER TABLE canceled_thesis 
+ADD COLUMN cancelled_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Ημερομηνία ακύρωσης',
+ADD COLUMN assembly_number VARCHAR(50) NULL COMMENT 'Αριθμός Γενικής Συνέλευσης για ακύρωση',
+ADD COLUMN assembly_year YEAR NULL COMMENT 'Έτος Γενικής Συνέλευσης για ακύρωση',
+ADD INDEX idx_canceled_thesis_date (cancelled_at);
 
 CREATE TABLE member_request (
 	request_id INT auto_increment PRIMARY KEY,

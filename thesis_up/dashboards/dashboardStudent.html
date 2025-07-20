@@ -193,24 +193,22 @@
             <!-- Everything will be displayed using cards -->
             <div class="card-body">
                 <!-- Form for file upload -->
-                <form id="thesisManagementForm" style="display: none;" class="card p-4 mt-4 w-100 mx-auto" enctype="multipart/form-data" method="POST">
+                <form id="thesisManagementForm" style="display: none;" class="card p-4 mt-2 w-100 mx-auto" enctype="multipart/form-data" method="POST">
                     <div class="d-flex flex-column align-items-center">
                         <div class="mb-3 w-100">
-                            <div class="d-flex align-items-center">
-                                <i class="fa fa-upload text-bordeaux me-2" aria-hidden="true"></i>
-                                <p class="mb-0">Επισύναψη Πρόχειρου Αρχείου Διπλωματικής Εργασίας</p>
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <i class="fa fa-upload text-bordeaux me-2 fs-4" aria-hidden="true"></i>
+                                <h5 class="mb-0 align-middle" style="line-height: 1.2;">Επισύναψη Πρόχειρου Αρχείου Διπλωματικής Εργασίας</h5>
                             </div>
                             <input type="file" name="progressFile" id="progressFile" class="form-control" required>
                         </div>
                         <!-- Adding the choice of links upload -->
                         <div id="linksContainer" class="mb-3 w-100">
                             <p class="mt-3"> Μπορείτε να επισυνάψετε χρήσιμο σύνδεσμο/ους εάν το επιθυμείτε </p>
-                            <div class="d-flex align-items-center">
-                                <i class="fa fa-link text-bordeaux me-2" aria-hidden="true"></i>
-                                <label class="form-label text-muted mb-1">Σύνδεσμος (π.χ. Google Drive Files, GitHub, YouTube)</label>
-                                <div class="d-flex justify-content-start mt-3"></div>
-                                    <button type="button" class="btn btn-sm btn-outline-dark mb-2 mt-2 ms-4" onclick="addLinkInput()">Προσθήκη Συνδέσμου</button>
-                                </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="fa fa-link text-bordeaux fs-5" aria-hidden="true"></i>
+                                <span class="text-muted">Σύνδεσμος (π.χ. Google Drive Files, GitHub, YouTube)</span>
+                                <button type="button" class="btn btn-sm btn-outline-dark ms-3" onclick="addLinkInput()">Προσθήκη Συνδέσμου</button>
                                 <!-- Ιnputs will be inserted here dynamically -->
                                 <div id="dynamicLinksArea" class="mt-3"></div>
                             </div>
@@ -221,42 +219,48 @@
                         </div>
                     </div>
                 </form>
-                <div class="card-body">
-                    <form id="timeOfExaminationForm" style="display: none;" class="card p-4 mt-2 w-100 mx-auto">
-                        <!-- Student saves the date and the way of examination -->
-                        <div class="mb-3 w-100">
-                            <div class="d-flex align-items-center">
-                                <i class="fa-solid fa-calendar-days text-bordeaux me-2" aria-hidden="true"></i>
-                                <p class="mb-0">Πληροφορίες Εξέτασης</p>
-                            </div>
-                            <div class="mb-3 mt-2">
-                                <label for="dateOfExamination" class="form-label">Ημερομηνία Εξέτασης</label>
-                                <input type="date" class="form-control" id="dateOfExamination" name="dateOfExamination" required>
-                            </div>  
-                            <div class="mb-3 mt-2">
-                                <label for="timeOfExamination" class="form-label">Ώρα Εξέτασης</label>
-                                <input type="time" class="form-control" id="timeOfExamination" name="timeOfExamination" required>
-                            </div>
-                            <div class="mb-3 mt-2">
-                                <label for="examinationType" class="form-label">Επιλογή Τρόπου Εξέτασης</label>
-                                <select class="form-select" id="examinationType" name="examinationType" required>
-                                    <option value="" selected disabled>Επιλέξτε τρόπο εξέτασης</option>
-                                    <option value="Διά Ζώσης">Διά Ζώσης</option>
-                                    <option value="Διαδικτυακά">Διαδικτυακά</option>
-                                </select>
-                            </div>
-                            <div id="examinationDetailsContainer" class="mb-3 mt-2"></div>
-                            <!-- Form Submit -->
-                            <div class="text-center">
-                                <button type="submit" class="btn btn-outline-bordeaux mt-3">Αποθήκευση Πληροφοριών Εξέτασης</button>
-                            </div>
-                            <div class="text-center">
-                                <button type="button" id="editExaminationButton" class="btn btn-outline-bordeaux mt-3" style="display: none;">
-                                Αλλαγή Στοιχείων
-                                </button>
-                            </div>
+            </div>
+            <div class="card-body">
+                <form id="timeOfExaminationForm" style="display: none;" class="card p-4 mt-2 w-100 mx-auto">
+                    <!-- Student saves the date and the way of examination -->
+                    <div class="mb-3 w-100">
+                        <div class="d-flex align-items-center">
+                            <i class="fa-solid fa-calendar-days text-bordeaux me-2 fs-4" aria-hidden="true"></i>
+                            <h5 class="mb-0 align-middle" style="line-height: 1.2;">Πληροφορίες Εξέτασης</h5>
                         </div>
-                    </form>
+                        <div class="mb-3 mt-2">
+                            <label for="dateOfExamination" class="form-label">Ημερομηνία Εξέτασης</label>
+                            <input type="date" class="form-control" id="dateOfExamination" name="dateOfExamination" required>
+                        </div>  
+                        <div class="mb-3 mt-2">
+                            <label for="timeOfExamination" class="form-label">Ώρα Εξέτασης</label>
+                            <input type="time" class="form-control" id="timeOfExamination" name="timeOfExamination" required>
+                        </div>
+                        <div class="mb-3 mt-2">
+                            <label for="examinationType" class="form-label">Επιλογή Τρόπου Εξέτασης</label>
+                            <select class="form-select" id="examinationType" name="examinationType" required>
+                                <option value="" selected disabled>Επιλέξτε τρόπο εξέτασης</option>
+                                <option value="Διά Ζώσης">Διά Ζώσης</option>
+                                <option value="Διαδικτυακά">Διαδικτυακά</option>
+                            </select>
+                        </div>
+                        <div id="examinationDetailsContainer" class="mb-3 mt-2"></div>
+                        <!-- Form Submit -->
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-outline-bordeaux mt-3">Αποθήκευση Πληροφοριών Εξέτασης</button>
+                        </div>
+                        <div class="text-center">
+                            <button type="button" id="editExaminationButton" class="btn btn-outline-bordeaux mt-3" style="display: none;">
+                            Αλλαγή Στοιχείων
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <!-- The below handles the HTML after the grades and the Nimertis link -->
+            <div class="card-body">
+                <div id="gradesInfo" class="card mt-2 p-4 w-100 mx-auto">
+                <!-- The content of the examination report will be displayed here -->
                 </div>
             </div>
         </div>
@@ -631,6 +635,40 @@
                                 .catch(err => {
                                     console.error('Σφάλμα κατά το fetch των στοιχείων εξέτασης:', err);
                                 });
+
+                                fetch(`/get-grades/${thesis.thesis_id}`)
+                                .then(res => {
+                                    if (!res.ok) throw new Error('Network response was not ok');
+                                    return res.json();
+                                })
+                                .then(gradesData => {
+                                    const grades = gradesData.grades;
+                                    if (Array.isArray(grades) && grades.length > 0) {
+                                        // Δημιουργία ενός νέου container για το Πρακτικό Εξέτασης
+                                        const gradesInfo = document.getElementById('gradesInfo');
+                                        gradesInfo.innerHTML = `
+                                            <div class="d-flex align-items-center">
+                                                <i class="fa-solid fa-file-signature text-bordeaux me-2 fs-4" aria-hidden="true"></i>
+                                                <h5 class="mb-0 align-middle" style="line-height: 1.2;">Πρακτικό Εξέτασης</h5>
+                                            </div>
+                                            <!-- Space added -->
+                                            <div class="my-3"></div>
+                                            <p>Το πρακτικό της εξέτασης έχει ολοκληρωθεί και μπορείτε να δείτε συνοπτικά τις αξιολογήσεις σας παρακάτω:</p>
+                                            <ul>
+                                            ${grades.map(grade => {
+                                                const isInstructor = window.currentThesis && grade.professor_full_name === window.currentThesis.full_instructor_name;
+                                                const roleText = isInstructor ? ' (Επιβλέπων)' : '';
+                                                return `<li><strong>${grade.professor_full_name}${roleText}:</strong> ${grade.grade}</li>`;
+                                            }).join('')}
+                                            </ul>
+                                            <div class="d-flex align-items-center gap-3">
+                                                <p class="mb-0">Αναλυτικά το αρχείο πρακτικού εξέτασης είναι διαθέσιμο:</p>
+                                                <button class="btn btn-outline-bordeaux" id="downloadProtocolBtn">Εμφάνιση Πρακτικού σε μορφή HTML</button>
+                                            </div>
+                                        `;
+                                        gradesInfo.style.display = 'block'; // <-- Αυτό είναι το σημαντικό
+                                    }
+                                });
                             } 
                     });
                     // The variables that will be used
@@ -760,6 +798,53 @@
                 editBtn.addEventListener('click', enableExaminationEdit);
             }
         });
+
+        // This is the button that handles the view of the HTML file
+            // Attach click listener to the button
+    const downloadBtn = document.getElementById('downloadProtocolBtn');
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', () => {
+            const protocolHtml = `
+                <!DOCTYPE html>
+                <html lang="el">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Πρακτικό Εξέτασης</title>
+                    <style>
+                        body { font-family: sans-serif; padding: 2rem; line-height: 1.6; }
+                        h2 { color: #800000; }
+                        ul { margin-top: 1rem; }
+                        li { margin-bottom: 0.5rem; }
+                    </style>
+                </head>
+                <body>
+                    <h2>Πρακτικό Εξέτασης</h2>
+                    <p>Το πρακτικό της εξέτασης έχει ολοκληρωθεί και περιλαμβάνει τις παρακάτω αξιολογήσεις:</p>
+                    <ul>
+                        ${grades.map(grade => {
+                            const isInstructor = window.currentThesis && grade.professor_full_name === window.currentThesis.full_instructor_name;
+                            const roleText = isInstructor ? ' (Επιβλέπων)' : '';
+                            return `<li><strong>${grade.professor_full_name}${roleText}:</strong> ${grade.grade}</li>`;
+                        }).join('')}
+                    </ul>
+                    <p>Ημερομηνία δημιουργίας: ${new Date().toLocaleDateString('el-GR')}</p>
+                </body>
+                </html>
+            `;
+
+            const blob = new Blob([protocolHtml], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'praktiko_exetasis.html';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        });
+    }
+
     </script>
 
     <!-- This is first created for the editing form, could/will be used for other cases as well -->
@@ -777,9 +862,7 @@
                 modal.style.display = 'none';
             };
         }
-    </script>
 
-    <script>
         // This is the function for the file upload
         function renderUploadedFile(filename) {
             const fileInput = document.getElementById('progressFile');  // Find the file element in the form in order to handle it handle it
@@ -820,6 +903,7 @@
             // Add the info and change button to the file input's parent element
             fileInput.parentElement.parentElement.prepend(info, changeBtn);
         }
+
         function renderSubmittedLinks(linksArray) {
             // Finds the container where the links will be displayed
             const container = document.getElementById('dynamicLinksArea');

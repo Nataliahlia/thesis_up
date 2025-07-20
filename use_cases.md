@@ -278,7 +278,7 @@ UC21: Select Committee Members (Student)
 3.	Student specifies examination method (in-person/online) and provides room or link. 
 4.	System saves presentation details.
 
-UC24: View Examination Report
+✅ UC24: View Examination Report
 •	Description: A Student views their examination report in HTML format. 
 •	Actors: Student 
 •	Preconditions: Student is logged in and grades have been recorded by committee members. 
@@ -338,7 +338,7 @@ IV. Secretariat Use Cases
 4.	System imports data, creating usernames (e.g., from emails) and generating random passwords. 
 5.	System confirms import status.
 
-UC30: Record General Assembly AP Number
+✅ UC30: Record General Assembly AP Number
 •	Description: Secretariat records the AP number from the General Assembly approval for an active thesis. 
 •	Actors: Secretariat 
 •	Preconditions: Secretariat is logged in and the thesis is "Active". 
@@ -348,7 +348,7 @@ UC30: Record General Assembly AP Number
 2.	Secretariat records the AP number. 
 3.	System saves the AP number.
 
-UC31: Cancel Thesis Assignment (Secretariat)
+✅ UC31: Cancel Thesis Assignment (Secretariat)
 •	Description: Secretariat cancels a thesis topic assignment, recording the General Assembly details and reason. 
 •	Actors: Secretariat 
 •	Preconditions: Secretariat is logged in and thesis is "Active". 

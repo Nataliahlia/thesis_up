@@ -29,8 +29,9 @@ app.use(require('./routes/mythesis_details.routes'));
 app.use(require('./routes/session.routes'));
 app.use(require('./routes/myprofile_edit.route'));
 app.use(require('./routes/under_examination_update.route'));
-app.use(require('./routes/datetime.route'));
+app.use(require('./routes/student_examination.route'));
 app.use(require('./routes/notes.routes')); // UC13 Notes routes
+app.use(require('./routes/secretary_active.route')); 
 
 const updatePasswords = require('./scripts/updatePasswords');
 
