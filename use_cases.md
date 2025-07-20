@@ -359,7 +359,7 @@ IV. Secretariat Use Cases
 3.	Secretariat records General Assembly number, year, and free-text reason. 
 4.	System cancels assignment and records details.
 
-UC32: Change Thesis Status to "Completed" (Secretariat)
+✅ UC32: Change Thesis Status to "Completed" (Secretariat)
 •	Description: Secretariat changes the status of an "Under Examination" thesis to "Completed" after grades are recorded and the Nemertis link is provided. 
 •	Actors: Secretariat 
 •	Preconditions: Secretariat is logged in, thesis is "Under Examination", grades are recorded, and the Nemertis link is provided. 

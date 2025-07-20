@@ -32,6 +32,7 @@ app.use(require('./routes/under_examination_update.route'));
 app.use(require('./routes/student_examination.route'));
 app.use(require('./routes/notes.routes')); // UC13 Notes routes
 app.use(require('./routes/secretary_active.route')); 
+app.use(require('./routes/thesis_completion.routes'));
 
 const updatePasswords = require('./scripts/updatePasswords');
 

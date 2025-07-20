@@ -17,6 +17,8 @@ router.get('/thesis-topics', (req, res) => {
             tt.member1,
             tt.member2,
             tt.protocol_number,
+            tt.nimertis_link,
+            tt.final_grade,
             DATEDIFF(NOW(), tt.time_of_activation) as days_since_activation,
             s.name as name,
             s.surname as surname,

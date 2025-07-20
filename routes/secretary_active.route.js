@@ -47,6 +47,12 @@ router.post('/delete-thesis/:thesis_id', (req, res) => {
     // Get cancelled_at and reason from request body
     const { reason, assembly_number, assembly_year } = req.body;
 
+    // This is used to get the secretary's name from the session
+    const fullSecretaryName = `${req.session.user.name} ${req.session.user.surname}`;
+    if (!fullSecretaryName) {
+        return res.status(403).json({ success: false, error: 'Μη εξουσιοδοτημένη πρόσβαση' });
+    }
+
     // First, delete the thesis
     connection.query(query, [thesis_id], (error, results) => {
         if (error) {
@@ -72,6 +78,23 @@ router.post('/delete-thesis/:thesis_id', (req, res) => {
             }
             if (results2.affectedRows === 0) {
                 return res.status(500).json({ success: false, error: 'Σφάλμα κατά την εισαγωγή στην ακυρωμένη διπλωματική.' });
+            }
+        });
+
+        // Insert into thesis_events
+        const query_three = `
+            INSERT INTO thesis_events (thesis_id, status, created_by)
+            VALUES (?, 'Ακυρωμένη', ?)
+        `;
+
+        // Execute the insert query into thesis_events
+        connection.query(query_three, [thesis_id, fullSecretaryName], (error3, results3) => {
+            if (error3) {
+                console.error('Σφάλμα βάσης (thesis_events):', error3);
+                return res.status(500).json({ success: false, error: 'Σφάλμα βάσης κατά την εισαγωγή στο ιστορικό.' });
+            }
+            if (results3.affectedRows === 0) {
+                return res.status(500).json({ success: false, error: 'Σφάλμα κατά την εισαγωγή στο ιστορικό διπλωματικής.' });
             }
             res.json({ success: true });
         });
