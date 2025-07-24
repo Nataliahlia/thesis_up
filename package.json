@@ -16,7 +16,8 @@
     "express-session": "^1.18.1",
     "fs": "^0.0.1-security",
     "multer": "^2.0.1",
-    "mysql2": "^3.14.1"
+    "mysql2": "^3.14.1",
+    "puppeteer": "^24.15.0"
   },
   "description": ""
 }

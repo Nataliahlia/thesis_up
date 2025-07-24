@@ -16,3 +16,4 @@ select * from thesis_comments;
 select * from thesis_topic;
 select * from professor;
 describe canceled_thesis;
+

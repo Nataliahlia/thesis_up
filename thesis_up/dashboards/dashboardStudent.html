@@ -260,9 +260,11 @@
             <!-- The below handles the HTML after the grades and the Nimertis link -->
             <div class="card-body">
                 <div id="gradesInfo" class="card mt-2 p-4 w-100 mx-auto">
-                <!-- The content of the examination report will be displayed here -->
+                    <!-- The content of the examination report will be displayed here -->
                 </div>
             </div>
+            <!-- This is the protocol content that will be used to create the pdf, as the html opens in a new tab -->
+            <div id="protocolContent" style="position: absolute; left: -9999px; top: 0;"></div>
         </div>
     </div>
 
@@ -661,12 +663,38 @@
                                                 return `<li><strong>${grade.professor_full_name}${roleText}:</strong> ${grade.grade}</li>`;
                                             }).join('')}
                                             </ul>
-                                            <div class="d-flex align-items-center gap-3">
+                                            <div class="d-flex align-items-center gap-2 mb-2">
                                                 <p class="mb-0">Αναλυτικά το αρχείο πρακτικού εξέτασης είναι διαθέσιμο:</p>
-                                                <button class="btn btn-outline-bordeaux" id="downloadProtocolBtn">Εμφάνιση Πρακτικού σε μορφή HTML</button>
+                                                <button class="btn btn-outline-bordeaux" id="downloadProtocolBtn">
+                                                    Εμφάνιση Πρακτικού σε μορφή HTML
+                                                </button>
+                                            </div>
+
+                                            <!-- On click event for the download button, so the function is called -->
+                                            <div class="d-flex align-items-center gap-2">
+                                                <p class="mb-0">Μπορείτε να εξάγετε το αρχείο και σε μορφή PDF:</p>
+                                                <button class="btn btn-outline-bordeaux" onclick="downloadPDF()">
+                                                    Κατέβασε το Πρακτικό σε PDF
+                                                </button>
                                             </div>
                                         `;
-                                        gradesInfo.style.display = 'block'; // <-- Αυτό είναι το σημαντικό
+                                        gradesInfo.style.display = 'block'; 
+
+                                        // Add the event listener for the download button, set a timeout to ensure the button is available
+                                        // Because it is created using innerHTML
+                                        setTimeout(() => {
+                                            const downloadBtn = document.getElementById('downloadProtocolBtn');
+                                            if (downloadBtn) {
+                                                downloadBtn.addEventListener('click', () => {
+                                                    const thesisId = window.currentThesis?.thesis_id;
+                                                    if (thesisId) {
+                                                        window.open(`/generate-protocol/${thesisId}`, '_blank');
+                                                    } else {
+                                                        showCustomAlert('Σφάλμα: Δεν εντοπίστηκε διπλωματική εργασία.');
+                                                    }
+                                                });
+                                            }
+                                        }, 100);
                                     }
                                 });
                             } 
@@ -798,53 +826,6 @@
                 editBtn.addEventListener('click', enableExaminationEdit);
             }
         });
-
-        // This is the button that handles the view of the HTML file
-            // Attach click listener to the button
-    const downloadBtn = document.getElementById('downloadProtocolBtn');
-    if (downloadBtn) {
-        downloadBtn.addEventListener('click', () => {
-            const protocolHtml = `
-                <!DOCTYPE html>
-                <html lang="el">
-                <head>
-                    <meta charset="UTF-8">
-                    <title>Πρακτικό Εξέτασης</title>
-                    <style>
-                        body { font-family: sans-serif; padding: 2rem; line-height: 1.6; }
-                        h2 { color: #800000; }
-                        ul { margin-top: 1rem; }
-                        li { margin-bottom: 0.5rem; }
-                    </style>
-                </head>
-                <body>
-                    <h2>Πρακτικό Εξέτασης</h2>
-                    <p>Το πρακτικό της εξέτασης έχει ολοκληρωθεί και περιλαμβάνει τις παρακάτω αξιολογήσεις:</p>
-                    <ul>
-                        ${grades.map(grade => {
-                            const isInstructor = window.currentThesis && grade.professor_full_name === window.currentThesis.full_instructor_name;
-                            const roleText = isInstructor ? ' (Επιβλέπων)' : '';
-                            return `<li><strong>${grade.professor_full_name}${roleText}:</strong> ${grade.grade}</li>`;
-                        }).join('')}
-                    </ul>
-                    <p>Ημερομηνία δημιουργίας: ${new Date().toLocaleDateString('el-GR')}</p>
-                </body>
-                </html>
-            `;
-
-            const blob = new Blob([protocolHtml], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
-
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'praktiko_exetasis.html';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-        });
-    }
-
     </script>
 
     <!-- This is first created for the editing form, could/will be used for other cases as well -->
@@ -1004,6 +985,19 @@
 
             document.querySelector('#timeOfExaminationForm button[type="submit"]').style.display = 'inline-block';  // Show the submit button when editing
             document.getElementById('editExaminationButton').style.display = 'none';                                // Hide the edit button when editing
+        }
+
+        // Function to download the PDF of the protocol
+        // We are using puppeteer to generate the PDF on the server side
+        function downloadPDF() {
+            const thesisId = window.currentThesis?.thesis_id;   // Get the thesis ID from the global variable
+            // Validate the thesis ID
+            if (!thesisId) {
+                showCustomAlert('Δεν εντοπίστηκε διπλωματική εργασία.');
+                return;
+            }
+            // Redirect to the download route
+            window.location.href = `/download-protocol/${thesisId}`;
         }
     </script>
 
