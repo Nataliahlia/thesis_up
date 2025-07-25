@@ -20,6 +20,7 @@ router.get('/mythesis-details', (req, res) => {
         tt.member1,
         tt.member2,
         tt.instructor_id,
+        tt.nimertis_link,
         DATEDIFF(NOW(), tt.time_of_activation) as days_since_activation,
         instructor.name as instructor_name,
         instructor.surname as instructor_surname,

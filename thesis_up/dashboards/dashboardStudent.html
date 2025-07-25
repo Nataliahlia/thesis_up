@@ -600,105 +600,193 @@
 
                             // Used to get the date, time etc that the user previously uploaded
                             fetch(`/get-examination-info/${thesis.thesis_id}`)
-                                .then(res => {
-                                    if (!res.ok) throw new Error('Network response was not ok');
-                                    return res.json();
-                                })
-                                .then(result => {
-                                    if (!result || !result.data) {
-                                        // Because this is the point where the check happens
-                                        // Here we check if the user has uploaded exam info before
-                                        console.log('Δεν υπάρχουν ακόμη στοιχεία εξέτασης.');
-                                        return;
+                            .then(res => {
+                                if (!res.ok) throw new Error('Network response was not ok');
+                                return res.json();
+                            })
+                            .then(result => {
+                                if (!result || !result.data) {
+                                    // Because this is the point where the check happens
+                                    // Here we check if the user has uploaded exam info before
+                                    console.log('Δεν υπάρχουν ακόμη στοιχεία εξέτασης.');
+                                    return;
+                                }
+
+                                // Set the flag to true if examination info is available//
+                                // if the examination info is available it will be true for sure
+                                hasExaminationInfo = true; 
+
+                                const { date, time, type, location_or_link } = result.data;     // Get the server answer    
+                                document.getElementById('dateOfExamination').value = date.split('T')[0];    // Extract just the date, not the time
+                                document.getElementById('timeOfExamination').value = time;
+                                document.getElementById('examinationType').value = type;
+                                const event = new Event('change');   // This is used to trigger the change event on the select element
+                                // Dispatch the event to trigger the change event listener, used to add the inputs dynamically 
+                                document.getElementById('examinationType').dispatchEvent(event);
+
+                                // Gets the type and shows the correct field -> location_or_link
+                                setTimeout(() => {
+                                    if (type === 'Διά Ζώσης') {
+                                        document.getElementById('examinationRoom').value = location_or_link;
+                                        lockExaminationFields();
+                                    } else if (type === 'Διαδικτυακά') {
+                                        document.getElementById('examinationLink').value = location_or_link;
                                     }
+                                }, 100);
+                            })
+                            .catch(err => {
+                                console.error('Σφάλμα κατά το fetch των στοιχείων εξέτασης:', err);
+                            });
 
-                                    // Set the flag to true if examination info is available//
-                                    // if the examination info is available it will be true for sure
-                                    hasExaminationInfo = true; 
+                            fetch(`/get-grades/${thesis.thesis_id}`)
+                            .then(res => {
+                                if (!res.ok) throw new Error('Network response was not ok');
+                                return res.json();
+                            })
+                            .then(gradesData => {
+                                const grades = gradesData.grades;
+                                // The followings are used to show the nimertis link if it is already submitted
+                                // and to allow the user to submit it if it is not submitted yet
+                                const existingNimertis = window.currentThesis?.nimertis_link || '';
+                                const isReadonly = existingNimertis ? 'readonly' : '';
+                                const hideSaveBtn = existingNimertis ? 'style="display: none;"' : '';
+                                const outlineClass = existingNimertis ? 'bordeaux-outline' : '';
+                                if (Array.isArray(grades) && grades.length > 0) {
+                                    // Create a container for the protocol content
+                                    // if the 3 grades have been submitted
+                                    const gradesInfo = document.getElementById('gradesInfo');
+                                    gradesInfo.innerHTML = `
+                                        <div class="d-flex align-items-center">
+                                            <i class="fa-solid fa-file-signature text-bordeaux me-2 fs-4" aria-hidden="true"></i>
+                                            <h5 class="mb-0 align-middle" style="line-height: 1.2;">Πρακτικό Εξέτασης</h5>
+                                        </div>
+                                        <!-- Space added -->
+                                        <div class="my-3"></div>
+                                        <p>Το πρακτικό της εξέτασης έχει ολοκληρωθεί και μπορείτε να δείτε συνοπτικά τις αξιολογήσεις σας παρακάτω:</p>
+                                        <ul>
+                                        ${grades.map(grade => {
+                                            const isInstructor = window.currentThesis && grade.professor_full_name === window.currentThesis.full_instructor_name;
+                                            const roleText = isInstructor ? ' (Επιβλέπων)' : '';
+                                            return `<li><strong>${grade.professor_full_name}${roleText}:</strong> ${grade.grade}</li>`;
+                                        }).join('')}
+                                        </ul>
+                                        <div class="d-flex align-items-center mb-2" style="max-width: 600px;">
+                                            <div style="min-width: 300px;">
+                                                <p class="mb-0">Αναλυτικά το αρχείο πρακτικού εξέτασης είναι διαθέσιμο:</p>
+                                            </div>
+                                            <button class="btn btn-outline-bordeaux w-100 ms-2" id="downloadProtocolBtn">
+                                                Εμφάνιση Πρακτικού σε μορφή HTML
+                                            </button>
+                                        </div>
 
-                                    const { date, time, type, location_or_link } = result.data;     // Get the server answer    
-                                    document.getElementById('dateOfExamination').value = date.split('T')[0];    // Extract just the date, not the time
-                                    document.getElementById('timeOfExamination').value = time;
-                                    document.getElementById('examinationType').value = type;
-                                    const event = new Event('change');   // This is used to trigger the change event on the select element
-                                    // Dispatch the event to trigger the change event listener, used to add the inputs dynamically 
-                                    document.getElementById('examinationType').dispatchEvent(event);
+                                        <!-- On click event for the download button, so the function is called -->
+                                        <div class="d-flex align-items-center mb-2" style="max-width: 600px;">
+                                            <div style="min-width: 300px;">
+                                                <p class="mb-0">Μπορείτε να εξάγετε το αρχείο και σε μορφή PDF:</p>
+                                            </div>
+                                            <button class="btn btn-outline-bordeaux w-100 ms-2" onclick="downloadPDF()">
+                                                Κατέβασε το Πρακτικό σε PDF
+                                            </button>
+                                        </div>
 
-                                    // Gets the type and shows the correct field -> location_or_link
+                                        <div class="d-flex align-items-center mb-2" style="max-width: 600px;">
+                                            <div style="min-width: 300px;">
+                                                <p class="mb-0">Καταχωρήστε τον σύνδεσμο για το αποθετήριο Νημερτής:</p>
+                                            </div>
+                                            <input type="text" id="nimertisLink" class="form-control ms-2 me-2 ${outlineClass}" placeholder="https://nimertis.example.com" value="${existingNimertis}" ${isReadonly} />
+                                            <button id="saveNimertisBtn" class="btn btn-outline-bordeaux" ${hideSaveBtn}>
+                                                Καταχώρηση
+                                            </button>
+                                            <button id="editNimertisBtn" class="btn btn-outline-bordeaux ms-2" ${existingNimertis ? '' : 'style="display: none;"'}>
+                                                Αλλαγή
+                                            </button>
+                                        </div>
+                                    `;
+                                    gradesInfo.style.display = 'block'; 
+
+                                    // Add the event listener for the download button, set a timeout to ensure the button is available
+                                    // Because it is created using innerHTML
                                     setTimeout(() => {
-                                        if (type === 'Διά Ζώσης') {
-                                            document.getElementById('examinationRoom').value = location_or_link;
-                                            lockExaminationFields();
-                                        } else if (type === 'Διαδικτυακά') {
-                                            document.getElementById('examinationLink').value = location_or_link;
+                                        const downloadBtn = document.getElementById('downloadProtocolBtn');
+                                        if (downloadBtn) {
+                                            downloadBtn.addEventListener('click', () => {
+                                                const thesisId = window.currentThesis?.thesis_id;
+                                                if (thesisId) {
+                                                    window.open(`/generate-protocol/${thesisId}`, '_blank');
+                                                } else {
+                                                    showCustomAlert('Σφάλμα: Δεν εντοπίστηκε διπλωματική εργασία.');
+                                                }
+                                            });
                                         }
                                     }, 100);
-                                })
-                                .catch(err => {
-                                    console.error('Σφάλμα κατά το fetch των στοιχείων εξέτασης:', err);
-                                });
 
-                                fetch(`/get-grades/${thesis.thesis_id}`)
-                                .then(res => {
-                                    if (!res.ok) throw new Error('Network response was not ok');
-                                    return res.json();
-                                })
-                                .then(gradesData => {
-                                    const grades = gradesData.grades;
-                                    if (Array.isArray(grades) && grades.length > 0) {
-                                        // Δημιουργία ενός νέου container για το Πρακτικό Εξέτασης
-                                        const gradesInfo = document.getElementById('gradesInfo');
-                                        gradesInfo.innerHTML = `
-                                            <div class="d-flex align-items-center">
-                                                <i class="fa-solid fa-file-signature text-bordeaux me-2 fs-4" aria-hidden="true"></i>
-                                                <h5 class="mb-0 align-middle" style="line-height: 1.2;">Πρακτικό Εξέτασης</h5>
-                                            </div>
-                                            <!-- Space added -->
-                                            <div class="my-3"></div>
-                                            <p>Το πρακτικό της εξέτασης έχει ολοκληρωθεί και μπορείτε να δείτε συνοπτικά τις αξιολογήσεις σας παρακάτω:</p>
-                                            <ul>
-                                            ${grades.map(grade => {
-                                                const isInstructor = window.currentThesis && grade.professor_full_name === window.currentThesis.full_instructor_name;
-                                                const roleText = isInstructor ? ' (Επιβλέπων)' : '';
-                                                return `<li><strong>${grade.professor_full_name}${roleText}:</strong> ${grade.grade}</li>`;
-                                            }).join('')}
-                                            </ul>
-                                            <div class="d-flex align-items-center gap-2 mb-2">
-                                                <p class="mb-0">Αναλυτικά το αρχείο πρακτικού εξέτασης είναι διαθέσιμο:</p>
-                                                <button class="btn btn-outline-bordeaux" id="downloadProtocolBtn">
-                                                    Εμφάνιση Πρακτικού σε μορφή HTML
-                                                </button>
-                                            </div>
+                                    // Add the event listener for the nimertis link
+                                    setTimeout(() => {
+                                        // Get the DOM elements that are used for the nimertis link functionality
+                                        const saveBtn = document.getElementById('saveNimertisBtn');
+                                        const linkInput = document.getElementById('nimertisLink');
+                                        const editBtn = document.getElementById('editNimertisBtn');
 
-                                            <!-- On click event for the download button, so the function is called -->
-                                            <div class="d-flex align-items-center gap-2">
-                                                <p class="mb-0">Μπορείτε να εξάγετε το αρχείο και σε μορφή PDF:</p>
-                                                <button class="btn btn-outline-bordeaux" onclick="downloadPDF()">
-                                                    Κατέβασε το Πρακτικό σε PDF
-                                                </button>
-                                            </div>
-                                        `;
-                                        gradesInfo.style.display = 'block'; 
+                                        // Edit link button
+                                        if (editBtn && linkInput) {
+                                            // When the user presses the edit nimertis link button
+                                            editBtn.addEventListener('click', () => {
+                                                linkInput.removeAttribute('readonly');  // Remove the readonly attribute, so the user can change it 
+                                                linkInput.classList.remove('bordeaux-outline'); //  Remove the bordeaux outline that indicates the storage of a link
+                                                saveBtn.style.display = 'inline-block'; // Display the save button again
+                                                editBtn.style.display = 'none';         // Hide the edit button 
+                                            });
+                                        }
 
-                                        // Add the event listener for the download button, set a timeout to ensure the button is available
-                                        // Because it is created using innerHTML
-                                        setTimeout(() => {
-                                            const downloadBtn = document.getElementById('downloadProtocolBtn');
-                                            if (downloadBtn) {
-                                                downloadBtn.addEventListener('click', () => {
-                                                    const thesisId = window.currentThesis?.thesis_id;
-                                                    if (thesisId) {
-                                                        window.open(`/generate-protocol/${thesisId}`, '_blank');
+                                        // Save link button 
+                                        if (saveBtn && linkInput) {
+                                            // When the user presses the save link button 
+                                            saveBtn.addEventListener('click', () => {
+                                                const link = linkInput.value.trim();    // Get the link value, without any gaps
+                                                const thesisId = window.currentThesis?.thesis_id;   // Get the thesis id
+
+                                                // Validate the correct link
+                                                if (!link || !link.startsWith('http')) {
+                                                    showCustomAlert('Παρακαλώ εισάγετε έναν έγκυρο σύνδεσμο.');
+                                                    return;
+                                                }
+
+                                                // Store the link in the db
+                                                fetch('/save-nimertis-link', {
+                                                    method: 'POST',
+                                                    headers: {
+                                                        'Content-Type': 'application/json'
+                                                    },
+                                                    body: JSON.stringify({ thesis_id: thesisId, nimertis_link: link })
+                                                })
+                                                .then(res => res.json())
+                                                .then(result => {
+                                                    if (result.success) {
+                                                        showCustomAlert('Ο σύνδεσμος αποθηκεύτηκε με επιτυχία.');
+
+                                                        linkInput.setAttribute('readonly', true);   // Make it readonly after the submit
+                                                        linkInput.classList.add('bordeaux-outline');// Add colour styling to the input, so that the outline after the submit is bordeaux
+                                                        saveBtn.style.display = 'none';             // Hide the display button 
+
+                                                        // Show the edit button, so the user can change the link
+                                                        if (editBtn) {  // If for secure reason the edit button is not found
+                                                            editBtn.style.display = 'inline-block';
+                                                        }
                                                     } else {
-                                                        showCustomAlert('Σφάλμα: Δεν εντοπίστηκε διπλωματική εργασία.');
+                                                        showCustomAlert('Σφάλμα αποθήκευσης: ' + result.error);
                                                     }
+                                                })
+                                                .catch(() => {
+                                                    showCustomAlert('Σφάλμα δικτύου.');
                                                 });
-                                            }
-                                        }, 100);
-                                    }
-                                });
-                            } 
+                                            });
+                                        }
+                                    }, 100);
+                                }
+                            });
+                        } 
                     });
+                    
                     // The variables that will be used
                     const type = document.getElementById('examinationType');
                     const detailsContainer = document.getElementById('examinationDetailsContainer');
@@ -878,7 +966,7 @@
                 fileInput.parentElement.style.display = 'block';            // Reveal the file input field
                 fileInput.required = true;                                  // Make field required again
                 info.remove();                                              // Remove the info message
-                changeBtn.remove();                                        // Remove the change button
+                changeBtn.remove();                                         // Remove the change button
             };
 
             // Add the info and change button to the file input's parent element

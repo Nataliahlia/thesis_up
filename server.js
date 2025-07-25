@@ -36,6 +36,7 @@ app.use(require('./routes/thesis_completion.routes'));
 const { router: protocolRouter } = require('./routes/protocol.route');
 app.use(protocolRouter);
 app.use(require('./routes/protocol_pdf.route'));
+app.use(require('./routes/nimertis.route')); 
 
 const updatePasswords = require('./scripts/updatePasswords');
 

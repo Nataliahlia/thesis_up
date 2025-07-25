@@ -287,8 +287,8 @@ UC21: Select Committee Members (Student)
 1.	Student views their thesis. 
 2.	Student selects to view the examination report. 
 3.	System generates and displays the report in HTML.
-(νομιζω ενωνεται με 25)
-UC25: Record Library Repository Link
+
+✅ UC25: Record Library Repository Link
 •	Description: A Student records the link to their final thesis text in the library repository (Nemertis). 
 •	Actors: Student 
 •	Preconditions: Student is logged in and thesis is "Under Examination", and grades have been recorded. 
