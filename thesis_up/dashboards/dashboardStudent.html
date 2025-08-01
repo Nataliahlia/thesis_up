@@ -875,7 +875,7 @@
                         } else if (thesis.state === 'Περατωμένη') {
                             // If the thesis is completed, show the completed info section
                             // Find all the elements with the class card-body inside the thesisManagement div and hide them
-                            // Keep only the needed ones
+                            // Keep only the needed ones, the gap now hides 
                             document.querySelectorAll('#thesisManagement .card-body').forEach(body => {
                                 if (
                                     !body.contains(document.getElementById('completedInfo')) &&
@@ -916,6 +916,15 @@
                             // Show the chronological info section
                             const timelineContainer = document.getElementById('chronologicalInfo');
                             timelineContainer.style.display = 'block'; // Show the timeline section
+
+                            // Clear the old container, so that the data is shown only once, no duplicates
+                            timelineContainer.innerHTML = `
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <i class="fa-solid fa-clock text-bordeaux me-2 fs-4"></i>
+                                    <h5 class="mb-0 align-middle" style="line-height: 1.2;">Χρονολόγιο</h5>
+                                </div>
+                            `;
+
                             const timelineList = document.createElement('ul');  // Create a new list for the timeline
                             timelineList.className = 'list-unstyled ms-3';      // Hide the bullets and add some left margin
                             timelineContainer.appendChild(timelineList);        // Append the list to the timeline container
