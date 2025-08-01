@@ -107,25 +107,6 @@
             <div id="myThesis" class="list-group mt-4"></div>
         </div>
 
-        <!-- Student has a completed thesis -->
-         <div id="generalInfoCard" class="card p-4 mt-4 w-100" style="display: none;">
-    <h3 class="text-bordeaux">Γενικές Πληροφορίες</h3>
-    <p>Η διπλωματική σας έχει ολοκληρωθεί. Παρακάτω μπορείται να δείτε και να αναζητήσετε ορισμένες πληροφορίες</p>
-</div>
-
-<!-- Timeline Card -->
-<div id="timelineCard" class="card p-4 mt-4 w-100" style="display: none;">
-    <div class="d-flex align-items-center mb-3">
-        <i class="fas fa-stream me-3 text-bordeaux fs-3"></i>
-        <h3 class="text-bordeaux menu-text mb-0">Χρονολόγιο</h3>
-    </div>
-    
-    <ul id="timelineContent" class="timeline list-unstyled ms-2">
-        <!-- Οι ημερομηνίες θα μπαίνουν δυναμικά -->
-    </ul>
-</div>
-
-
         <!-- Custom Alert Modal -->
         <!-- Background overlay -->
         <div id="customAlert" class="custom-alert-backdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.4); z-index: 9999;">
@@ -287,25 +268,24 @@
             <div id="protocolContent" style="position: absolute; left: -9999px; top: 0;"></div>
 
             <!-- Student chooses to manage his/hers thesis and the state is Περατωμένη-->
-            <div id="completedInfo" style="display: none;" class="card p-4 mt-4">
-                <div class="d-flex align-items-center gap-2 mb-2">
-                    <i class="fa-solid fa-bars-staggered text-bordeaux me-2 fs-4" aria-hidden="true"></i>
-                    <h5 class="mb-0 align-middle" style="line-height: 1.2;">Γενικές Πληροφορίες Διπλωματικής</h5>
-                </div>
-                <div id="completedContent"></div>
-            </div> 
+            <div class="card-body">
+                <div id="completedInfo" style="display: none;" class="card mt-2 p-4 w-100 mx-auto">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="fa-solid fa-bars-staggered text-bordeaux me-2 fs-4" aria-hidden="true"></i>
+                        <h5 class="mb-0 align-middle" style="line-height: 1.2;">Γενικές Πληροφορίες Διπλωματικής</h5>
+                    </div>
+                    <div id="completedContent"></div>
+                </div> 
+            </div>
             <!-- The chronological information will be displayed here -->
-            <div id="chronologicalInfo" style="display: none;" class="card p-4 mt-4">
-                <div class="d-flex align-items-center gap-2 mb-2">
-                    <i class="fa-solid fa-clock text-bordeaux me-2 fs-4" aria-hidden="true"></i>
-                    <h5 class="mb-0 align-middle" style="line-height: 1.2;">Χρονολόγιο</h5>
-                </div>
-            </div> 
-
-
-
-
-
+            <div class="card-body">
+                <div id="chronologicalInfo" style="display: none;" class="card mt-2 p-4 w-100 mx-auto">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="fa-solid fa-clock text-bordeaux me-2 fs-4" aria-hidden="true"></i>
+                        <h5 class="mb-0 align-middle" style="line-height: 1.2;">Χρονολόγιο</h5>
+                    </div>
+                </div> 
+            </div>
         </div>
     </div>
 
@@ -778,8 +758,8 @@
                                             return `<li><strong>${grade.professor_full_name}${roleText}:</strong> ${grade.grade}</li>`;
                                         }).join('')}
                                         </ul>
-                                        <div class="d-flex align-items-center mb-2" style="max-width: 600px;">
-                                            <div style="min-width: 300px;">
+                                        <div class="d-flex align-items-center mb-2" style="max-width: 750px;">
+                                            <div style="min-width: 420px;">
                                                 <p class="mb-0">Αναλυτικά το αρχείο πρακτικού εξέτασης είναι διαθέσιμο:</p>
                                             </div>
                                             <button class="btn btn-outline-bordeaux w-100 ms-2" id="downloadProtocolBtn">
@@ -788,8 +768,8 @@
                                         </div>
 
                                         <!-- On click event for the download button, so the function is called -->
-                                        <div class="d-flex align-items-center mb-2" style="max-width: 600px;">
-                                            <div style="min-width: 300px;">
+                                        <div class="d-flex align-items-center mb-2" style="max-width: 750px;">
+                                            <div style="min-width: 420px;">
                                                 <p class="mb-0">Μπορείτε να εξάγετε το αρχείο και σε μορφή PDF:</p>
                                             </div>
                                             <button class="btn btn-outline-bordeaux w-100 ms-2" onclick="downloadPDF()">
@@ -797,8 +777,8 @@
                                             </button>
                                         </div>
 
-                                        <div class="d-flex align-items-center mb-2" style="max-width: 600px;">
-                                            <div style="min-width: 300px;">
+                                        <div class="d-flex align-items-center mb-2" style="max-width: 650px;">
+                                            <div style="min-width: 420px;">
                                                 <p class="mb-0">Καταχωρήστε τον σύνδεσμο για το αποθετήριο Νημερτής:</p>
                                             </div>
                                             <input type="text" id="nimertisLink" class="form-control ms-2 me-2 ${outlineClass}" placeholder="https://nimertis.example.com" value="${existingNimertis}" ${isReadonly} />
@@ -895,9 +875,17 @@
                         } else if (thesis.state === 'Περατωμένη') {
                             // If the thesis is completed, show the completed info section
                             // Find all the elements with the class card-body inside the thesisManagement div and hide them
+                            // Keep only the needed ones
                             document.querySelectorAll('#thesisManagement .card-body').forEach(body => {
-                                body.style.display = 'none';
+                                if (
+                                    !body.contains(document.getElementById('completedInfo')) &&
+                                    !body.contains(document.getElementById('chronologicalInfo')) && 
+                                    !body.contains(document.getElementById('gradesInfo'))
+                                ) {
+                                    body.style.display = 'none';
+                                }
                             });
+
                             // Show the completed info section
                             const completedDiv = document.getElementById('completedInfo');
                             completedDiv.style.display = 'block';
@@ -932,74 +920,164 @@
                             timelineList.className = 'list-unstyled ms-3';      // Hide the bullets and add some left margin
                             timelineContainer.appendChild(timelineList);        // Append the list to the timeline container
 
+                            // Grades info as the last element
+                            const gradesInfo = document.getElementById('gradesInfo');
+                            if (gradesInfo && chronologicalInfo) {
+                                // Create a spacer div, so that the grades info is not too close to the chronological info
+                                const spacer = document.createElement('div');
+                                spacer.style.height = '2rem'; // Add the same spacing as the other sections
+                                // Needed 2 because the above card div does not have a margin-bottom
+
+                                chronologicalInfo.insertAdjacentElement('afterend', spacer);    // Insert the spacer after the chronological info section
+                                spacer.insertAdjacentElement('afterend', gradesInfo);           // Insert the grades info after the spacer
+                            }
+
                             fetch(`/get-thesis-events/${thesis.thesis_id}`)
-                                .then(res => res.json())
-                                .then(data => {
-                                    // If the fetch was successful and data was returned
-                                    if (data.events && data.events.length > 0) {
-                                        const events = data.events;
+                            .then(res => res.json())
+                            .then(data => {
+                                // If the fetch was successful and data was returned
+                                if (data.events && data.events.length > 0) {
+                                    const events = data.events;
 
-                                        // Create the timeline HTML structure
-                                        let timelineHTML = '<div class="timeline-arrows">';
+                                    // Create the timeline HTML structure
+                                    let timelineHTML = '<div class="timeline-arrows">';
+                                    
+                                    for (let i = 0; i < events.length - 1; i++) {
+                                        const currentStageNumber = i + 1; // Stage number for the old state
+                                        const nextStageNumber = currentStageNumber + 1;    // Stage number for the next state
 
-                                        for (let i = 0; i < events.length - 1; i++) {
-                                            const currentStageNumber = i + 1; // Stage number for the old state
-                                            const nextStageNumber = i + 2;    // Stage number for the next state
+                                        const progressPercent = ((currentStageNumber / 5) * 100); // Calculate the progress percentage for the old state
+                                        const nextProgressPercent = ((nextStageNumber / 5) * 100); // Calculate the progress percentage for the next state
 
-                                            const progressPercent = ((currentStageNumber / 5) * 100); // Calculate the progress percentage for the old state
-                                            const nextProgressPercent = ((nextStageNumber / 5) * 100); // Calculate the progress percentage for the next state
+                                        const currentStage = events[i];     // Current stage object
+                                        const nextStage = events[i + 1];    // Next stage object
 
-                                            const currentStage = events[i];     // Current stage object
-                                            const nextStage = events[i + 1];    // Next stage object
+                                        const currentTicks = i + 2; // The ticks that indicate the number of stages completed
 
-                                            const currentTicks = i + 2; // The ticks that indicate the number of stages completed
-
-                                            // The HTML consists of three columns, one and three are for the states and the second shows the arrow and the date that the change happened
-                                            timelineHTML += `
-                                                <div class="timeline-step d-flex align-items-start mb-4">
-                                                    <div class="status me-4" style="text-align: center; width: 260px;">
-                                                        <div style="font-weight: 500;">${currentStage.status}</div>
-                                                        <div class="progress mt-1" style="height: 20px; width: 260px; font-size: 0.8rem;">
-                                                            <div class="progress-bar bg-bordeaux d-flex justify-content-center align-items-center" role="progressbar" style="width: ${progressPercent}%; white-space: nowrap;">
-                                                                Στάδιο ${currentStageNumber}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="arrow-container d-flex flex-column align-items-center me-4">
-                                                    <span class="date">${new Date(nextStage.event_date).toLocaleDateString('el-GR')}</span>
-                                                    <div class="custom-arrow"></div>
-                                                    </div>
-                                                    <div class="status" style="text-align: center; width: 260px;">
-                                                        <div style="font-weight: 500;">${nextStage.status}</div>
-                                                        <div class="progress-ticks mt-1">
-                                                            <div class="progress mt-1" style="height: 20px; width: 260px; font-size: 0.8rem;">
-                                                                <div class="progress-bar bg-bordeaux d-flex justify-content-center align-items-center" role="progressbar" style="width: ${nextProgressPercent}%; white-space: nowrap;">
-                                                                    Στάδιο ${nextStageNumber}
-                                                                </div>
-                                                            </div>
-                                                            <div class="ticks">
-                                                                ${'<i class="fa-solid fa-check text-bordeaux"></i>'.repeat(currentTicks)}
-                                                            </div>
+                                        // The HTML consists of three columns, one and three are for the states and the second shows the arrow and the date that the change happened
+                                        timelineHTML += `
+                                            <div class="timeline-step d-flex align-items-start mb-4">
+                                                <div class="status me-4" style="text-align: center; width: 260px;">
+                                                    <div style="font-weight: 500;">${currentStage.status}</div>
+                                                    <div class="progress mt-1" style="height: 20px; width: 260px; font-size: 0.8rem;">
+                                                        <div class="progress-bar bg-bordeaux d-flex justify-content-center align-items-center" role="progressbar" style="width: ${progressPercent}%; white-space: nowrap;">
+                                                            Στάδιο ${currentStageNumber}
                                                         </div>
                                                     </div>
                                                 </div>
-                                                `;
-                                            }
+                                                <div class="arrow-container d-flex flex-column align-items-center me-4">
+                                                <span class="date">${new Date(nextStage.event_date).toLocaleDateString('el-GR')}</span>
+                                                <div class="custom-arrow"></div>
+                                                </div>
+                                                <div class="status me-4" style="text-align: center; width: 260px;">
+                                                    <div style="font-weight: 500;">${nextStage.status}</div>
+                                                    <!-- Give bigger width now, so that the ticks can be displayed without overlapping the bar -->
+                                                    <div class="progress-ticks mt-1" style="width: 360px;">
+                                                        <div class="progress mt-1" style="height: 20px; width: 260px; font-size: 0.8rem;">
+                                                            <div class="progress-bar bg-bordeaux d-flex justify-content-center align-items-center" role="progressbar" style="width: ${nextProgressPercent}%; white-space: nowrap;">
+                                                                Στάδιο ${nextStageNumber}
+                                                            </div>
+                                                        </div>
+                                                        <div class="ticks">
+                                                            ${'<i class="fa-solid fa-check text-bordeaux"></i>'.repeat(currentTicks)}
+                                                        </div> 
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `;
+                                    }
 
-                                            timelineHTML += '</div>';               // Close the wrapper
-                                            timelineList.innerHTML = timelineHTML;  // Set the inner HTML of the timeline list to the one created above
-                                            } else {
-                                                timelineList.innerHTML = '<p>Δεν έχουν καταγραφεί γεγονότα</p>';
-                                            }
-                                        })
-                                        .catch(() => {
-                                            timelineList.innerHTML = '<p>Σφάλμα κατά τη φόρτωση των γεγονότων</p>';
-                                        });
-                                        
-                                        // Show the protocol info section
+                                    timelineHTML += '</div>';               // Close the wrapper
+                                    timelineList.innerHTML = timelineHTML;  // Set the inner HTML of the timeline list to the one created above
+                                } else {
+                                    timelineList.innerHTML = '<p>Δεν έχουν καταγραφεί γεγονότα</p>';
+                                }
+                            })
+                            .catch(() => {
+                                timelineList.innerHTML = '<p>Σφάλμα κατά τη φόρτωση των γεγονότων</p>';
+                            });
+                                
+                            // Show the protocol info section
+                            // This section is similar to the one used in Υπό Εξέταση, there are small changes made (buttons etc)
+                            fetch(`/get-grades/${thesis.thesis_id}`)
+                            .then(res => {
+                                if (!res.ok) throw new Error('Network response was not ok');
+                                return res.json();
+                            })
+                            .then(gradesData => {
+                                const grades = gradesData.grades;
+                                // The followings are used to show the nimertis link if it is already submitted
+                                // and to allow the user to submit it if it is not submitted yet
+                                const existingNimertis = window.currentThesis?.nimertis_link || '';
+                                const isReadonly = existingNimertis ? 'readonly' : '';
+                                const hideSaveBtn = existingNimertis ? 'style="display: none;"' : '';
+                                const outlineClass = existingNimertis ? 'bordeaux-outline' : '';
+                                if (Array.isArray(grades) && grades.length > 0) {
+                                    // Create a container for the protocol content
+                                    // if the 3 grades have been submitted
+                                    gradesInfo.innerHTML = `
+                                        <div class="d-flex align-items-center">
+                                            <i class="fa-solid fa-file-signature text-bordeaux me-2 fs-4" aria-hidden="true"></i>
+                                            <h5 class="mb-0 align-middle" style="line-height: 1.2;">Πρακτικό Εξέτασης</h5>
+                                        </div>
+                                        <!-- Space added -->
+                                        <div class="my-3"></div>
+                                        <p>Το πρακτικό της εξέτασης έχει ολοκληρωθεί και μπορείτε να δείτε συνοπτικά τις αξιολογήσεις σας παρακάτω:</p>
+                                        <ul>
+                                        ${grades.map(grade => {
+                                            const isInstructor = window.currentThesis && grade.professor_full_name === window.currentThesis.full_instructor_name;
+                                            const roleText = isInstructor ? ' (Επιβλέπων)' : '';
+                                            return `<li><strong>${grade.professor_full_name}${roleText}:</strong> ${grade.grade}</li>`;
+                                        }).join('')}
+                                        </ul>
+                                        <div class="d-flex align-items-center mb-2" style="max-width: 750px;">
+                                            <div style="min-width: 420px;">
+                                                <p class="mb-0">Αναλυτικά το αρχείο πρακτικού εξέτασης είναι διαθέσιμο:</p>
+                                            </div>
+                                            <button class="btn btn-outline-bordeaux w-100 ms-2" id="downloadProtocolBtn">
+                                                Εμφάνιση Πρακτικού σε μορφή HTML
+                                            </button>
+                                        </div>
+
+                                        <!-- On click event for the download button, so the function is called -->
+                                        <div class="d-flex align-items-center mb-2" style="max-width: 750px;">
+                                            <div style="min-width: 420px;">
+                                                <p class="mb-0">Μπορείτε να εξάγετε το αρχείο και σε μορφή PDF:</p>
+                                            </div>
+                                            <button class="btn btn-outline-bordeaux w-100 ms-2" onclick="downloadPDF()">
+                                                Κατέβασε το Πρακτικό σε PDF
+                                            </button>
+                                        </div>
+
+                                        <div class="d-flex align-items-center mb-2" style="max-width: 650px;">
+                                            <div style="min-width: 420px;">
+                                                <p class="mb-0">Καταχωρημένος σύνδεσμος για το αποθετήριο Νημερτής:</p>
+                                            </div>
+                                            <input type="text" id="nimertisLink" class="form-control ms-2 me-2 ${outlineClass}" placeholder="https://nimertis.example.com" value="${existingNimertis}" ${isReadonly} />
+                                        </div>
+                                    `;
+                                    gradesInfo.style.display = 'block'; 
+
+                                    // Add the event listener for the download button, set a timeout to ensure the button is available
+                                    // Because it is created using innerHTML
+                                    setTimeout(() => {
+                                        const downloadBtn = document.getElementById('downloadProtocolBtn');
+                                        if (downloadBtn) {
+                                            downloadBtn.addEventListener('click', () => {
+                                                const thesisId = window.currentThesis?.thesis_id;
+                                                if (thesisId) {
+                                                    window.open(`/generate-protocol/${thesisId}`, '_blank');
+                                                } else {
+                                                    showCustomAlert('Σφάλμα: Δεν εντοπίστηκε διπλωματική εργασία.');
+                                                }
+                                            });
+                                        }
+                                    }, 100);
+                                }
+                            });
                         }
                     });
-                    
+                
                     // The variables that will be used
                     const type = document.getElementById('examinationType');
                     const detailsContainer = document.getElementById('examinationDetailsContainer');

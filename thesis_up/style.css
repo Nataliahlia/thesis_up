@@ -219,8 +219,11 @@ body {
 
 .ticks {
   display: flex;
-  gap: 2px; /* Απόσταση μεταξύ των ticks */
+  align-items: center;  /* Κεντράρει κάθετα τα ticks με την μπάρα */
+  gap: 2px;             /* Απόσταση μεταξύ των ticks */
+  margin-left: 5px;     /* Απόσταση από τη μπάρα */
 }
+
 
 .ticks i {
   font-size: 0.8rem;

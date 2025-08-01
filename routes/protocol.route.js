@@ -147,6 +147,13 @@ async function createProtocolHtml(thesisId) {
 }
 
 router.get('/generate-protocol/:thesis_id', async (req, res) => {
+
+    // Validate thesis_id parameter
+    if (!req.params.thesis_id || isNaN(req.params.thesis_id)) {
+        return res.status(400).send('Invalid thesis ID.');
+    }
+
+    // Try to generate the protocol HTML
     try {
         const html = await createProtocolHtml(req.params.thesis_id);    // Generate the protocol HTML
         res.setHeader('Content-Type', 'text/html'); // Set the response type (HTML) to the client 
