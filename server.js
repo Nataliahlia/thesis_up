@@ -37,6 +37,7 @@ const { router: protocolRouter } = require('./routes/protocol.route');
 app.use(protocolRouter);
 app.use(require('./routes/protocol_pdf.route'));
 app.use(require('./routes/nimertis.route')); 
+app.use(require('./routes/thesis_events.route')); // Thesis events routes
 
 const updatePasswords = require('./scripts/updatePasswords');
 

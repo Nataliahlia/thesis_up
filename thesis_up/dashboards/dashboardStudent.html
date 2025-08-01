@@ -107,6 +107,25 @@
             <div id="myThesis" class="list-group mt-4"></div>
         </div>
 
+        <!-- Student has a completed thesis -->
+         <div id="generalInfoCard" class="card p-4 mt-4 w-100" style="display: none;">
+    <h3 class="text-bordeaux">Γενικές Πληροφορίες</h3>
+    <p>Η διπλωματική σας έχει ολοκληρωθεί. Παρακάτω μπορείται να δείτε και να αναζητήσετε ορισμένες πληροφορίες</p>
+</div>
+
+<!-- Timeline Card -->
+<div id="timelineCard" class="card p-4 mt-4 w-100" style="display: none;">
+    <div class="d-flex align-items-center mb-3">
+        <i class="fas fa-stream me-3 text-bordeaux fs-3"></i>
+        <h3 class="text-bordeaux menu-text mb-0">Χρονολόγιο</h3>
+    </div>
+    
+    <ul id="timelineContent" class="timeline list-unstyled ms-2">
+        <!-- Οι ημερομηνίες θα μπαίνουν δυναμικά -->
+    </ul>
+</div>
+
+
         <!-- Custom Alert Modal -->
         <!-- Background overlay -->
         <div id="customAlert" class="custom-alert-backdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.4); z-index: 9999;">
@@ -184,7 +203,7 @@
             <p class="text-muted mt-3">* Επεξεργασία Στοιχείων Επικοινωνίας. Μόνο στα πεδία με αστερίσκο μπορεί να γίνει επεξεργασία</p>
         </div>
 
-        <!-- Student chooses to manage his/hers thesis -->
+        <!-- Student chooses to manage his/hers thesis-->
         <div id="thesisManagement" style="display: none;" class="card p-4 mt-4">
             <div class="d-flex align-items-center">
                 <i class="fa-solid fa-list-check me-3 text-bordeaux fs-3"></i>
@@ -220,6 +239,7 @@
                     </div>
                 </form>
             </div>
+            <!-- Student chooses to manage his/hers thesis and the state is Υπό Εξέταση-->
             <div class="card-body">
                 <form id="timeOfExaminationForm" style="display: none;" class="card p-4 mt-2 w-100 mx-auto">
                     <!-- Student saves the date and the way of examination -->
@@ -265,6 +285,27 @@
             </div>
             <!-- This is the protocol content that will be used to create the pdf, as the html opens in a new tab -->
             <div id="protocolContent" style="position: absolute; left: -9999px; top: 0;"></div>
+
+            <!-- Student chooses to manage his/hers thesis and the state is Περατωμένη-->
+            <div id="completedInfo" style="display: none;" class="card p-4 mt-4">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="fa-solid fa-bars-staggered text-bordeaux me-2 fs-4" aria-hidden="true"></i>
+                    <h5 class="mb-0 align-middle" style="line-height: 1.2;">Γενικές Πληροφορίες Διπλωματικής</h5>
+                </div>
+                <div id="completedContent"></div>
+            </div> 
+            <!-- The chronological information will be displayed here -->
+            <div id="chronologicalInfo" style="display: none;" class="card p-4 mt-4">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="fa-solid fa-clock text-bordeaux me-2 fs-4" aria-hidden="true"></i>
+                    <h5 class="mb-0 align-middle" style="line-height: 1.2;">Χρονολόγιο</h5>
+                </div>
+            </div> 
+
+
+
+
+
         </div>
     </div>
 
@@ -367,13 +408,39 @@
                         const theThesis = document.getElementById('myThesis');
                         theThesis.innerHTML = ''; // Clear old content
 
+                        // Create the progression bar 
+                        let stageNumber = 0;    // This is used for the stage number
+                        let stageLabel = thesis.state;  // This is used for the stage name
+                        let progressPercent = 0;  // This is used for the progress percentage
+
+                        switch (thesis.state) {
+                            case "Υπό Ανάθεση":
+                                stageNumber = 2;
+                                stageLabel = "Υπό Ανάθεση";
+                                break;
+                            case "Ενεργή":
+                                stageNumber = 3;
+                                stageLabel = "Ενεργή";
+                                break;
+                            case "Υπό Εξέταση":
+                                stageNumber = 4;
+                                stageLabel = "Υπό Εξέταση";
+                                break;
+                            case "Περατωμένη":
+                                stageNumber = 5;
+                                stageLabel = "Περατωμένη";
+                                break;
+                        }
+
+                        progressPercent = (stageNumber / 5) * 100;  // Calculate the progress percentage, according to the stage number
+
                         const item = document.createElement('div');
                         item.className = 'list-group-item';
                         // No change when hovering ->  style="pointer-events: none;"
                         item.innerHTML = `
-                            <div class="d-flex justify-content-between align-items-center">
-                                <h3><strong>Θέμα:</strong> ${thesis.title ? thesis.title : 'Δεν έχει ορισθεί θέμα'}</h3>
-                                <span class="btn btn-outline-bordeaux btn-sm border border-bordeaux rounded-pill px-3 py-2" style="pointer-events: none;">${thesis.state}</span>
+                            <div class="d-flex justify-content-between align-items-center" style="min-height: 60px; pointer-events: none;">
+                                <h3 class="my-auto"><strong>Θέμα:</strong> ${thesis.title}</h3>
+                                <span class="btn bordeaux-outline btn-sm my-auto rounded-pill">${thesis.state}</span>
                             </div>
                             <hr class="my-3">
                             <p><strong class="text-bordeaux">Περιγραφή:</strong><br> ${thesis.description ? thesis.description : 'Δεν έχει ορισθεί περιγραφή'}</p>
@@ -381,8 +448,49 @@
                             <p><strong class="text-bordeaux">Επιβλέπων Καθηγητής:</strong> ${thesis.full_instructor_name ? thesis.full_instructor_name : 'Δεν έχει ορισθεί επιβλέπων καθηγητής'}</p>
                             <p><strong class="text-bordeaux">Μέλη Τριμελούς:</strong> ${(thesis.member1 && thesis.member2) ? `${thesis.full_instructor_name} (Επιβλέπων), ${thesis.full_mentor_name}, ${thesis.full_mentortwo_name}` : 'Δεν έχουν ορισθεί μέλη τριμελούς'}</p>
                             <p>${thesis.days_since_activation ? thesis.days_since_activation + ' ημέρες έχουν παρέλθει από την επίσημη ανάθεση' : 'Δεν έχει γίνει ακόμη επίσημη ανάθεση'}</p>
+
+                            <div class="mt-3">
+                            <hr>
+                                <div class="mt-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="fas fa-tasks text-bordeaux me-2"></i>
+                                        <strong class="text-bordeaux">Πρόοδος Διπλωματικής:</strong>
+                                    </div>
+                                    <div class="progress" style="height: 22px;">
+                                        <div class="progress-bar bg-bordeaux fw-bold" role="progressbar" style="width: ${progressPercent}%;">
+                                            Στάδιο ${stageNumber} από 5: ${stageLabel}
+                                        </div>
+                                    </div>
+                                </div>
                         `;
                         theThesis.appendChild(item);
+
+                        // Check if the global var for the back button is set to true
+                        if (window.fromCompletedInfo) {
+                            // Get the div used for the thesis list
+                            const thesisList = document.getElementById('thesisList');
+
+                            // Wrapper to center the button
+                            const btnWrapper = document.createElement('div');
+                            btnWrapper.className = 'd-flex justify-content-center mt-3';
+
+                            // Create the back button with its styling
+                            const backBtn = document.createElement('button');
+                            backBtn.className = 'btn btn-outline-bordeaux';
+                            backBtn.innerHTML = `<i class="fa-solid fa-arrow-left me-2"></i> Επιστροφή στη Διαχείριση Διπλωματικής`;
+
+                            // Add an event listener to the back button
+                            backBtn.addEventListener('click', function () {
+                                document.getElementById('manageThesis').click();
+                                backBtn.remove(); // Remove the button after clicking
+                            });
+
+                            // Append the button wrapper to the thesis list
+                            btnWrapper.appendChild(backBtn);
+                            thesisList.appendChild(btnWrapper);
+
+                            window.fromCompletedInfo = false; // Reset flag
+                        }
                         theThesis.style.display = 'block'; // Make sure the div is visible
                 })
                 .catch(error => {
@@ -478,7 +586,7 @@
         });
     </script>
 
-     <script>
+    <script>
         let hasExaminationInfo = false;     // This is the variable that will be used to check if the datetime info has been uploaded
         document.addEventListener('DOMContentLoaded', function () {
             // Step 1 -> Form, no data are send here
@@ -784,7 +892,112 @@
                                     }, 100);
                                 }
                             });
-                        } 
+                        } else if (thesis.state === 'Περατωμένη') {
+                            // If the thesis is completed, show the completed info section
+                            // Find all the elements with the class card-body inside the thesisManagement div and hide them
+                            document.querySelectorAll('#thesisManagement .card-body').forEach(body => {
+                                body.style.display = 'none';
+                            });
+                            // Show the completed info section
+                            const completedDiv = document.getElementById('completedInfo');
+                            completedDiv.style.display = 'block';
+
+                            // Display the completed thesis information
+                            const completedContent = document.getElementById('completedContent');
+                            completedContent.innerHTML = `
+                                <div class="d-flex justify-content-between align-items-center" style="min-height: 60px; pointer-events: none;">
+                                    <p><strong class="text-bordeaux">Θέμα:</strong><br> ${thesis.title}</p>
+                                    <span class="btn bordeaux-outline btn-sm my-auto rounded-pill">${thesis.state}</span>
+                                </div>
+                                <p><strong class="text-bordeaux">Περιγραφή:</strong><br> ${thesis.description}</p>
+                                <div class="mt-3">
+                                <hr>
+                                <p>Η διπλωματική εργασία, καθώς και η διαδικασία υποβολής, έχει ολοκληρωθεί. Για να δείτε περισσότερες λεπτομέρειες σχετικά με την διπλωματική σας, παρακαλώ επιλέξτε το παρακάτω κουμπί.</p>
+                                <div class="text-center mb-2">
+                                    <button class="btn btn-outline-bordeaux mt-3" id="moreInfoButton">
+                                        Για περισσότερες λεπτομέρειες πατήστε εδώ
+                                    </button>
+                                </div>
+                            `;
+                            // Add an event listener to the button to show more info
+                            document.getElementById('moreInfoButton').addEventListener('click', function () {
+                                window.fromCompletedInfo = true;    // Set the flag to true, so the back button will work correctly
+                                document.getElementById('viewMyThesis').click();    // Go to the view thesis section
+                            });
+
+                            // Show the chronological info section
+                            const timelineContainer = document.getElementById('chronologicalInfo');
+                            timelineContainer.style.display = 'block'; // Show the timeline section
+                            const timelineList = document.createElement('ul');  // Create a new list for the timeline
+                            timelineList.className = 'list-unstyled ms-3';      // Hide the bullets and add some left margin
+                            timelineContainer.appendChild(timelineList);        // Append the list to the timeline container
+
+                            fetch(`/get-thesis-events/${thesis.thesis_id}`)
+                                .then(res => res.json())
+                                .then(data => {
+                                    // If the fetch was successful and data was returned
+                                    if (data.events && data.events.length > 0) {
+                                        const events = data.events;
+
+                                        // Create the timeline HTML structure
+                                        let timelineHTML = '<div class="timeline-arrows">';
+
+                                        for (let i = 0; i < events.length - 1; i++) {
+                                            const currentStageNumber = i + 1; // Stage number for the old state
+                                            const nextStageNumber = i + 2;    // Stage number for the next state
+
+                                            const progressPercent = ((currentStageNumber / 5) * 100); // Calculate the progress percentage for the old state
+                                            const nextProgressPercent = ((nextStageNumber / 5) * 100); // Calculate the progress percentage for the next state
+
+                                            const currentStage = events[i];     // Current stage object
+                                            const nextStage = events[i + 1];    // Next stage object
+
+                                            const currentTicks = i + 2; // The ticks that indicate the number of stages completed
+
+                                            // The HTML consists of three columns, one and three are for the states and the second shows the arrow and the date that the change happened
+                                            timelineHTML += `
+                                                <div class="timeline-step d-flex align-items-start mb-4">
+                                                    <div class="status me-4" style="text-align: center; width: 260px;">
+                                                        <div style="font-weight: 500;">${currentStage.status}</div>
+                                                        <div class="progress mt-1" style="height: 20px; width: 260px; font-size: 0.8rem;">
+                                                            <div class="progress-bar bg-bordeaux d-flex justify-content-center align-items-center" role="progressbar" style="width: ${progressPercent}%; white-space: nowrap;">
+                                                                Στάδιο ${currentStageNumber}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="arrow-container d-flex flex-column align-items-center me-4">
+                                                    <span class="date">${new Date(nextStage.event_date).toLocaleDateString('el-GR')}</span>
+                                                    <div class="custom-arrow"></div>
+                                                    </div>
+                                                    <div class="status" style="text-align: center; width: 260px;">
+                                                        <div style="font-weight: 500;">${nextStage.status}</div>
+                                                        <div class="progress-ticks mt-1">
+                                                            <div class="progress mt-1" style="height: 20px; width: 260px; font-size: 0.8rem;">
+                                                                <div class="progress-bar bg-bordeaux d-flex justify-content-center align-items-center" role="progressbar" style="width: ${nextProgressPercent}%; white-space: nowrap;">
+                                                                    Στάδιο ${nextStageNumber}
+                                                                </div>
+                                                            </div>
+                                                            <div class="ticks">
+                                                                ${'<i class="fa-solid fa-check text-bordeaux"></i>'.repeat(currentTicks)}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                `;
+                                            }
+
+                                            timelineHTML += '</div>';               // Close the wrapper
+                                            timelineList.innerHTML = timelineHTML;  // Set the inner HTML of the timeline list to the one created above
+                                            } else {
+                                                timelineList.innerHTML = '<p>Δεν έχουν καταγραφεί γεγονότα</p>';
+                                            }
+                                        })
+                                        .catch(() => {
+                                            timelineList.innerHTML = '<p>Σφάλμα κατά τη φόρτωση των γεγονότων</p>';
+                                        });
+                                        
+                                        // Show the protocol info section
+                        }
                     });
                     
                     // The variables that will be used
@@ -1087,6 +1300,28 @@
             // Redirect to the download route
             window.location.href = `/download-protocol/${thesisId}`;
         }
+
+        // Handle the display and the hiding of the back button
+        document.addEventListener('DOMContentLoaded', function () {
+            // Get the menu items that will be used to handle the back button
+            const menuItems = [
+                document.getElementById('viewMyThesis'),
+                document.getElementById('manageThesis'),
+                document.getElementById('editButton')
+            ];
+
+            menuItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    // If the button was not pressed and the user choose something from the menu instead
+                    // We remove the back button and reset the global variable
+                    if (!window.fromCompletedInfo) {
+                        const backBtn = document.querySelector('#thesisList .btn-outline-bordeaux');
+                        if (backBtn) backBtn.remove();
+                        window.fromCompletedInfo = false;
+                    }
+                });
+            });
+        });
     </script>
 
 </body>

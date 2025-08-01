@@ -22,3 +22,4 @@ UPDATE thesis_topic
 SET nimertis_link = NULL
 WHERE thesis_id = 13;
 select * from thesis_topic;
+select * from thesis_topic where state = 'Περατωμένη';

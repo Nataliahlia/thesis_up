@@ -298,7 +298,7 @@ UC21: Select Committee Members (Student)
 2.	Student enters the Nemertis link. 
 3.	System saves the link.
 
-UC26: View Completed Thesis Information (Student)
+✅ UC26: View Completed Thesis Information (Student)
 •	Description: A Student can view information for their completed thesis, including status changes and examination report. 
 •	Actors: Student 
 •	Preconditions: Student is logged in and thesis is "Completed". 
