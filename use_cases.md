@@ -243,7 +243,6 @@ III. Student Use Cases
 1.	Student selects "Edit Profile". 
 2.	Student enters/modifies postal address, email, mobile, and landline phone. 
 3.	System validates and saves changes.
-// The email is only modified, it is used for the username
 
 UC21: Select Committee Members (Student)
 •	Description: A Student selects Instructors to invite as members of their Three-Member Committee. 

@@ -100,6 +100,27 @@ router.post('/myprofile-edit', (req, res) => {
 
         res.json({ success: true, message: 'Profile updated successfully' });
     });
+
+    // If the update is for email, update the users table as well
+    if (email && email !== current.email) {
+        console.log('Updating user email in users table');
+        console.log('Email', email);
+        console.log('Current email', current.email);
+
+        const updateUserQuery = `
+            UPDATE users 
+            SET email = ? 
+            WHERE id = ?
+        `;
+
+        connection.query(updateUserQuery, [email || current.email, studentId], (err) => {
+            if (err) {
+                console.error('User update error:', err);
+                return res.status(500).json({ success: false, error: 'Failed to update user email' });
+            }
+        });
+    }
+
   });
 });
 
