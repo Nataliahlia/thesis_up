@@ -39,6 +39,7 @@ app.use(require('./routes/protocol_pdf.route'));
 app.use(require('./routes/nimertis.route')); 
 app.use(require('./routes/thesis_events.route')); // Thesis events routes
 app.use(require('./routes/all_profs.route')); // All professors route
+app.use(require('./routes/logout.route')); // Logout route
 
 const updatePasswords = require('./scripts/updatePasswords');
 

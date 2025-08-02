@@ -28,17 +28,17 @@
 
                 <!-- Right side: Search bar, notification, and profile -->
                 <div class="d-flex align-items-center">
-                    <form class="d-flex me-3">
+                    <!-- <form class="d-flex me-3">
                         <input class="form-control" type="search" placeholder="Search..." aria-label="Search" style="width: 250px;">
                         <button class="btn btn-outline-bordeaux ms-2" type="submit">
                             <i class="fas fa-search"></i>
                         </button>
-                    </form>
+                    </form> -->
 
                     <!-- Notification icon -->
-                    <button class="btn btn-link me-3" style="color: #6c757d;">
+                    <!-- <button class="btn btn-link me-3" style="color: #6c757d;">
                         <i class="fas fa-bell" style="font-size: 1.2rem;"></i>
-                    </button>
+                    </button> -->
 
                     <!-- Profile circle -->
                     <div class="dropdown">
@@ -48,10 +48,7 @@
                             </div>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
-                            <li><a class="dropdown-item" href="#">Προφίλ</a></li>
-                            <li><a class="dropdown-item" href="#">Ρυθμίσεις</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#">Αποσύνδεση</a></li>
+                            <li><a class="dropdown-item" href="#" id="logoutLink">Αποσύνδεση</a></li>
                         </ul>
                     </div>
                 </div>
@@ -117,6 +114,41 @@
                 <div class="text-center">
                     <!-- The button that will close the alert -->
                     <button id="customAlertOk" class="btn btn-outline-bordeaux">OK</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Logout Confirmation Modal -->
+        <div id="customLogout" class="custom-alert-backdrop" style="display: none; 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background-color: rgba(0, 0, 0, 0.4); z-index: 9999; 
+            justify-content: center; align-items: center;">
+            <div class="modal-content" style="background: white; border-radius: 10px; max-width: 500px; width: 90%;">
+                <div class="modal-header border-0" 
+                    style="padding: 1rem 1.25rem; background-color: #f8f9fa; 
+                            border-top-left-radius: 10px; border-top-right-radius: 10px;">
+                    <h5 class="modal-title text-bordeaux fw-bold">
+                        <i class="fas fa-sign-out-alt me-2"></i>Επιβεβαίωση Αποσύνδεσης
+                    </h5>
+                    <button type="button" class="btn-close" id="closeLogout"></button>
+                </div>
+                <div class="modal-body text-center" style="padding: 1rem 1.25rem;">
+                    <div class="mb-3">
+                        <i class="fas fa-question-circle text-warning" style="font-size: 3rem;"></i>
+                    </div>
+                    <p class="fs-5 mb-3">Είστε σίγουρος ότι θέλετε να αποσυνδεθείτε;</p>
+                    <p class="text-muted small">Θα χρειαστεί να συνδεθείτε ξανά για να έχετε πρόσβαση στο σύστημα.</p>
+                </div>
+                <div class="modal-footer border-0 justify-content-center" 
+                    style="padding: 1rem; background-color: #f8f9fa; 
+                            border-top: 1px solid rgba(0,0,0,0.1); 
+                            border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4 me-2" id="cancelLogout">
+                        <i class="fas fa-times me-2"></i>Ακύρωση
+                    </button>
+                    <button type="button" class="btn btn-outline-bordeaux rounded-pill px-4" id="confirmLogoutCustom">
+                        <i class="fas fa-sign-out-alt me-2"></i>Αποσύνδεση
+                    </button>
                 </div>
             </div>
         </div>
@@ -1634,6 +1666,44 @@
                 });
             });
         });
+
+        // Handle the user logout 
+        function initializeLogoutCustom() {
+            // Create the references to the elements of the modal  
+            const logoutLink = document.getElementById('logoutLink');
+            const logoutModal = document.getElementById('customLogout');
+            const cancelLogoutBtn = document.getElementById('cancelLogout');
+            const closeLogoutBtn = document.getElementById('closeLogout');
+            const confirmLogoutBtn = document.getElementById('confirmLogoutCustom');
+
+            if (logoutLink) {
+                logoutLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    logoutModal.style.display = 'flex'; // Show modal when the user chooses to logout 
+                });
+            }
+
+            if (cancelLogoutBtn) {
+                cancelLogoutBtn.addEventListener('click', function() {
+                    logoutModal.style.display = 'none'; // Hide modal
+                });
+            }
+
+
+            if (closeLogoutBtn) {  
+                closeLogoutBtn.addEventListener('click', function() {
+                    logoutModal.style.display = 'none'; // Hide modal
+                });
+            }
+            if (confirmLogoutBtn) {
+                confirmLogoutBtn.addEventListener('click', function() {
+                    window.location.href = '/logout'; // Go to the logout route
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initializeLogoutCustom);
+
     </script>
 
 </body>
