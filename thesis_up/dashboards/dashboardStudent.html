@@ -286,6 +286,17 @@
                     </div>
                 </div> 
             </div>
+
+            <!-- Student chooses to manage his/hers thesis and the state is Υπό Ανάθεση -->
+            <div class="card-body">
+                <div id="membersContainer" style="display: none;" class="card mt-2 p-4 w-100 mx-auto">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="fas fa-users me-2 text-bordeaux me-2 fs-4" aria-hidden="true"></i>
+                        <h5 class="mb-0 align-middle" style="line-height: 1.2;">Τριμελής Επιτροπή</h5>
+                    </div>
+                    <div id="membersContent"></div>
+                </div> 
+            </div>
         </div>
     </div>
 
@@ -931,6 +942,7 @@
 
                             // Grades info as the last element
                             const gradesInfo = document.getElementById('gradesInfo');
+                            const chronologicalInfo = document.getElementById('chronologicalInfo');
                             if (gradesInfo && chronologicalInfo) {
                                 // Create a spacer div, so that the grades info is not too close to the chronological info
                                 const spacer = document.createElement('div');
@@ -1084,6 +1096,175 @@
                                     }, 100);
                                 }
                             });
+                        } else if (thesis.state === 'Υπό Ανάθεση') {
+                            // If the thesis is under assignment, show the members section
+                            // Find all the elements with the class card-body inside the thesisManagement div and hide them
+                            // Keep only the needed ones, the gap now hides
+                            document.querySelectorAll('#thesisManagement .card-body').forEach(body => {
+                                if (!body.contains(document.getElementById('membersContainer'))) {
+                                    body.style.display = 'none';
+                                }
+                            });
+
+                            // Show the members header
+                            const committee = document.getElementById('membersContainer');
+                            committee.style.display = 'block';
+                            // Show the members content
+                            const membersContent = document.getElementById('membersContent');
+                            membersContent.innerHTML = '';
+
+                            // The committee members' content
+                            membersContent.innerHTML = `
+                                <p class="mb-0">Ο επιβλέπων καθηγητής της διπλωματικής σας είναι ο/η: ${thesis.full_instructor_name}</p>
+                                <div class="my-2"></div>
+                                <p class="mb-0 text-bordeaux">Οδηγίες σχετικά με την διαδικασία επιλογής τριμελούς επιτροπής:</p>
+                                <p class="mb-0">
+                                    Από την παρακάτω λίστα καθηγητών μπορείτε να επιλέξετε εκείνους που θα θέλατε να γίνουν μέλη στην τριμελή επιτροπή για τη διπλωματική σας. 
+                                    Μπορείτε να επιλέξετε περισσότερους από δύο καθηγητές, μόλις δύο αποδεχτούν το αίτημά σας, θα ορισθούν αυτόματα ως μέλη της τριμελούς επιτροπής.
+                                </p>
+                            `;
+
+                            fetch('/all-professors')
+                            .then(res => res.json())
+                            .then(professors => {
+                                // Filter out the instructor from the list of professors
+                                const filtered = professors.filter(p => p.full_name !== thesis.full_instructor_name);
+
+                                // Create the dropdown for selecting professors
+                                const dropdownWrapper = document.createElement('div');
+                                dropdownWrapper.className = 'mt-3';
+
+                                dropdownWrapper.innerHTML = `
+                                    <label for="professorDropdown" class="form-label">
+                                        Επιλογή μέλους τριμελούς:
+                                    </label>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <select id="professorDropdown" class="form-select w-25">
+                                            <option disabled selected>Επιλέξτε καθηγητή</option>
+                                            ${filtered.map(p => `<option value="${p.professor_id}">${p.full_name}</option>`).join('')}
+                                        </select>
+                                        <button id="addProfessorButton" class="btn btn-outline-bordeaux">
+                                            Επιλογή
+                                        </button>
+                                    </div>
+                                    <div id="invitationsList" class="mt-3"></div>
+                                `;
+
+                                membersContent.appendChild(dropdownWrapper);    // Add the dropdown to the members content
+
+                                // Get references to the dropdown, button and invitations list
+                                const addProfessorBtn = dropdownWrapper.querySelector('#addProfessorButton');
+                                const professorDropdown = dropdownWrapper.querySelector('#professorDropdown');
+                                const invitationsList = dropdownWrapper.querySelector('#invitationsList');
+
+                                // Get the existing committee invitations, to display them 
+                                fetch(`/get-committee-invitations/${thesis.thesis_id}`)
+                                .then(res => res.json())
+                                .then(data => {
+                                    // If there are existing invitations, display them
+                                    if (data.success && data.invitations.length > 0) {
+                                        // Get the proseffors id in order to disable the ones that already have an invitation from the dropdown 
+                                        const invitedIds = data.invitations.map(inv => inv.professor_id);
+
+                                        // Create a dictionary for the status labels, to display them in greek 
+                                        const statusLabels = {
+                                            pending: "Σε κατάσταση αναμονής",
+                                            accepted: "Έγινε αποδοχή",
+                                            declined: "Απορρίφθηκε"
+                                        };
+
+                                        // Show the invitations in the list
+                                        invitationsList.innerHTML = data.invitations
+                                        .map(inv => `<p class="text-success mb-0">Έχετε στείλει αίτημα στον/στην ${inv.full_name}</p>`
+                                            + `<p class="text-muted mb-0">Ημερομηνία αποστολής αιτήματος: ${new Date(inv.invitation_date).toLocaleDateString('el-GR')}</p>`
+                                            + `<p class="text-muted mb-3">Κατάσταση: ${statusLabels[inv.status]}</p>`
+                                        )
+                                        .join('');
+
+                                        // Disable the professors that have already been selected
+                                        invitedIds.forEach(id => {
+                                            const option = professorDropdown.querySelector(`option[value="${id}"]`);
+                                            if (option) {
+                                                option.disabled = true;
+                                                option.textContent += ' (Έχει ήδη αποσταλεί)';
+                                            }
+                                        });
+                                    }
+                                });
+
+
+                                // Send a new request 
+                                addProfessorBtn.addEventListener('click', () => {
+                                    // Get the selected professor from the dropdown
+                                    const selectedOption = professorDropdown.options[professorDropdown.selectedIndex];
+                                    // If no option is selected or the selected option is disabled, show an alert
+                                    if (!selectedOption || selectedOption.disabled) {
+                                        showCustomAlert('Παρακαλώ επιλέξτε καθηγητή');
+                                        return;
+                                    }
+
+                                    // Get the professor id and name, and the thesis id
+                                    const professorId = selectedOption.value;
+                                    const professorName = selectedOption.textContent;
+                                    const thesisId = window.currentThesis?.thesis_id;
+
+                                    // Validate the thesis id
+                                    if (!thesisId) {
+                                        showCustomAlert('Σφάλμα: Δεν βρέθηκε η διπλωματική.');
+                                        return;
+                                    }
+
+                                    // Post request to send the invitation, save it in the db
+                                    fetch('/send-committee-invitation', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            thesis_id: thesisId,
+                                            professor_id: professorId
+                                        })
+                                    })
+                                    .then(res => res.json())
+                                    .then(result => {
+                                        // If the request was successful, show a success message and update the invitations list
+                                        // the invitations list that is shown to the user
+                                        if (result.success) {
+                                            const inv = result.invitation;  // Get the invitation data from the result
+
+                                            // Create a dictionary for the status labels, to display them in greek 
+                                            const statusLabels = {
+                                                pending: "Σε κατάσταση αναμονής",
+                                                accepted: "Έγινε αποδοχή",
+                                                declined: "Απορρίφθηκε"
+                                            };
+
+                                            // Show the new invitation in the list
+                                            invitationsList.innerHTML += `
+                                                <div class="mb-3">
+                                                    <p class="text-success mb-0">Έχετε στείλει αίτημα στον/στην ${inv.full_name}</p>
+                                                    <p class="text-muted mb-0">Ημερομηνία αποστολής αιτήματος: ${new Date(inv.invitation_date).toLocaleDateString('el-GR')}</p>
+                                                    <p class="text-muted mb-3">Κατάσταση: ${statusLabels[inv.status]}</p>
+                                                </div>
+                                            `;
+
+                                            // Disable the chosen dropdown option
+                                            const option = professorDropdown.querySelector(`option[value="${inv.professor_id}"]`);
+
+                                            if (option) {
+                                                option.disabled = true;
+                                                option.textContent += ' (Αίτημα Στάλθηκε)';
+                                            }
+                                        } else {
+                                            showCustomAlert(`Σφάλμα: ${result.error}`);
+                                        }
+                                    })
+                                    .catch(err => {
+                                        console.error(err);
+                                        showCustomAlert('Σφάλμα δικτύου.');
+                                    });
+                                });
+                            });
+                        } else if (thesis.state === "Ενεργή") {
+
                         }
                     });
                 
