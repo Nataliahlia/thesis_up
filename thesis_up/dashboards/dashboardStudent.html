@@ -297,6 +297,17 @@
                     <div id="membersContent"></div>
                 </div> 
             </div>
+
+            <!-- Student chooses to manage his/hers thesis and the state is Ενεργή -->
+            <div class="card-body">
+                <div id="activeContainer" style="display: none;" class="card mt-2 p-4 w-100 mx-auto">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="fa-solid fa-chart-line me-2 text-bordeaux me-2 fs-4" aria-hidden="true"></i>
+                        <h5 class="mb-0 align-middle" style="line-height: 1.2;">Ενεργή Διπλωματική</h5>
+                    </div>
+                    <div id="activeContent"></div>
+                </div> 
+            </div>
         </div>
     </div>
 
@@ -1264,7 +1275,40 @@
                                 });
                             });
                         } else if (thesis.state === "Ενεργή") {
+                            // If the thesis is under assignment, show only the info to the student
+                            // Find all the elements with the class card-body inside the thesisManagement div and hide them
+                            // Keep only the needed ones, the gap now hides
+                            document.querySelectorAll('#thesisManagement .card-body').forEach(body => {
+                                if (!body.contains(document.getElementById('activeContainer'))) {
+                                    body.style.display = 'none';
+                                }
+                            });
 
+                            // Show the members header
+                            const active = document.getElementById('activeContainer');
+                            active.style.display = 'block';
+                            // Show the members content
+                            const membersContent = document.getElementById('activeContent');
+                            activeContent.innerHTML = '';
+
+                            // The committee members' content
+                            activeContent.innerHTML = `
+                                <p class="mb-0">Η επίσημη ανάθεση του θέματος έχει ολοκληρωθεί.</p>
+                                <p class="mb-0 mt-2" style="text-decoration: underline;">Ακολουθούν ορισμένες οδηγίες:</p>
+                                <p class="mb-0 mt-2">Η διπλωματική σας βρίσκεται στην κατάσταση "Ενεργή", αυτό σημαίνει ότι οι καθηγητές που επιλέξατε έχουν αποδεχτεί το αίτημά σας και 
+                                    η τριμελής επιτροπή έχει οριστεί. Αναμένετε από τον επιβλέποντα καθηγητή σας, κυρία/ος <span class="text-bordeaux">${thesis.full_instructor_name}</span>, να σας καθοδηγήσει στη συνέχεια της διαδικασίας.
+                                    Αναμένετε ο επιβλέπων καθηγητής να ορίσει την κατάσταση της διπλωματικής σας σε "Υπό Εξέταση", οπότε και θα μπορείτε να προχωρήσετε στην ανάρτηση της, αλλά και στη συμπλήρωση ορισμένων διαδικαστικών, όπως είναι ο σύνδεσμος για το αποθετήριο Νημερτής.
+                                    Έως ότου η διαδικάσια προχωρήσει από τον επιβλέποντα καθηγητή σας, μπορείτε να δείτε τις λεπτομέρειες της διπλωματικής σας επιλέγοντας παρακάτω:</p>
+                                <button class="btn btn-outline-bordeaux mt-3" id="activeThesis">
+                                    Προβολή Διπλωματικής Εργασίας
+                                </button>
+                            `;
+                            
+                            // Add an event listener to the button to show more info
+                            document.getElementById('activeThesis').addEventListener('click', function () {
+                                window.fromCompletedInfo = true;    // Set the flag to true, so the back button will work correctly
+                                document.getElementById('viewMyThesis').click();    // Go to the view thesis section
+                            });
                         }
                     });
                 
