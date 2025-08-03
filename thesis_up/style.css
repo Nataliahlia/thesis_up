@@ -229,3 +229,84 @@ body {
   font-size: 0.8rem;
 }
 
+
+
+/* Responsive διόρθωση για το modal */
+@media (max-width: 576px) {
+  #customLogout .modal-content {
+    max-width: 95% !important; /* Να γεμίζει σχεδόν όλη την οθόνη */
+    margin: auto;
+  }
+
+  #customLogout .modal-header, 
+  #customLogout .modal-body, 
+  #customLogout .modal-footer {
+    padding: 0.8rem; /* Μικρότερα paddings για κινητό */
+  }
+
+  #customLogout .btn {
+    font-size: 0.9rem; /* Κουμπιά ελαφρώς μικρότερα */
+    padding: 0.4rem 0.8rem;
+  }
+}
+
+/* Responsive ρύθμιση μεγέθους γραμματοσειράς για κινητά */
+@media (max-width: 768px) {
+  body {
+    font-size: 0.9rem; /* Μικρότερο γενικό μέγεθος για p, li κλπ */
+  }
+
+  h1 {
+    font-size: 1.4rem; /* Μικρότερο από desktop, αλλά μεγαλύτερο από p */
+  }
+
+  h2 {
+    font-size: 1.3rem;
+  }
+
+  h3 {
+    font-size: 1.2rem;
+  }
+
+  h4, h5 {
+    font-size: 1.1rem;
+  }
+
+  .card h3 {
+    font-size: 1.15rem; /* Ειδικά στους τίτλους καρτών */
+  }
+}
+
+@media (max-width: 768px) {
+  h1.h3.text-bordeaux {
+    font-size: 1.2rem !important; /* ή όσο μικρό θέλεις */
+    line-height: 1.2;
+  }
+}
+
+@media (max-width: 768px) {
+  .carousel-track > .card {
+    min-width: 220px;     /* όχι υπερβολικά μικρές */
+    width: 250px;         /* μέτριο πλάτος ώστε να χωράει το κείμενο */
+    height: auto;         /* αφήνουμε το ύψος να προσαρμόζεται στο περιεχόμενο */
+    margin-right: 1rem;
+    padding: 0.5rem;
+    scroll-snap-align: start;    
+  }
+
+  .carousel-track > .card .card-body {
+    font-size: 0.8rem;   /* μικρότερη γραμματοσειρά για να χωράει */
+    line-height: 1.2;    /* πιο κοντά οι γραμμές */
+  }
+
+  .carousel-track > .card .card-title {
+    font-size: 0.9rem;   /* μικρότερος τίτλος */
+    line-height: 1.2;
+  }
+
+  .carousel-track > .card .card-text {
+  white-space: normal !important;
+  word-break: break-word;
+}
+
+}
