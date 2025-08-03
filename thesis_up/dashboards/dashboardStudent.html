@@ -63,10 +63,10 @@
                 <h5>Μενού</h5>
             </div>
             <nav class="nav flex-column">
-                <a class="nav-link text-bordeaux d-flex py-3 px-4" style="align-items: flex-start;" href="#">
+                <!-- <a class="nav-link text-bordeaux d-flex py-3 px-4" style="align-items: flex-start;" href="#">
                     <i class="fas fa-home me-3 text-bordeaux"></i>
                     <span class="text-bordeaux menu-text">Αρχική</span>
-                </a>
+                </a> -->
                 <a id="viewMyThesis" class="nav-link text-bordeaux d-flex py-3 px-4" style="align-items: flex-start;" href="#">
                     <i class="fas fa-file-alt me-3 text-bordeaux"></i>
                     <span class="text-bordeaux menu-text">Πληροφορίες Διπλωματικής</span>
@@ -530,7 +530,10 @@
                 .catch(error => {
                     console.error('Fetch error:', error);
                 });
-            });            
+            });      
+            
+            // Access the info when the page loads
+            button.click();
         });
     </script>
 
