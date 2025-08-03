@@ -20,6 +20,38 @@ app.use(session({
   }
 }));
 
+// Middleware to check if the user is authenticated, so he can not access the dashboard without being logged in
+function isAuthenticated(req, res, next) {
+  // Check if the session exists and if the user is logged in
+  if (!req.session || !req.session.user) {
+    return res.redirect('/login');
+  }
+
+  // Check if the user has the correct role for the requested dashboard, so different users can not access different dashboards
+  // Get the user's role and the requested URL
+  const role = req.session.user.role;
+  const url = req.originalUrl;
+
+  // Check the role and redirect accordingly
+  if (role === 'student' && url.includes('dashboardStudent')) {
+    return next();
+  }
+  
+  if (role === 'professor' && url.includes('dashboardProfessor')) {
+    return next();
+  }
+
+  if (role === 'secretary' && url.includes('dashboardSecretary')) {
+    return next();
+  }
+
+  // If the user does not have the correct role for the requested dashboard, redirect to the login page
+  return res.redirect('/login');
+}
+
+// Προστασία φακέλου dashboards
+app.use('/dashboards', isAuthenticated, express.static(path.join(__dirname, 'dashboards')));
+
 app.use(require('./routes/auth.routes'));
 app.use(require('./routes/dashboard.routes'));  
 app.use(require('./routes/public_endpoint.routes'));
