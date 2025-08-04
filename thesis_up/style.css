@@ -1,9 +1,11 @@
+/* bordeaux, primary colour -> used for navbars, buttons, links etc */
 .bg-bordeaux {
-  background-color: #6A1F2B; /* bordeaux, primary colour -> used for navbars, buttons, links etc */
+  background-color: #6A1F2B; 
 }
 
+/* bordeaux, primary colour -> used for the texts */
 .text-bordeaux {
-  color:  #6A1F2B; /* or your custom bordeaux hex code */
+  color:  #6A1F2B; 
 }
 
 /* Bold when hovered */
@@ -36,12 +38,14 @@ a:hover .text-bordeaux {
   background-color: white;   /* Ensure background stays white when disabled */
 }
 
+/* Custom alert styles, it is centered and hidden at first */
 .custom-alert-backdrop {
   display: none;
   justify-content: center;
   align-items: center;
 }
 
+/* This adds some styling to the card that is used for links, in the student dashboard (the ones he/she uploads) */
 .link-card {
   animation: fadein 0.3s ease-in;
   border: 1px solid #dee2e6;
@@ -52,6 +56,8 @@ a:hover .text-bordeaux {
   position: relative;
 }
 
+/* This adds some styling to the card that is used for links, in the student dashboard (the ones he/she uploads) */
+/* It makes the input field inside the card seamless */
 .link-card input {
   width: 100%;
   border: none;
@@ -59,6 +65,7 @@ a:hover .text-bordeaux {
   outline: none;
 }
 
+/* This adds some styling to the button that the user can click to remove the card (the ones he/she uploads) */
 .remove-btn {
   position: absolute;
   top: 8px;
@@ -309,4 +316,193 @@ body {
   word-break: break-word;
 }
 
+}
+
+@media (max-width: 768px) {
+  /* Όλες οι κάρτες στο carousel σε mobile */
+  #carouselContainer {
+    display: flex;
+    justify-content: center !important;
+    align-items: center;
+  }
+
+  #carouselContainer .card {
+    min-width: 220px;     /* όχι υπερβολικά μικρές */
+    width: 250px !important;   /* παρακάμπτει το inline width */
+    height: auto !important;   /* παρακάμπτει το inline height */
+    padding: 0.5rem !important;
+    margin-right: 1rem !important; /* μικρότερη απόσταση */
+    margin-left: 1rem !important; /* μικρότερη απόσταση */
+  }
+
+  #carouselContainer .card .card-body {
+    font-size: 0.8rem;
+    line-height: 1.2;
+  }
+
+  #carouselContainer .card .card-title {
+    font-size: 0.9rem;
+    line-height: 1.2;
+  }
+}
+
+
+@media (max-width: 768px) {
+  #carouselContainer {
+    overflow-x: auto !important;       /* χειροκίνητη οριζόντια κύλιση */
+    scroll-snap-type: x mandatory;     /* καρφώνει τις κάρτες */
+    -webkit-overflow-scrolling: touch; /* smooth scroll για κινητά */
+      scroll-snap-type: x proximity; 
+  }
+
+  .carousel-track {
+    animation: none !important;        /* σταματά CSS animation (αν υπάρχει) */
+    transform: none !important;
+  }
+
+  .carousel-track > .card {
+    scroll-snap-align: start;          /* κάθε κάρτα ξεκινά στην άκρη */
+  }
+
+  /* Εμφάνιση scrollbar (προαιρετικό) */
+  #carouselContainer::-webkit-scrollbar {
+    height: 6px;
+  }
+  #carouselContainer::-webkit-scrollbar-thumb {
+    background: rgba(106,31,43,0.5);
+    border-radius: 3px;
+  }
+}
+
+@media (max-width: 768px) {
+  #linksContainer .d-flex {
+    flex-direction: column !important; /* Κάθετη διάταξη */
+    align-items: flex-start !important; /* Στοίχιση αριστερά */
+  }
+
+  /* Οι υποβεβλημένοι σύνδεσμοι να έχουν απόσταση από το κουμπί */
+  #dynamicLinksArea {
+    margin-top: 0.8rem;
+    width: 100%; /* Πιάνει όλο το πλάτος */
+  }
+
+  /* Styling για τους συνδέσμους */
+  #dynamicLinksArea a {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    padding: 0.3rem 0.5rem;
+    margin-bottom: 0.4rem;
+    text-decoration: none;
+    word-break: break-all;
+  }
+}
+
+
+@media (max-width: 768px) {
+  #gradesInfo .d-flex {
+    flex-direction: column !important; /* Κάθετη διάταξη */
+    align-items: stretch !important;   /* Το κουμπί να πιάνει όλο το πλάτος */
+    gap: 0.5rem;                        /* Απόσταση κειμένου-κουμπιού */
+  }
+
+  #gradesInfo .btn {
+    width: 100% !important;            /* Κουμπί full width */
+    margin-left: 0 !important;         /* Αφαίρεση περιττού margin */
+  }
+  #gradesInfo .d-flex > div {
+    min-width: unset !important;   /* Καταργεί το σταθερό min-width */
+    width: 100% !important;        /* Το div του κειμένου πιάνει όλο το πλάτος */
+    white-space: normal !important;/* Επιτρέπει σπάσιμο γραμμής */
+    word-break: break-word;        /* Σπάει μακριές λέξεις/links */
+  }
+}
+
+
+@media (max-width: 768px) {
+  #membersContainer .d-flex {
+    flex-direction: column !important; /* Κάθετη στοίχιση */
+    align-items: stretch !important;   /* Πιάνει όλο το πλάτος */
+    gap: 0.5rem;                        /* Απόσταση μεταξύ dropdown και κουμπιού */
+  }
+
+  #membersContainer select,
+  #membersContainer button {
+    width: 100% !important;             /* Πλήρες πλάτος */
+  }
+}
+
+@media (max-width: 768px) {
+  #chronologicalInfo .timeline-step {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  #chronologicalInfo .timeline-step .status {
+    flex-basis: 35%;
+    min-width: 0;
+    max-width: 100%;
+    text-align: center;
+    flex-shrink: 1;
+    word-break: break-word;
+        font-size: 0.80rem;      /* μικρότερο μέγεθος */
+  }
+
+  #chronologicalInfo .timeline-step .arrow-container {
+    flex-basis: 20%;
+    min-width: 0;
+    max-width: 100%;
+    display: flex;
+    justify-content: center;
+    flex-shrink: 1;
+  }
+
+  /* Αν έχεις και δεξιά status */
+  #chronologicalInfo .timeline-step .status:last-child {
+    text-align: center;
+  }
+
+  #chronologicalInfo .progress,
+  #chronologicalInfo .ticks {
+    display: none !important;
+  }
+
+  #chronologicalInfo .date {
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+
+  #chronologicalInfo .arrow-container {
+    transform: scale(0.8);
+  }
+}
+
+@media (max-width: 768px) {
+  #sidebar {
+    position: fixed;
+    top: 82px;            /* κάτω από το navbar */
+    left: -250px;         /* κρυμμένο αρχικά */
+    width: 250px;
+    height: calc(100vh - 82px);
+    background-color: #f8f9fa;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    z-index: 2000;        /* ώστε να είναι πάνω από το περιεχόμενο */
+    transition: left 0.3s ease;
+  }
+
+  /* Όταν ανοίγει */
+  #sidebar.open {
+    left: 0;
+  }
+
+  /* Το main-content δεν αλλάζει margin σε mobile */
+  .main-content {
+    margin-left: 0 !important;
+  }
 }

@@ -292,8 +292,12 @@
             </div>
             <!-- The below handles the HTML after the grades and the Nimertis link -->
             <div class="card-body">
-                <div id="gradesInfo" class="card mt-2 p-4 w-100 mx-auto">
-                    <!-- The content of the examination report will be displayed here -->
+                <div id="gradesCard" style="display:none;" class="card mt-2 p-4 w-100 mx-auto">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="fa-solid fa-file-signature text-bordeaux me-2 fs-4" aria-hidden="true"></i>
+                        <h5 class="mb-0 align-middle" style="line-height: 1.2;">Πρακτικό Εξέτασης</h5>
+                    </div>
+                    <div id="gradesInfo"></div>
                 </div>
             </div>
             <!-- This is the protocol content that will be used to create the pdf, as the html opens in a new tab -->
@@ -796,16 +800,15 @@
                                 const isReadonly = existingNimertis ? 'readonly' : '';
                                 const hideSaveBtn = existingNimertis ? 'style="display: none;"' : '';
                                 const outlineClass = existingNimertis ? 'bordeaux-outline' : '';
+
+                                                            const gradesCard = document.getElementById('gradesCard');
+
+                                gradesCard.style.display = 'block';
                                 if (Array.isArray(grades) && grades.length > 0) {
                                     // Create a container for the protocol content
                                     // if the 3 grades have been submitted
                                     const gradesInfo = document.getElementById('gradesInfo');
                                     gradesInfo.innerHTML = `
-                                        <div class="d-flex align-items-center">
-                                            <i class="fa-solid fa-file-signature text-bordeaux me-2 fs-4" aria-hidden="true"></i>
-                                            <h5 class="mb-0 align-middle" style="line-height: 1.2;">Πρακτικό Εξέτασης</h5>
-                                        </div>
-                                        <!-- Space added -->
                                         <div class="my-3"></div>
                                         <p>Το πρακτικό της εξέτασης έχει ολοκληρωθεί και μπορείτε να δείτε συνοπτικά τις αξιολογήσεις σας παρακάτω:</p>
                                         <ul>
@@ -847,7 +850,6 @@
                                             </button>
                                         </div>
                                     `;
-                                    gradesInfo.style.display = 'block'; 
 
                                     // Add the event listener for the download button, set a timeout to ensure the button is available
                                     // Because it is created using innerHTML
@@ -930,6 +932,21 @@
                                 }
                             });
                         } else if (thesis.state === 'Περατωμένη') {
+                            // Get the divs in order to place the practical under the chronologic info
+                            const gradesCard = document.getElementById('gradesCard');
+                            const chronoCard = document.getElementById('chronologicalInfo');
+
+                            if (gradesCard && chronoCard) {
+                                // Create a spacer div, so that the grades info is not too close to the chronological info
+                                const spacer = document.createElement('div');
+                                spacer.style.height = '2rem'; // Add the same spacing as the other sections
+                                // Needed 2 because the above card div does not have a margin-bottom
+
+                                chronoCard.insertAdjacentElement('afterend', spacer);    // Insert the spacer after the chronological info section
+                                spacer.insertAdjacentElement('afterend', gradesCard);           // Insert the grades info after the spacer
+                                gradesCard.style.display = 'block';
+                            }
+
                             // If the thesis is completed, show the completed info section
                             // Find all the elements with the class card-body inside the thesisManagement div and hide them
                             // Keep only the needed ones, the gap now hides 
@@ -989,15 +1006,6 @@
                             // Grades info as the last element
                             const gradesInfo = document.getElementById('gradesInfo');
                             const chronologicalInfo = document.getElementById('chronologicalInfo');
-                            if (gradesInfo && chronologicalInfo) {
-                                // Create a spacer div, so that the grades info is not too close to the chronological info
-                                const spacer = document.createElement('div');
-                                spacer.style.height = '2rem'; // Add the same spacing as the other sections
-                                // Needed 2 because the above card div does not have a margin-bottom
-
-                                chronologicalInfo.insertAdjacentElement('afterend', spacer);    // Insert the spacer after the chronological info section
-                                spacer.insertAdjacentElement('afterend', gradesInfo);           // Insert the grades info after the spacer
-                            }
 
                             fetch(`/get-thesis-events/${thesis.thesis_id}`)
                             .then(res => res.json())
@@ -1083,10 +1091,6 @@
                                     // Create a container for the protocol content
                                     // if the 3 grades have been submitted
                                     gradesInfo.innerHTML = `
-                                        <div class="d-flex align-items-center">
-                                            <i class="fa-solid fa-file-signature text-bordeaux me-2 fs-4" aria-hidden="true"></i>
-                                            <h5 class="mb-0 align-middle" style="line-height: 1.2;">Πρακτικό Εξέτασης</h5>
-                                        </div>
                                         <!-- Space added -->
                                         <div class="my-3"></div>
                                         <p>Το πρακτικό της εξέτασης έχει ολοκληρωθεί και μπορείτε να δείτε συνοπτικά τις αξιολογήσεις σας παρακάτω:</p>
@@ -1123,7 +1127,6 @@
                                             <input type="text" id="nimertisLink" class="form-control ms-2 me-2 ${outlineClass}" placeholder="https://nimertis.example.com" value="${existingNimertis}" ${isReadonly} />
                                         </div>
                                     `;
-                                    gradesInfo.style.display = 'block'; 
 
                                     // Add the event listener for the download button, set a timeout to ensure the button is available
                                     // Because it is created using innerHTML

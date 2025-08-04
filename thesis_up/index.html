@@ -237,7 +237,7 @@
                 <div class="card-body text-center d-flex flex-column justify-content-between align-items-center h-100" style="padding: 1rem; white-space: normal; overflow-wrap: break-word; word-break: break-word; max-width: 100%;">
                     <h4 class="card-title text-bordeaux">Δεν Βρέθηκαν Αποτελέσματα</h4>
                     <p class="card-text text-muted">
-                        Δεν υπάρχουν ανακοινώσεις διπλωματικών εργασιών για το επιλεγμένο χρονικό διάστημα.
+                        Δεν υπάρχουν ανακοινώσεις διπλωματικών εργασιών για το συγκεκριμένο χρονικό διάστημα.
                     </p>
                     ${
                         start && end
@@ -264,6 +264,12 @@
             currentWidth = container.scrollWidth;
         }
 
+        // If its a mobile device, we set the overflow to auto, so the user can scroll manually
+        if (isMobile) {
+            container.style.overflowX = 'auto';
+            return;
+        }
+
         // If the width of the content is greater than the width of the container, start the scrolling effect
         if (container.scrollWidth > containerWidth) {
             let scrollSpeed = 1;
@@ -271,17 +277,9 @@
             // This function will scroll the content of the container, each frame moves 1 pixel
             function smoothScroll() {
                 container.scrollLeft += scrollSpeed;
-                if (!isMobile) {
-                    // When the scroll position reaches the halfway point of the content, reset it to 0
-                    if (container.scrollLeft >= container.scrollWidth / 2) {
-                        container.scrollLeft = 0;
-                    }
-                } else {
-                    // For mobile, reset the scroll position to the second container width
-                    // it gives a smoother effect on smaller screens
-                    if (container.scrollLeft >= container.scrollWidth - containerWidth * 2) {
-                        container.scrollLeft = containerWidth * 2;
-                    }
+                // When the scroll position reaches the halfway point of the content, reset it to 0
+                if (container.scrollLeft >= container.scrollWidth / 2) {
+                    container.scrollLeft = 0;
                 }
                 animationFrameId = requestAnimationFrame(smoothScroll);     // Recursive call
             }
