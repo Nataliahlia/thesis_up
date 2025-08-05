@@ -1138,7 +1138,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 displayThesisDetails(data.data);
                 
                 // Initialize UC13 Notes system
-                initializeThesisDetailsWithNotes(data.data.thesis_id);
+                initializeThesisDetailsWithNotes(data.data.id);
                 
                 loadingDiv.style.display = 'none';
                 contentDiv.style.display = 'block';
