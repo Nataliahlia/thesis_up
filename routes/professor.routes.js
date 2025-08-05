@@ -73,7 +73,7 @@ router.get('/api/professor/available-topics', (req, res) => {
         ORDER BY title
     `;
     
-    connection.query(query, [professorId], (err, results) => {
+    db.query(query, [professorId], (err, invitations) => {
         if (err) {
             console.error('Error fetching available topics:', err);
             return res.status(500).json({ error: 'Database error' });
@@ -1213,6 +1213,137 @@ router.get('/api/professor/statistics', (req, res) => {
     executeQuery('completionStats', queries.completionStats, [professorId]);
     executeQuery('studentStats', queries.studentStats, [professorId]);
     executeQuery('recentActivity', queries.recentActivity, [professorId]);
+});
+
+// ===== UC11: COMMITTEE INVITATIONS ENDPOINTS =====
+
+// Get committee invitations for the logged-in professor
+router.get('/api/professor/committee-invitations', (req, res) => {
+    const professorId = 1; // Mock professor ID for testing
+    
+    if (!professorId) {
+        return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    
+    // Query to get all committee invitations for this professor
+    const query = `
+        SELECT 
+            tc.id,
+            tc.thesis_id,
+            tc.role,
+            tc.invitation_date,
+            tc.acceptance_date,
+            tc.status,
+            tt.title as thesis_title,
+            tt.description as thesis_description,
+            s.name as student_name,
+            s.student_number as student_id,
+            p.name as supervisor_name
+        FROM thesis_committee tc
+        JOIN thesis_topic tt ON tc.thesis_id = tt.thesis_id
+        LEFT JOIN student s ON tt.student_id = s.student_number
+        JOIN professor p ON tt.instructor_id = p.professor_id
+        WHERE tc.professor_id = ?
+        ORDER BY 
+            CASE tc.status 
+                WHEN 'pending' THEN 1 
+                WHEN 'accepted' THEN 2 
+                WHEN 'declined' THEN 3 
+            END,
+            tc.invitation_date DESC
+    `;
+    
+    connection.query(query, [professorId], (err, invitations) => {
+        if (err) {
+            console.error('Error fetching committee invitations:', err);
+            return res.status(500).json({ success: false, message: 'Database error' });
+        }
+        
+        // Calculate summary statistics
+        const summary = {
+            total: invitations.length,
+            pending: invitations.filter(inv => inv.status === 'pending').length,
+            accepted: invitations.filter(inv => inv.status === 'accepted').length,
+            declined: invitations.filter(inv => inv.status === 'declined').length
+        };
+        
+        res.json({ 
+            success: true, 
+            invitations: invitations,
+            summary: summary
+        });
+    });
+});
+
+// Respond to a committee invitation
+router.post('/api/professor/committee-invitations/respond', (req, res) => {
+    const professorId = 1; // Mock professor ID for testing
+    const { invitation_id, response } = req.body;
+    
+    if (!professorId) {
+        return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    
+    if (!invitation_id || !response) {
+        return res.status(400).json({ success: false, message: 'Missing required fields' });
+    }
+    
+    if (!['accepted', 'declined'].includes(response)) {
+        return res.status(400).json({ success: false, message: 'Invalid response' });
+    }
+    
+    // First, verify that this invitation belongs to the logged-in professor and is pending
+    const verifyQuery = `
+        SELECT id, thesis_id, role, status 
+        FROM thesis_committee 
+        WHERE id = ? AND professor_id = ? AND status = 'pending'
+    `;
+    
+    connection.query(verifyQuery, [invitation_id, professorId], (err, results) => {
+        if (err) {
+            console.error('Error verifying invitation:', err);
+            return res.status(500).json({ success: false, message: 'Database error' });
+        }
+        
+        if (results.length === 0) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Invitation not found or already responded to' 
+            });
+        }
+        
+        const invitation = results[0];
+        
+        // Update the invitation status
+        const updateQuery = `
+            UPDATE thesis_committee 
+            SET status = ?, acceptance_date = NOW() 
+            WHERE id = ?
+        `;
+        
+        connection.query(updateQuery, [response, invitation_id], (err, updateResult) => {
+            if (err) {
+                console.error('Error updating invitation:', err);
+                return res.status(500).json({ success: false, message: 'Database error' });
+            }
+            
+            if (updateResult.affectedRows === 0) {
+                return res.status(404).json({ 
+                    success: false, 
+                    message: 'Invitation not found' 
+                });
+            }
+            
+            const responseText = response === 'accepted' ? 'αποδεκτή' : 'απορριφθείσα';
+            
+            res.json({ 
+                success: true, 
+                message: `Η πρόσκληση έγινε ${responseText} επιτυχώς`,
+                invitation_id: invitation_id,
+                status: response
+            });
+        });
+    });
 });
 
 module.exports = router;

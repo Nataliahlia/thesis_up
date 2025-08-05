@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeAssignTopic();
     initializeMyTheses();
     initializeStatistics(); // Add UC12 Statistics functionality
+    initializeCommitteeInvitations(); // Add UC11 Committee Invitations functionality
     
     // ===== NOTIFICATION SYSTEM =====
     function showNotification(message, type = 'info') {
@@ -125,6 +126,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Make custom confirmation globally available
     window.showCustomConfirmation = showCustomConfirmation;
+    
+    // Make invitation filter clearing globally available
+    window.clearInvitationFilters = function() {
+        const statusFilter = document.getElementById('invitationStatusFilter');
+        const searchInput = document.getElementById('invitationsSearch');
+        
+        if (statusFilter) statusFilter.value = '';
+        if (searchInput) searchInput.value = '';
+        
+        // Find and call the applyInvitationFilters function
+        const event = new CustomEvent('clearFilters');
+        document.dispatchEvent(event);
+    };
 
     // ===== SIDEBAR FUNCTIONALITY =====
     function initializeSidebar() {
@@ -213,13 +227,15 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Other navigation links that are not yet implemented
         // Note: Statistics is handled by initializeStatistics(), so we exclude it here
+        // Note: Committee Invitations is handled by initializeCommitteeInvitations(), so we exclude it here
         const notImplementedLinks = document.querySelectorAll('.nav-link[href="#"]:not([id])');
         notImplementedLinks.forEach(link => {
             if (!link.textContent.includes('Αρχική') && 
                 !link.textContent.includes('Στατιστικά') && 
                 !link.textContent.includes('Δημιουργία') && 
                 !link.textContent.includes('Ανάθεση') && 
-                !link.textContent.includes('Διπλωματικές')) {
+                !link.textContent.includes('Διπλωματικές') &&
+                !link.textContent.includes('Προσκλήσεις')) {
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
                     hideAllForms();
@@ -503,7 +519,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // ===== UTILITY FUNCTIONS =====
     function hideAllForms() {
-        const forms = ['createTopicForm', 'assignTopicForm', 'myThesesList', 'thesisDetailsView', 'editThesisForm', 'statisticsSection'];
+        const forms = ['createTopicForm', 'assignTopicForm', 'myThesesList', 'thesisDetailsView', 'editThesisForm', 'statisticsSection', 'committeeInvitationsSection'];
         forms.forEach(formId => {
             const form = document.getElementById(formId);
             if (form) {
@@ -512,6 +528,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         console.log('All forms hidden'); // Debug log
+    }
+
+    function showSection(sectionId) {
+        hideAllForms();
+        const section = document.getElementById(sectionId);
+        if (section) {
+            section.style.display = 'block';
+            console.log(`Showing section: ${sectionId}`);
+        } else {
+            console.error(`Section not found: ${sectionId}`);
+        }
     }
     
     function updateMainTitle(title) {
@@ -3244,6 +3271,505 @@ document.addEventListener('DOMContentLoaded', function() {
     function getCurrentUserRole() {
         // Return the current user's role for the specific thesis
         return currentUserRole || 'member';
+    }
+
+    // ===== UC11: COMMITTEE INVITATIONS FUNCTIONALITY =====
+    function initializeCommitteeInvitations() {
+        const committeeInvitationsLink = document.getElementById('committeeInvitationsLink');
+        
+        if (committeeInvitationsLink) {
+            committeeInvitationsLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                showSection('committeeInvitationsSection');
+                updateMainTitle('Προσκλήσεις σε Τριμελή Επιτροπή');
+                
+                // Scroll to top of the page first
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                
+                // Then load invitations
+                loadCommitteeInvitations();
+                
+                // Set this as active
+                document.querySelectorAll('.nav-link').forEach(navLink => {
+                    navLink.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
+        }
+
+        // Initialize filter buttons
+        initializeInvitationFilters();
+        
+        // Initialize modal event listeners
+        initializeInvitationModals();
+        
+        // Add event listener for clear filters custom event
+        document.addEventListener('clearFilters', function() {
+            applyInvitationFilters();
+        });
+    }
+
+    function initializeInvitationFilters() {
+        const statusFilter = document.getElementById('invitationStatusFilter');
+        const searchInput = document.getElementById('invitationsSearch');
+        const clearSearchBtn = document.getElementById('clearInvitationsSearchBtn');
+        
+        // Status filter dropdown
+        if (statusFilter) {
+            statusFilter.addEventListener('change', function() {
+                applyInvitationFilters();
+            });
+        }
+        
+        // Search input
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                applyInvitationFilters();
+            });
+        }
+        
+        // Clear search button
+        if (clearSearchBtn) {
+            clearSearchBtn.addEventListener('click', function() {
+                if (searchInput) {
+                    searchInput.value = '';
+                    applyInvitationFilters();
+                }
+            });
+        }
+        
+        // Legacy support for data-invitation-filter buttons (if any)
+        const filterButtons = document.querySelectorAll('[data-invitation-filter]');
+        filterButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const filter = this.getAttribute('data-invitation-filter');
+                
+                // Update active state
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Apply filter using legacy method
+                filterInvitations(filter);
+            });
+        });
+    }
+
+    function initializeInvitationModals() {
+        // Accept invitation modal
+        const acceptModal = document.getElementById('acceptInvitationModal');
+        const acceptBtn = document.getElementById('confirmAcceptInvitation');
+        
+        if (acceptBtn) {
+            acceptBtn.addEventListener('click', function() {
+                const invitationId = this.getAttribute('data-invitation-id');
+                if (invitationId) {
+                    respondToInvitation(invitationId, 'accepted');
+                }
+            });
+        }
+
+        // Decline invitation modal
+        const declineModal = document.getElementById('declineInvitationModal');
+        const declineBtn = document.getElementById('confirmDeclineInvitation');
+        
+        if (declineBtn) {
+            declineBtn.addEventListener('click', function() {
+                const invitationId = this.getAttribute('data-invitation-id');
+                if (invitationId) {
+                    respondToInvitation(invitationId, 'declined');
+                }
+            });
+        }
+    }
+
+    async function loadCommitteeInvitations() {
+        try {
+            showInvitationsLoading(true);
+            
+            const response = await fetch('/api/professor/committee-invitations', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Αποτυχία φόρτωσης προσκλήσεων');
+            }
+
+            const data = await response.json();
+            
+            // Show content first, then load data
+            showInvitationsLoading(false);
+            displayInvitations(data.invitations || []);
+            updateInvitationsSummary(data.summary || {});
+            
+        } catch (error) {
+            console.error('Error loading committee invitations:', error);
+            showNotification('Σφάλμα κατά τη φόρτωση των προσκλήσεων', 'error');
+            showInvitationsLoading(false);
+            displayInvitations([]);
+        }
+    }
+
+    function displayInvitations(invitations) {
+        const container = document.getElementById('invitationsCardsContainer');
+        const noInvitationsElement = document.getElementById('noInvitationsFound');
+        
+        if (!container) {
+            console.error('Invitations container not found');
+            return;
+        }
+
+        // Show the container
+        container.style.display = 'block';
+        
+        if (invitations.length === 0) {
+            container.style.display = 'none';
+            if (noInvitationsElement) {
+                noInvitationsElement.style.display = 'block';
+            }
+            return;
+        }
+
+        // Hide no invitations message
+        if (noInvitationsElement) {
+            noInvitationsElement.style.display = 'none';
+        }
+
+        const invitationsHTML = invitations.map(invitation => createInvitationCard(invitation)).join('');
+        container.innerHTML = invitationsHTML;
+        
+        // Add event listeners to action buttons
+        attachInvitationEventListeners();
+        
+        // Apply any active filters
+        applyInvitationFilters();
+    }
+
+    function applyInvitationFilters() {
+        const statusFilter = document.getElementById('invitationStatusFilter');
+        const searchInput = document.getElementById('invitationsSearch');
+        const cards = document.querySelectorAll('.invitation-card');
+        const noInvitationsElement = document.getElementById('noInvitationsFound');
+        
+        let visibleCount = 0;
+        const totalCount = cards.length;
+        
+        cards.forEach(card => {
+            let showCard = true;
+            
+            // Status filter
+            if (statusFilter && statusFilter.value) {
+                const cardStatus = card.getAttribute('data-status');
+                if (cardStatus !== statusFilter.value) {
+                    showCard = false;
+                }
+            }
+            
+            // Search filter
+            if (searchInput && searchInput.value.trim() && showCard) {
+                const searchTerm = searchInput.value.trim().toLowerCase();
+                const cardText = card.textContent.toLowerCase();
+                
+                if (!cardText.includes(searchTerm)) {
+                    showCard = false;
+                }
+            }
+            
+            // Show/hide card
+            if (showCard) {
+                card.style.display = 'block';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+        
+        // Update visibility of container and no results message
+        const container = document.getElementById('invitationsCardsContainer');
+        if (visibleCount === 0 && totalCount > 0) {
+            if (container) container.style.display = 'none';
+            if (noInvitationsElement) {
+                noInvitationsElement.style.display = 'block';
+                noInvitationsElement.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <h6 class="text-muted">Δεν βρέθηκαν προσκλήσεις που να ταιριάζουν με τα κριτήρια αναζήτησης</h6>
+                        <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="clearInvitationFilters()">
+                            <i class="fas fa-times me-1"></i>Καθαρισμός φίλτρων
+                        </button>
+                    </div>
+                `;
+            }
+        } else if (visibleCount > 0) {
+            if (container) container.style.display = 'block';
+            if (noInvitationsElement) noInvitationsElement.style.display = 'none';
+        }
+        
+        // Update filtered count display
+        updateFilteredInvitationsCount(visibleCount, totalCount);
+        
+        console.log(`Applied invitation filters: ${visibleCount}/${totalCount} cards visible`);
+    }
+
+
+    function updateFilteredInvitationsCount(filtered, total) {
+        const filteredElement = document.getElementById('filteredInvitationsCount');
+        const totalDisplayElement = document.getElementById('totalInvitationsDisplayCount');
+        
+        if (filteredElement) {
+            filteredElement.textContent = filtered;
+        }
+        
+        if (totalDisplayElement) {
+            totalDisplayElement.textContent = total;
+        }
+    }
+
+    function createInvitationCard(invitation) {
+        const statusClass = `invitation-status-${invitation.status}`;
+        const statusText = getStatusText(invitation.status);
+        const canRespond = invitation.status === 'pending';
+        
+        return `
+            <div class="invitation-card" data-invitation-id="${invitation.id}" data-status="${invitation.status}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1 fw-bold">${invitation.thesis_title}</h6>
+                        <small class="text-muted">Φοιτητής: ${invitation.student_name} (${invitation.student_id})</small>
+                    </div>
+                    <span class="badge ${statusClass}">${statusText}</span>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="invitation-detail-row">
+                                <div class="invitation-detail-label">Ρόλος:</div>
+                                <div class="invitation-detail-value">${getRoleText(invitation.role)}</div>
+                            </div>
+                            <div class="invitation-detail-row">
+                                <div class="invitation-detail-label">Ημερομηνία Πρόσκλησης:</div>
+                                <div class="invitation-detail-value">${formatDate(invitation.invitation_date)}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="invitation-detail-row">
+                                <div class="invitation-detail-label">Επιβλέπων:</div>
+                                <div class="invitation-detail-value">${invitation.supervisor_name}</div>
+                            </div>
+                            ${invitation.acceptance_date ? `
+                                <div class="invitation-detail-row">
+                                    <div class="invitation-detail-label">Ημερομηνία Απάντησης:</div>
+                                    <div class="invitation-detail-value">${formatDate(invitation.acceptance_date)}</div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    
+                    ${canRespond ? `
+                        <div class="invitation-actions">
+                            <button class="btn btn-bordeaux btn-accept-invitation" 
+                                    data-invitation-id="${invitation.id}" 
+                                    data-thesis-title="${invitation.thesis_title}">
+                                <i class="fas fa-check me-1"></i>Αποδοχή
+                            </button>
+                            <button class="btn btn-outline-danger btn-decline-invitation" 
+                                    data-invitation-id="${invitation.id}" 
+                                    data-thesis-title="${invitation.thesis_title}">
+                                <i class="fas fa-times me-1"></i>Απόρριψη
+                            </button>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    function attachInvitationEventListeners() {
+        // Accept buttons
+        document.querySelectorAll('.btn-accept-invitation').forEach(button => {
+            button.addEventListener('click', function() {
+                const invitationId = this.getAttribute('data-invitation-id');
+                const thesisTitle = this.getAttribute('data-thesis-title');
+                showAcceptModal(invitationId, thesisTitle);
+            });
+        });
+
+        // Decline buttons
+        document.querySelectorAll('.btn-decline-invitation').forEach(button => {
+            button.addEventListener('click', function() {
+                const invitationId = this.getAttribute('data-invitation-id');
+                const thesisTitle = this.getAttribute('data-thesis-title');
+                showDeclineModal(invitationId, thesisTitle);
+            });
+        });
+    }
+
+    function showAcceptModal(invitationId, thesisTitle) {
+        const modal = new bootstrap.Modal(document.getElementById('acceptInvitationModal'));
+        const thesisTitleElement = document.getElementById('acceptModalThesisTitle');
+        const confirmBtn = document.getElementById('confirmAcceptInvitation');
+        
+        if (thesisTitleElement) {
+            thesisTitleElement.textContent = thesisTitle;
+        }
+        
+        if (confirmBtn) {
+            confirmBtn.setAttribute('data-invitation-id', invitationId);
+        }
+        
+        modal.show();
+    }
+
+    function showDeclineModal(invitationId, thesisTitle) {
+        const modal = new bootstrap.Modal(document.getElementById('declineInvitationModal'));
+        const thesisTitleElement = document.getElementById('declineModalThesisTitle');
+        const confirmBtn = document.getElementById('confirmDeclineInvitation');
+        
+        if (thesisTitleElement) {
+            thesisTitleElement.textContent = thesisTitle;
+        }
+        
+        if (confirmBtn) {
+            confirmBtn.setAttribute('data-invitation-id', invitationId);
+        }
+        
+        modal.show();
+    }
+
+    async function respondToInvitation(invitationId, response) {
+        try {
+            const responseBody = {
+                invitation_id: invitationId,
+                response: response
+            };
+
+            const result = await fetch('/api/professor/committee-invitations/respond', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(responseBody)
+            });
+
+            if (!result.ok) {
+                throw new Error('Αποτυχία απάντησης στην πρόσκληση');
+            }
+
+            const data = await result.json();
+            
+            // Close modal
+            const activeModal = document.querySelector('.modal.show');
+            if (activeModal) {
+                const modal = bootstrap.Modal.getInstance(activeModal);
+                if (modal) modal.hide();
+            }
+
+            // Show success message
+            const responseText = response === 'accepted' ? 'έγινε αποδεκτή' : 'απορρίφθηκε';
+            showNotification(`Η πρόσκληση ${responseText} επιτυχώς`, 'success');
+            
+            // Reload invitations
+            loadCommitteeInvitations();
+            
+        } catch (error) {
+            console.error('Error responding to invitation:', error);
+            showNotification('Σφάλμα κατά την απάντηση στην πρόσκληση', 'error');
+        }
+    }
+
+    function filterInvitations(status) {
+        const cards = document.querySelectorAll('.invitation-card');
+        
+        cards.forEach(card => {
+            const cardStatus = card.getAttribute('data-status');
+            
+            if (status === 'all' || cardStatus === status) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    function updateInvitationsSummary(summary) {
+        const totalElement = document.getElementById('totalInvitationsCount');
+        const pendingElement = document.getElementById('pendingInvitationsCount');
+        const acceptedElement = document.getElementById('acceptedInvitationsCount');
+        const declinedElement = document.getElementById('declinedInvitationsCount');
+        
+        console.log('Updating invitations summary:', summary);
+        
+        if (totalElement) {
+            totalElement.textContent = summary.total || 0;
+            console.log('Updated total invitations to:', summary.total || 0);
+        } else {
+            console.warn('totalInvitationsCount element not found');
+        }
+        
+        if (pendingElement) {
+            pendingElement.textContent = summary.pending || 0;
+            console.log('Updated pending invitations to:', summary.pending || 0);
+        } else {
+            console.warn('pendingInvitationsCount element not found');
+        }
+        
+        if (acceptedElement) {
+            acceptedElement.textContent = summary.accepted || 0;
+            console.log('Updated accepted invitations to:', summary.accepted || 0);
+        } else {
+            console.warn('acceptedInvitationsCount element not found');
+        }
+        
+        if (declinedElement) {
+            declinedElement.textContent = summary.declined || 0;
+            console.log('Updated declined invitations to:', summary.declined || 0);
+        } else {
+            console.warn('declinedInvitationsCount element not found');
+        }
+    }
+
+    function showInvitationsLoading(show) {
+        const loadingElement = document.getElementById('invitationsLoading');
+        const contentElement = document.getElementById('invitationsContent');
+        
+        if (loadingElement) {
+            loadingElement.style.display = show ? 'block' : 'none';
+        }
+        
+        if (contentElement) {
+            contentElement.style.display = show ? 'none' : 'block';
+        }
+    }
+
+    function getStatusText(status) {
+        const statusMap = {
+            'pending': 'Εκκρεμής',
+            'accepted': 'Αποδεκτή',
+            'declined': 'Απορριφθείσα'
+        };
+        return statusMap[status] || status;
+    }
+
+    function getRoleText(role) {
+        const roleMap = {
+            'member': 'Μέλος Επιτροπής',
+            'president': 'Πρόεδρος Επιτροπής',
+            'secretary': 'Γραμματέας Επιτροπής'
+        };
+        return roleMap[role] || role;
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return '';
+        
+        const date = new Date(dateString);
+        return date.toLocaleDateString('el-GR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
     }
 
     // Make sure to call initializeThesisDetailsWithNotes when loading thesis details

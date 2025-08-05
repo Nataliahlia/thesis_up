@@ -1182,3 +1182,158 @@ footer {
         margin-top: 0.5rem;
     }
 }
+
+/* Committee Invitations Styles (UC11) */
+.invitation-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    margin-bottom: 1.5rem;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.invitation-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-color: #8B0000;
+}
+
+.invitation-card .card-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 1px solid #dee2e6;
+    padding: 1rem 1.25rem;
+}
+
+.invitation-card .card-body {
+    padding: 1.25rem;
+}
+
+/* Status badges for invitations */
+.invitation-status-pending {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.invitation-status-accepted {
+    background-color: #198754;
+    color: #fff;
+}
+
+.invitation-status-declined {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+/* Action buttons styling */
+.invitation-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+}
+
+.invitation-actions .btn {
+    min-width: 100px;
+    font-weight: 500;
+}
+
+/* Invitation details styling */
+.invitation-detail-row {
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.invitation-detail-row:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.invitation-detail-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.25rem;
+}
+
+.invitation-detail-value {
+    color: #6c757d;
+}
+
+/* Summary cards styling */
+.invitation-summary-card {
+    border: 1px solid #dee2e6;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.invitation-summary-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.invitation-summary-card .card-body {
+    padding: 1.5rem 1rem;
+}
+
+.invitation-summary-card i {
+    opacity: 0.8;
+}
+
+/* Responsive adjustments for invitations */
+@media (max-width: 768px) {
+    .invitation-actions {
+        justify-content: center;
+    }
+    
+    .invitation-actions .btn {
+        flex: 1;
+        min-width: auto;
+    }
+    
+    .invitation-detail-row {
+        text-align: center;
+    }
+    
+    .invitation-summary-card .card-body {
+        padding: 1rem 0.75rem;
+    }
+}
+
+/* Loading states for invitations */
+.invitation-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.invitation-loading::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #8B0000;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Modal enhancements for invitations */
+.modal .modal-body .fa-4x {
+    font-size: 3rem;
+}
+
+.modal .invitation-modal-details {
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    padding: 1rem;
+    margin: 1rem 0;
+    border-left: 4px solid #8B0000;
+}
