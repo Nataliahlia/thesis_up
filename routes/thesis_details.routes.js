@@ -48,33 +48,54 @@ router.get('/api/professor/thesis-details/:thesisId', (req, res) => {
         const thesis = thesisResult[0];
         console.log('Found thesis:', thesis.title);
 
-        // Return simplified response for now
-        const response = {
-            success: true,
-            data: {
-                id: thesis.thesis_id,
-                title: thesis.title,
-                description: thesis.description,
-                status: thesis.state,
-                code: thesis.thesis_id,
-                created_at: thesis.time_of_activation,
-                assigned_at: thesis.time_of_activation,
-                my_role: thesis.instructor_id === professorId ? 'supervisor' : 'member',
-                student_id: thesis.student_id,
-                student_name: thesis.student_name && thesis.student_surname ? 
-                    `${thesis.student_name} ${thesis.student_surname}` : null,
-                student_number: thesis.student_number,
-                student_email: thesis.student_email,
-                student_phone: thesis.student_phone,
-                pdf_file: thesis.pdf,
-                committee: [],
-                events: [],
-                files: [],
-                comments: []
-            }
-        };
+        // Get thesis timeline/events
+        const eventsQuery = `
+            SELECT 
+                event_type,
+                description,
+                event_date,
+                status
+            FROM thesis_events
+            WHERE thesis_id = ?
+            ORDER BY event_date DESC
+        `;
 
-        res.json(response);
+        connection.query(eventsQuery, [thesisId], (err, eventsResult) => {
+            if (err) {
+                console.error('Error fetching thesis events:', err);
+                return res.status(500).json({ success: false, message: 'Database error' });
+            }
+
+            console.log(`Found ${eventsResult.length} events for thesis ${thesisId}`);
+
+            // Return response with events
+            const response = {
+                success: true,
+                data: {
+                    id: thesis.thesis_id,
+                    title: thesis.title,
+                    description: thesis.description,
+                    status: thesis.state,
+                    code: thesis.thesis_id,
+                    created_at: thesis.time_of_activation,
+                    assigned_at: thesis.time_of_activation,
+                    my_role: thesis.instructor_id === professorId ? 'supervisor' : 'member',
+                    student_id: thesis.student_id,
+                    student_name: thesis.student_name && thesis.student_surname ? 
+                        `${thesis.student_name} ${thesis.student_surname}` : null,
+                    student_number: thesis.student_number,
+                    student_email: thesis.student_email,
+                    student_phone: thesis.student_phone,
+                    pdf_file: thesis.pdf,
+                    committee: [],
+                    events: eventsResult,
+                    files: [],
+                    comments: []
+                }
+            };
+
+            res.json(response);
+        });
     });
 });
 

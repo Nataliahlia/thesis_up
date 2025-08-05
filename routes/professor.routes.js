@@ -191,8 +191,24 @@ router.post('/api/professor/create-topic', uploadPDF.single('pdf'), (req, res) =
             return res.status(500).json({ success: false, message: 'Database error' });
         }
         
+        const newTopicId = result.insertId;
+        
+        // Log the topic creation event
+        const eventQuery = `
+            INSERT INTO thesis_events (thesis_id, event_type, description, event_date, status, created_by)
+            VALUES (?, 'Δημιουργία Θέματος', ?, NOW(), 'Χωρίς Ανάθεση', ?)
+        `;
+        
+        const eventDescription = `Δημιουργία νέου θέματος διπλωματικής: "${title}"`;
+        
+        connection.query(eventQuery, [newTopicId, eventDescription, professorId], (eventErr) => {
+            if (eventErr) {
+                console.error('Error recording topic creation event:', eventErr);
+            }
+        });
+        
         console.log(`Professor ${professorId} created new topic: "${title}"`);
-        res.json({ success: true, topicId: result.insertId });
+        res.json({ success: true, topicId: newTopicId });
     });
 });
 
@@ -256,6 +272,20 @@ router.post('/api/professor/assign-topic', (req, res) => {
                     console.error('Error assigning topic:', err);
                     return res.status(500).json({ success: false, message: 'Database error' });
                 }
+                
+                // Log the assignment event
+                const eventQuery = `
+                    INSERT INTO thesis_events (thesis_id, event_type, description, event_date, status, created_by)
+                    VALUES (?, 'Ανάθεση Θέματος', ?, NOW(), 'Υπό Ανάθεση', ?)
+                `;
+                
+                const eventDescription = `Αρχική ανάθεση θέματος σε φοιτητή (ID: ${studentId})`;
+                
+                connection.query(eventQuery, [topicId, eventDescription, professorId], (eventErr) => {
+                    if (eventErr) {
+                        console.error('Error recording assignment event:', eventErr);
+                    }
+                });
                 
                 console.log(`Professor ${professorId} assigned topic ${topicId} to student ${studentId}`);
                 res.json({ success: true });
@@ -357,6 +387,20 @@ router.post('/api/professor/cancel-assignment', (req, res) => {
                                     res.status(500).json({ success: false, message: 'Database error' });
                                 });
                             }
+                            
+                            // Log the cancellation event
+                            const eventQuery = `
+                                INSERT INTO thesis_events (thesis_id, event_type, description, event_date, status, created_by)
+                                VALUES (?, 'Ακύρωση Ανάθεσης', ?, NOW(), 'Χωρίς Ανάθεση', ?)
+                            `;
+                            
+                            const eventDescription = `Ακύρωση αρχικής ανάθεσης θέματος από τον επιβλέποντα`;
+                            
+                            connection.query(eventQuery, [thesisId, eventDescription, professorId], (eventErr) => {
+                                if (eventErr) {
+                                    console.error('Error recording cancellation event:', eventErr);
+                                }
+                            });
                             
                             console.log(`Professor ${professorId} cancelled assignment for thesis ${thesisId}`);
                             res.json({ 
@@ -609,10 +653,26 @@ router.post('/api/professor/update-thesis/:id', uploadPDF.single('pdf'), (req, r
             // Log the update
             console.log(`Professor ${professorId} updated thesis ${thesisId}: "${title}"`);
             
-            // Record the update in thesis events table
+            // Record status change event if status was changed
+            if (status && status !== currentThesis.state) {
+                const statusEventQuery = `
+                    INSERT INTO thesis_events (thesis_id, event_type, description, event_date, status, created_by)
+                    VALUES (?, 'Αλλαγή Κατάστασης', ?, NOW(), ?, ?)
+                `;
+                
+                const statusDescription = `Αλλαγή κατάστασης από "${currentThesis.state}" σε "${status}"`;
+                
+                connection.query(statusEventQuery, [thesisId, statusDescription, status, professorId], (statusErr) => {
+                    if (statusErr) {
+                        console.error('Error recording status change event:', statusErr);
+                    }
+                });
+            }
+            
+            // Record the general update in thesis events table
             const eventQuery = `
                 INSERT INTO thesis_events (thesis_id, event_type, description, event_date, created_by)
-                VALUES (?, 'update', ?, NOW(), ?)
+                VALUES (?, 'Ενημέρωση', ?, NOW(), ?)
             `;
             
             const eventDescription = `Ενημέρωση στοιχείων διπλωματικής: ${title}`;
@@ -1335,6 +1395,73 @@ router.post('/api/professor/committee-invitations/respond', (req, res) => {
             }
             
             const responseText = response === 'accepted' ? 'αποδεκτή' : 'απορριφθείσα';
+            
+            // Log the committee response event
+            const eventQuery = `
+                INSERT INTO thesis_events (thesis_id, event_type, description, event_date, created_by)
+                VALUES (?, 'Απόκριση Τριμελούς', ?, NOW(), ?)
+            `;
+            
+            const eventDescription = `Μέλος τριμελούς επιτροπής: Πρόσκληση ${responseText}`;
+            
+            connection.query(eventQuery, [invitation.thesis_id, eventDescription, professorId], (eventErr) => {
+                if (eventErr) {
+                    console.error('Error recording committee response event:', eventErr);
+                }
+            });
+            
+            // If invitation was accepted, check if we now have enough accepted members to make thesis active
+            if (response === 'accepted') {
+                const checkAcceptedQuery = `
+                    SELECT COUNT(*) as accepted_count 
+                    FROM thesis_committee 
+                    WHERE thesis_id = ? AND status = 'accepted'
+                `;
+                
+                connection.query(checkAcceptedQuery, [invitation.thesis_id], (err, countResult) => {
+                    if (err) {
+                        console.error('Error checking accepted count:', err);
+                        // Don't fail the main operation
+                        return;
+                    }
+                    
+                    const acceptedCount = countResult[0].accepted_count;
+                    
+                    // If we have 2 accepted members, change thesis status to "Ενεργή"
+                    if (acceptedCount >= 2) {
+                        const activateQuery = `
+                            UPDATE thesis_topic 
+                            SET state = 'Ενεργή', time_of_activation = NOW() 
+                            WHERE thesis_id = ? AND state = 'Υπό Ανάθεση'
+                        `;
+                        
+                        connection.query(activateQuery, [invitation.thesis_id], (err, activateResult) => {
+                            if (err) {
+                                console.error('Error activating thesis:', err);
+                                return;
+                            }
+                            
+                            if (activateResult.affectedRows > 0) {
+                                // Log the activation event
+                                const activateEventQuery = `
+                                    INSERT INTO thesis_events (thesis_id, event_type, description, event_date, status, created_by)
+                                    VALUES (?, 'Ενεργοποίηση', ?, NOW(), 'Ενεργή', ?)
+                                `;
+                                
+                                const activateDescription = `Η διπλωματική ενεργοποιήθηκε - Συμπληρώθηκε η τριμελής επιτροπή`;
+                                
+                                connection.query(activateEventQuery, [invitation.thesis_id, activateDescription, professorId], (eventErr) => {
+                                    if (eventErr) {
+                                        console.error('Error recording activation event:', eventErr);
+                                    }
+                                });
+                                
+                                console.log(`Thesis ${invitation.thesis_id} activated - committee complete`);
+                            }
+                        });
+                    }
+                });
+            }
             
             res.json({ 
                 success: true, 
