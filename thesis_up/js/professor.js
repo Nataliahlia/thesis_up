@@ -3384,6 +3384,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function loadCommitteeInvitations() {
         try {
+            console.log('Starting loadCommitteeInvitations...');
             showInvitationsLoading(true);
             
             const response = await fetch('/api/professor/committee-invitations', {
@@ -3393,14 +3394,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
 
+            console.log('Fetch response received:', response.ok);
+
             if (!response.ok) {
                 throw new Error('Αποτυχία φόρτωσης προσκλήσεων');
             }
 
             const data = await response.json();
+            console.log('Data received:', data);
             
             // Show content first, then load data
+            console.log('Hiding loading, showing content...');
             showInvitationsLoading(false);
+            
+            // Additional immediate cleanup - hide all loading states in committee section
+            const committeeSection = document.getElementById('committeeInvitationsSection');
+            if (committeeSection) {
+                const allLoadingElements = committeeSection.querySelectorAll('[id*="Loading"], [class*="loading"], [class*="spinner"]');
+                allLoadingElements.forEach(el => {
+                    el.style.display = 'none';
+                    el.style.visibility = 'hidden';
+                });
+                console.log('Hidden all loading elements in committee section:', allLoadingElements.length);
+            }
+            
             displayInvitations(data.invitations || []);
             updateInvitationsSummary(data.summary || {});
             
@@ -3445,6 +3462,19 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Apply any active filters
         applyInvitationFilters();
+        
+        // Ensure loading is hidden - fallback
+        console.log('displayInvitations completed, ensuring loading is hidden...');
+        showInvitationsLoading(false);
+        
+        // Additional fallback - remove any remaining loading elements
+        setTimeout(() => {
+            const remainingLoadingElements = document.querySelectorAll('#invitationsLoading');
+            remainingLoadingElements.forEach(el => {
+                el.remove();
+                console.log('Removed remaining loading element');
+            });
+        }, 50);
     }
 
     function applyInvitationFilters() {
@@ -3734,12 +3764,33 @@ document.addEventListener('DOMContentLoaded', function() {
         const loadingElement = document.getElementById('invitationsLoading');
         const contentElement = document.getElementById('invitationsContent');
         
+        console.log('showInvitationsLoading called with:', show);
+        console.log('Loading element found:', !!loadingElement);
+        console.log('Content element found:', !!contentElement);
+        
         if (loadingElement) {
-            loadingElement.style.display = show ? 'block' : 'none';
+            if (show) {
+                loadingElement.style.display = 'block';
+                loadingElement.style.visibility = 'visible';
+            } else {
+                // Completely remove the loading element when hiding
+                loadingElement.remove();
+                console.log('Loading element completely removed from DOM');
+            }
+        } else {
+            console.error('invitationsLoading element not found');
         }
         
         if (contentElement) {
-            contentElement.style.display = show ? 'none' : 'block';
+            if (show) {
+                contentElement.style.display = 'none';
+            } else {
+                contentElement.style.display = 'block';
+                contentElement.style.visibility = 'visible';
+            }
+            console.log('Content element display set to:', contentElement.style.display);
+        } else {
+            console.error('invitationsContent element not found');
         }
     }
 
