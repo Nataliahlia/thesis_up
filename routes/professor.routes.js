@@ -33,7 +33,8 @@ function getAuthenticatedProfessorId(req, res) {
         res.status(401).json({ success: false, message: 'Not logged in' });
         return null;
     }
-    return req.session.user.user_id;
+    // Use 'id' field from users table which corresponds to professor_id
+    return req.session.user.id;
 }
 
 // Debug test endpoint
@@ -79,7 +80,7 @@ router.get('/api/professor/available-topics', (req, res) => {
         return res.status(401).json({ error: 'Not logged in' });
     }
     
-    const professorId = req.session.user.user_id;
+    const professorId = req.session.user.id;
     const query = `
         SELECT thesis_id, title, description 
         FROM thesis_topic 
@@ -87,7 +88,7 @@ router.get('/api/professor/available-topics', (req, res) => {
         ORDER BY title
     `;
     
-    db.query(query, [professorId], (err, invitations) => {
+    connection.query(query, [professorId], (err, results) => {
         if (err) {
             console.error('Error fetching available topics:', err);
             return res.status(500).json({ error: 'Database error' });
@@ -131,8 +132,9 @@ router.get('/api/professor/my-theses', (req, res) => {
         return res.status(401).json({ error: 'Not logged in' });
     }
     
-    const professorId = req.session.user.user_id;
+    const professorId = req.session.user.id;
     console.log('Loading theses for professor ID:', professorId);
+    console.log('Full session user:', req.session.user);
     
     const query = `
         SELECT 
@@ -149,9 +151,11 @@ router.get('/api/professor/my-theses', (req, res) => {
             END as role,
             t.time_of_activation as assignDate,
             DATEDIFF(NOW(), t.time_of_activation) as duration,
-            t.pdf as pdfFile
+            t.pdf as pdfFile,
+            p.name as professor_name
         FROM thesis_topic t
         LEFT JOIN student s ON t.student_id = s.student_number
+        JOIN professor p ON t.instructor_id = p.professor_id
         WHERE t.instructor_id = ? OR t.member1 = ? OR t.member2 = ?
         ORDER BY t.time_of_activation DESC
     `;
@@ -246,7 +250,7 @@ router.post('/api/professor/assign-topic', (req, res) => {
     }
     
     const { topicId, studentId } = req.body;
-    const professorId = req.session.user.user_id;
+    const professorId = req.session.user.id;
     
     // Validation
     if (!topicId || !studentId) {
@@ -333,7 +337,7 @@ router.post('/api/professor/cancel-assignment', (req, res) => {
     }
     
     const { thesisId } = req.body;
-    const professorId = req.session.user.user_id;
+    const professorId = req.session.user.id;
     
     // Validation
     if (!thesisId) {
@@ -459,7 +463,7 @@ router.post('/api/professor/cancel-active-thesis', (req, res) => {
     }
     
     const { thesisId, assemblyNumber, assemblyYear, reason } = req.body;
-    const professorId = req.session.user.user_id;
+    const professorId = req.session.user.id;
     
     // Validation
     if (!thesisId || !assemblyNumber || !assemblyYear || !reason) {
@@ -785,6 +789,7 @@ router.get('/api/professor/thesis-details/:thesisId', (req, res) => {
                 tc.status,
                 tc.invitation_date,
                 tc.acceptance_date,
+                tc.professor_id,
                 p.name,
                 p.surname,
                 p.email
@@ -818,90 +823,73 @@ router.get('/api/professor/thesis-details/:thesisId', (req, res) => {
                     return res.status(500).json({ success: false, message: 'Database error' });
                 }
 
-                // Get thesis files
-                const filesQuery = `
+                // Get thesis files - handle case where table doesn't exist
+                const filesResult = []; // Default empty array since table doesn't exist
+                
+                // Get thesis comments/grades
+                const commentsQuery = `
                     SELECT 
-                        file_name,
-                        file_path,
-                        file_type,
-                        upload_date,
-                        description
-                    FROM thesis_files
-                    WHERE thesis_id = ?
-                    ORDER BY upload_date DESC
+                        tc.comment,
+                        tc.grade,
+                        tc.comment_date,
+                        tc.comment_type,
+                        p.name as professor_name,
+                        p.surname as professor_surname
+                    FROM thesis_comments tc
+                    JOIN professor p ON tc.professor_id = p.professor_id
+                    WHERE tc.thesis_id = ?
+                    ORDER BY tc.comment_date DESC
                 `;
 
-                connection.query(filesQuery, [thesisId], (err, filesResult) => {
+                connection.query(commentsQuery, [thesisId], (err, commentsResult) => {
                     if (err) {
-                        console.error('Error fetching thesis files:', err);
+                        console.error('Error fetching thesis comments:', err);
                         return res.status(500).json({ success: false, message: 'Database error' });
                     }
 
-                    // Get thesis comments/grades
-                    const commentsQuery = `
-                        SELECT 
-                            tc.comment,
-                            tc.grade,
-                            tc.comment_date,
-                            tc.comment_type,
-                            p.name as professor_name,
-                            p.surname as professor_surname
-                        FROM thesis_comments tc
-                        JOIN professor p ON tc.professor_id = p.professor_id
-                        WHERE tc.thesis_id = ?
-                        ORDER BY tc.comment_date DESC
-                    `;
-
-                    connection.query(commentsQuery, [thesisId], (err, commentsResult) => {
-                        if (err) {
-                            console.error('Error fetching thesis comments:', err);
-                            return res.status(500).json({ success: false, message: 'Database error' });
+                    // Determine professor's role in this thesis
+                    let myRole = 'other';
+                    if (thesis.instructor_id === professorId) {
+                        myRole = 'supervisor';
+                    } else {
+                        // Check if professor is in committee
+                        const isCommitteeMember = committeeResult.some(member => 
+                            member.professor_id === professorId
+                        );
+                        if (isCommitteeMember) {
+                            myRole = 'member';
                         }
+                    }
 
-                        // Determine professor's role in this thesis
-                        let myRole = 'other';
-                        if (thesis.instructor_id === professorId) {
-                            myRole = 'supervisor';
-                        } else {
-                            // Check if professor is in committee
-                            const isCommitteeMember = committeeResult.some(member => 
-                                member.professor_id === professorId
-                            );
-                            if (isCommitteeMember) {
-                                myRole = 'member';
-                            }
+                    // Combine all data
+                    const result = {
+                        success: true,
+                        data: {
+                            id: thesis.thesis_id,
+                            title: thesis.title,
+                            description: thesis.description,
+                            status: thesis.state,
+                            pdf: thesis.pdf,
+                            assignDate: thesis.time_of_activation,
+                            duration: thesis.duration_days,
+                            my_role: myRole,
+                            student: thesis.student_name && thesis.student_surname ? {
+                                name: `${thesis.student_name} ${thesis.student_surname}`,
+                                email: thesis.student_email,
+                                phone: thesis.student_phone,
+                                studentNumber: thesis.student_number
+                            } : null,
+                            supervisor: {
+                                name: `${thesis.supervisor_name} ${thesis.supervisor_surname}`
+                            },
+                            committee: committeeResult,
+                            timeline: eventsResult,
+                            files: filesResult,
+                            comments: commentsResult
                         }
+                    };
 
-                        // Combine all data
-                        const result = {
-                            success: true,
-                            data: {
-                                id: thesis.thesis_id,
-                                title: thesis.title,
-                                description: thesis.description,
-                                status: thesis.state,
-                                pdf: thesis.pdf,
-                                assignDate: thesis.time_of_activation,
-                                duration: thesis.duration_days,
-                                my_role: myRole,
-                                student: thesis.student_name && thesis.student_surname ? {
-                                    name: `${thesis.student_name} ${thesis.student_surname}`,
-                                    email: thesis.student_email,
-                                    phone: thesis.student_phone,
-                                    studentNumber: thesis.student_number
-                                } : null,
-                                supervisor: {
-                                    name: `${thesis.supervisor_name} ${thesis.supervisor_surname}`
-                                },
-                                committee: committeeResult,
-                                timeline: eventsResult,
-                                files: filesResult,
-                                comments: commentsResult
-                            }
-                        };
-
-                        res.json(result);
-                    });
+                    res.json(result);
                 });
             });
         });
@@ -1065,7 +1053,7 @@ router.get('/api/professor/statistics', (req, res) => {
         });
     }
     
-    const professorId = req.session.user.user_id;
+    const professorId = req.session.user.id;
     console.log('Statistics request - Professor ID:', professorId);
 
     // Parallel queries to get comprehensive statistics

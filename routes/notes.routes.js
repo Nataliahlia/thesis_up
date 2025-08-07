@@ -1,7 +1,7 @@
 // UC13 - Notes Routes (using existing thesis_comments table)
 const express = require('express');
 const router = express.Router();
-const db = require('../db');
+const connection = require('../db');
 
 // Get all notes for a thesis (using thesis_comments table)
 router.get('/api/notes/:thesisId', (req, res) => {
@@ -15,7 +15,7 @@ router.get('/api/notes/:thesisId', (req, res) => {
         });
     }
     
-    const userId = req.session.user.user_id; // This is the professor_id
+    const userId = req.session.user.id; // This is the professor_id
     
     // Verify that the user has access to this thesis
     const authQuery = `
@@ -26,7 +26,7 @@ router.get('/api/notes/:thesisId', (req, res) => {
         WHERE t.thesis_id = ? AND (t.instructor_id = ? OR tc.professor_id = ?)
     `;
     
-    db.query(authQuery, [thesisId, userId, userId], (err, authResult) => {
+    connection.query(authQuery, [thesisId, userId, userId], (err, authResult) => {
         if (err) {
             console.error('Error verifying access:', err);
             return res.status(500).json({
@@ -56,7 +56,7 @@ router.get('/api/notes/:thesisId', (req, res) => {
             ORDER BY tc.comment_date DESC
         `;
 
-        db.query(notesQuery, [thesisId], (err, notes) => {
+        connection.query(notesQuery, [thesisId], (err, notes) => {
             if (err) {
                 console.error('Error fetching notes:', err);
                 return res.status(500).json({
@@ -85,7 +85,7 @@ router.post('/api/notes', (req, res) => {
         });
     }
     
-    const userId = req.session.user.user_id; // This is the professor_id
+    const userId = req.session.user.id; // This is the professor_id
     
     if (!thesis_id || !title || !content || !type) {
         return res.status(400).json({
@@ -103,7 +103,7 @@ router.post('/api/notes', (req, res) => {
         WHERE t.thesis_id = ? AND (t.instructor_id = ? OR tc.professor_id = ?)
     `;
     
-    db.query(authQuery, [thesis_id, userId, userId], (err, authResult) => {
+    connection.query(authQuery, [thesis_id, userId, userId], (err, authResult) => {
         if (err) {
             console.error('Error verifying access:', err);
             return res.status(500).json({
@@ -121,11 +121,11 @@ router.post('/api/notes', (req, res) => {
         
         // Insert the note into thesis_comments
         const insertQuery = `
-            INSERT INTO thesis_comments (thesis_id, professor_id, title, comment, comment_type, comment_date, updated_at)
-            VALUES (?, ?, ?, ?, ?, NOW(), NOW())
+            INSERT INTO thesis_comments (thesis_id, professor_id, comment, comment_type)
+            VALUES (?, ?, ?, ?)
         `;
         
-        db.query(insertQuery, [thesis_id, userId, title, content, type], (err, result) => {
+        connection.query(insertQuery, [thesis_id, userId, content, type], (err, result) => {
             if (err) {
                 console.error('Error creating note:', err);
                 return res.status(500).json({
@@ -147,7 +147,7 @@ router.post('/api/notes', (req, res) => {
                     WHERE tc.id = ?
                 `;
                 
-                db.query(noteQuery, [result.insertId], (err, createdNote) => {
+                connection.query(noteQuery, [result.insertId], (err, createdNote) => {
                     if (err) {
                         console.error('Error fetching created note:', err);
                         return res.status(500).json({
@@ -185,7 +185,7 @@ router.put('/api/notes/:noteId', (req, res) => {
         });
     }
     
-    const userId = req.session.user.user_id; // This is the professor_id
+    const userId = req.session.user.id; // This is the professor_id
     
     if (!title || !content || !type) {
         return res.status(400).json({
@@ -201,7 +201,7 @@ router.put('/api/notes/:noteId', (req, res) => {
         WHERE id = ? AND professor_id = ?
     `;
     
-    db.query(authQuery, [noteId, userId], (err, authResult) => {
+    connection.query(authQuery, [noteId, userId], (err, authResult) => {
         if (err) {
             console.error('Error verifying note ownership:', err);
             return res.status(500).json({
@@ -220,11 +220,11 @@ router.put('/api/notes/:noteId', (req, res) => {
         // Update the note
         const updateQuery = `
             UPDATE thesis_comments 
-            SET title = ?, comment = ?, comment_type = ?, updated_at = NOW()
+            SET comment = ?, comment_type = ?
             WHERE id = ?
         `;
         
-        db.query(updateQuery, [title, content, type, noteId], (err) => {
+        connection.query(updateQuery, [content, type, noteId], (err) => {
             if (err) {
                 console.error('Error updating note:', err);
                 return res.status(500).json({
@@ -245,7 +245,7 @@ router.put('/api/notes/:noteId', (req, res) => {
                 WHERE tc.id = ?
             `;
             
-            db.query(noteQuery, [noteId], (err, updatedNote) => {
+            connection.query(noteQuery, [noteId], (err, updatedNote) => {
                 if (err) {
                     console.error('Error fetching updated note:', err);
                     return res.status(500).json({
@@ -276,7 +276,7 @@ router.delete('/api/notes/:noteId', (req, res) => {
         });
     }
     
-    const userId = req.session.user.user_id; // This is the professor_id
+    const userId = req.session.user.id; // This is the professor_id
     
     // Verify that the user is the author of this note
     const authQuery = `
@@ -285,7 +285,7 @@ router.delete('/api/notes/:noteId', (req, res) => {
         WHERE id = ? AND professor_id = ?
     `;
     
-    db.query(authQuery, [noteId, userId], (err, authResult) => {
+    connection.query(authQuery, [noteId, userId], (err, authResult) => {
         if (err) {
             console.error('Error verifying note ownership:', err);
             return res.status(500).json({
@@ -304,7 +304,7 @@ router.delete('/api/notes/:noteId', (req, res) => {
         // Delete the note
         const deleteQuery = `DELETE FROM thesis_comments WHERE id = ?`;
         
-        db.query(deleteQuery, [noteId], (err) => {
+        connection.query(deleteQuery, [noteId], (err) => {
             if (err) {
                 console.error('Error deleting note:', err);
                 return res.status(500).json({
