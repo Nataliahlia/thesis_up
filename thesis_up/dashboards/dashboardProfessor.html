@@ -91,10 +91,6 @@
                     <i class="fa-solid fa-people-group me-3 text-bordeaux"></i>
                     <span class="text-bordeaux menu-text">Προσκλήσεις σε Τριμελή Επιτροπή</span>
                 </a>
-                <a class="nav-link text-bordeaux d-flex align-items-center py-3 px-4" href="#" id="statisticsLink">
-                    <i class="fa-solid fa-chart-simple me-3 text-bordeaux"></i>
-                    <span class="text-bordeaux menu-text">Στατιστικά</span>
-                </a>
             </nav>
             
             <!-- Sidebar Footer -->
@@ -166,9 +162,6 @@
                         <div class="d-flex gap-3 justify-content-end">
                             <button type="button" class="btn btn-outline-secondary px-4" id="cancelTopicForm">
                                 <i class="fas fa-times me-2"></i>Ακύρωση
-                            </button>
-                            <button type="button" class="btn btn-outline-bordeaux px-4" id="previewTopicBtn">
-                                <i class="fas fa-eye me-2"></i>Προεπισκόπηση
                             </button>
                             <button type="submit" class="btn btn-bordeaux px-4">
                                 <i class="fas fa-save me-2"></i>Αποθήκευση Θέματος
@@ -275,6 +268,7 @@
                             </label>
                             <select id="statusFilter" class="form-select">
                                 <option value="">Όλες οι καταστάσεις</option>
+                                <option value="unassigned">Χωρίς Ανάθεση</option>
                                 <option value="under_assignment">Υπό Ανάθεση</option>
                                 <option value="active">Ενεργές</option>
                                 <option value="under_examination">Υπό Εξέταση</option>

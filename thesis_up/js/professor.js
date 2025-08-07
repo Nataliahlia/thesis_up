@@ -19,6 +19,9 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeStatistics(); // Add UC12 Statistics functionality
     initializeCommitteeInvitations(); // Add UC11 Committee Invitations functionality
     
+    // Show statistics as the default home page
+    showStatisticsAsHomePage();
+    
     // ===== NOTIFICATION SYSTEM =====
     function showNotification(message, type = 'info') {
         // Remove existing notifications
@@ -207,14 +210,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // ===== NAVIGATION LINKS =====
     function initializeNavigationLinks() {
-        // Home link - close all forms and show default view
+        // Home link - show statistics as the home page
         const homeLinks = document.querySelectorAll('.nav-link[href="#"]:not([id])');
         homeLinks.forEach(link => {
             if (link.textContent.includes('Αρχική')) {
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
-                    hideAllForms();
-                    updateMainTitle('Πίνακας Ελέγχου Καθηγητή');
+                    showStatisticsAsHomePage();
                     
                     // Set this as active
                     document.querySelectorAll('.nav-link').forEach(navLink => {
@@ -226,12 +228,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         // Other navigation links that are not yet implemented
-        // Note: Statistics is handled by initializeStatistics(), so we exclude it here
         // Note: Committee Invitations is handled by initializeCommitteeInvitations(), so we exclude it here
+        // Note: Statistics are now part of the home page
         const notImplementedLinks = document.querySelectorAll('.nav-link[href="#"]:not([id])');
         notImplementedLinks.forEach(link => {
             if (!link.textContent.includes('Αρχική') && 
-                !link.textContent.includes('Στατιστικά') && 
                 !link.textContent.includes('Δημιουργία') && 
                 !link.textContent.includes('Ανάθεση') && 
                 !link.textContent.includes('Διπλωματικές') &&
@@ -1054,12 +1055,24 @@ document.addEventListener('DOMContentLoaded', function() {
     function applyThesesFilters() {
         let filteredTheses = allTheses;
         
-        // Status filter
+        // Status filter with mapping from English to Greek
         const statusFilter = document.getElementById('statusFilter');
         if (statusFilter && statusFilter.value) {
-            filteredTheses = filteredTheses.filter(thesis => 
-                thesis.status === statusFilter.value
-            );
+            const statusMapping = {
+                'unassigned': 'Χωρίς Ανάθεση',
+                'under_assignment': 'Υπό Ανάθεση',
+                'active': 'Ενεργή',
+                'under_examination': 'Υπό Εξέταση',
+                'completed': 'Περατωμένη',
+                'cancelled': 'Ακυρωμένη'
+            };
+            
+            const targetStatus = statusMapping[statusFilter.value];
+            if (targetStatus) {
+                filteredTheses = filteredTheses.filter(thesis => 
+                    thesis.status === targetStatus
+                );
+            }
         }
         
         // Role filter
@@ -2180,9 +2193,21 @@ document.addEventListener('DOMContentLoaded', function() {
             // Apply current filters to get the same data as displayed
             const statusFilter = document.getElementById('statusFilter');
             if (statusFilter && statusFilter.value) {
-                thesesToExport = thesesToExport.filter(thesis => 
-                    thesis.status === statusFilter.value
-                );
+                const statusMapping = {
+                    'unassigned': 'Χωρίς Ανάθεση',
+                    'under_assignment': 'Υπό Ανάθεση',
+                    'active': 'Ενεργή',
+                    'under_examination': 'Υπό Εξέταση',
+                    'completed': 'Περατωμένη',
+                    'cancelled': 'Ακυρωμένη'
+                };
+                
+                const targetStatus = statusMapping[statusFilter.value];
+                if (targetStatus) {
+                    thesesToExport = thesesToExport.filter(thesis => 
+                        thesis.status === targetStatus
+                    );
+                }
             }
             
             const roleFilter = document.getElementById('roleFilter');
@@ -2232,9 +2257,21 @@ document.addEventListener('DOMContentLoaded', function() {
             // Apply current filters to get the same data as displayed
             const statusFilter = document.getElementById('statusFilter');
             if (statusFilter && statusFilter.value) {
-                thesesToExport = thesesToExport.filter(thesis => 
-                    thesis.status === statusFilter.value
-                );
+                const statusMapping = {
+                    'unassigned': 'Χωρίς Ανάθεση',
+                    'under_assignment': 'Υπό Ανάθεση',
+                    'active': 'Ενεργή',
+                    'under_examination': 'Υπό Εξέταση',
+                    'completed': 'Περατωμένη',
+                    'cancelled': 'Ακυρωμένη'
+                };
+                
+                const targetStatus = statusMapping[statusFilter.value];
+                if (targetStatus) {
+                    thesesToExport = thesesToExport.filter(thesis => 
+                        thesis.status === targetStatus
+                    );
+                }
             }
             
             const roleFilter = document.getElementById('roleFilter');
@@ -2473,38 +2510,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===== UC12: STATISTICS FUNCTIONALITY =====
     function initializeStatistics() {
         console.log('Initializing statistics...'); // Debug log
-        const statisticsLink = document.getElementById('statisticsLink');
         const statisticsSection = document.getElementById('statisticsSection');
         const backToMainFromStats = document.getElementById('backToMainFromStats');
         const retryStatsBtn = document.getElementById('retryStatsBtn');
         
-        console.log('Statistics link element:', statisticsLink); // Debug log
         console.log('Statistics section element:', statisticsSection); // Debug log
-        
-        // Statistics navigation
-        if (statisticsLink) {
-            console.log('Adding event listener to statistics link'); // Debug log
-            statisticsLink.addEventListener('click', function(e) {
-                e.preventDefault();
-                console.log('Statistics link clicked!'); // Debug log
-                showStatisticsSection();
-                
-                // Set this as active
-                document.querySelectorAll('.nav-link').forEach(navLink => {
-                    navLink.classList.remove('active');
-                });
-                this.classList.add('active');
-            });
-        } else {
-            console.error('Statistics link not found!'); // Debug log
-        }
         
         // Back to main button
         if (backToMainFromStats) {
             backToMainFromStats.addEventListener('click', function(e) {
                 e.preventDefault();
-                hideAllForms();
-                updateMainTitle('Πίνακας Ελέγχου Καθηγητή');
+                showStatisticsAsHomePage();
                 
                 // Set home as active
                 const homeLink = document.querySelector('.nav-link:not([id])');
@@ -2545,6 +2561,21 @@ document.addEventListener('DOMContentLoaded', function() {
             loadStatisticsData();
         } else {
             console.error('Statistics section not found!'); // Debug log
+        }
+    }
+    
+    // Function to show statistics as the home page
+    function showStatisticsAsHomePage() {
+        console.log('showStatisticsAsHomePage called');
+        hideAllForms();
+        updateMainTitle('Πίνακας Ελέγχου Καθηγητή - Στατιστικά');
+        
+        const statisticsSection = document.getElementById('statisticsSection');
+        if (statisticsSection) {
+            statisticsSection.style.display = 'block';
+            loadStatisticsData();
+        } else {
+            console.error('Statistics section not found!');
         }
     }
     
