@@ -74,19 +74,26 @@ a:hover .text-bordeaux {
   cursor: pointer;
 }
 
+/* This defines a fade-in animation */
+/* It starts with invisibility (opacity 0) and a slight downward translation (10px) */
+/* and ends with full visibility (opacity 1) and no translation */
 @keyframes fadein {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* White -> used for backgrounds */
 .bg-white {
-  background-color: #FFFFFF;/* white -> used for backgrounds */
+  background-color: #FFFFFF;
 }
 
+/* Light gray colour */
 .bg-light_gray {
-  background-color: #e2e1e1;/* light gray */
+  background-color: #e2e1e1;
 }
 
+/* Carousel wrapper -> this adds the styling to the carousel cards as a container */
+/* Wrapper 
 .carousel-wrapper {
   overflow: hidden;
   width: 100%;
@@ -95,22 +102,25 @@ a:hover .text-bordeaux {
   margin-bottom: 50px;
 }
 
+/* Carousel track -> this holds all cards side by side in a horizontal row */
 .carousel-track {
   display: flex;
 }
 
+/* This adds the styling to each card of the carousel */
 .carousel-track > .card {
   min-width: 250px;
   margin-right: 2rem;
   flex: 0 0 auto;
-  height: 250px;           /* bigger height */
-  width: 400px;          /* wider fixed width */
+  height: 250px;          
+  width: 400px;          
   display: inline-block;
-  flex-direction: column;
-  justify-content: space-between;  /* ή center ή flex-start */
+  /* flex-direction: column;
+  justify-content: space-between;   */
   padding: 1rem;
 }
 
+/* This adds the styling to the carousel outer container */
 #carouselContainer {
   display: flex;
   overflow-x: hidden;
