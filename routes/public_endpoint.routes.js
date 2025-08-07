@@ -25,9 +25,10 @@ router.get('/api/announcements', (req, res) => {
     JOIN thesis_topic t ON a.thesis_id = t.thesis_id
     JOIN professor p ON t.instructor_id = p.professor_id
     JOIN student s ON t.student_id = s.student_number
-    WHERE t.state = 'Υπό Εξέταση' AND a.date >= CURDATE()
+    WHERE t.state = 'Υπό Εξέταση'
   `;
 
+  //  AND a.date >= CURDATE()
   // Add date filtering if provided
   if (start && end) {
     sql += ` AND DATE(a.date) BETWEEN '${start}' AND '${end}'`;
