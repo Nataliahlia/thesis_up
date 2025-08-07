@@ -535,9 +535,6 @@
                     console.error('Fetch error:', error);
                 });
             });      
-            
-            // Access the info when the page loads
-            button.click();
         });
     </script>
 
@@ -1710,6 +1707,29 @@
 
         document.addEventListener('DOMContentLoaded', initializeLogoutCustom);
 
+    </script>
+
+    <!-- This handles the starting page and the page reloads -->
+    <script>
+        // Save active section on menu click
+        ['viewMyThesis', 'editButton', 'manageThesis'].forEach(id => {
+            const btn = document.getElementById(id);    // Get the button by its id
+            if (btn) {
+                btn.addEventListener('click', () => {
+                    localStorage.setItem('studentActiveSection', id);   // Save the id of the button in the local storage
+                });
+            }
+        });
+
+        // Restore active section on reload
+        document.addEventListener('DOMContentLoaded', function () {
+            const activeSection = localStorage.getItem('studentActiveSection'); // Get the saved section from the local storage
+            if (activeSection && document.getElementById(activeSection)) {
+                document.getElementById(activeSection).click();   // Simulate a click on the saved section to show it
+            } else {
+                document.getElementById('viewMyThesis').click();  // If no section is saved, show the default section -> handles starting page as well 
+            }
+        });
     </script>
 
 </body>
