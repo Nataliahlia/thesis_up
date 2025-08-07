@@ -27,6 +27,15 @@ const uploadPDF = multer({
     limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
 
+// Helper function to get authenticated professor ID
+function getAuthenticatedProfessorId(req, res) {
+    if (!req.session || !req.session.user) {
+        res.status(401).json({ success: false, message: 'Not logged in' });
+        return null;
+    }
+    return req.session.user.user_id;
+}
+
 // Debug test endpoint
 router.get('/api/professor/debug-test', (req, res) => {
     res.json({ message: 'Debug endpoint works!', timestamp: new Date() });
@@ -65,7 +74,12 @@ router.get('/uploads/thesis-pdfs/:filename', (req, res) => {
 
 // Get professor's available topics for assignment
 router.get('/api/professor/available-topics', (req, res) => {
-    const professorId = 1; // Mock professor ID for testing
+    // Check if user is logged in
+    if (!req.session || !req.session.user) {
+        return res.status(401).json({ error: 'Not logged in' });
+    }
+    
+    const professorId = req.session.user.user_id;
     const query = `
         SELECT thesis_id, title, description 
         FROM thesis_topic 
@@ -112,7 +126,14 @@ router.get('/api/professor/search-students', (req, res) => {
 
 // Get professor's theses (as supervisor or committee member)
 router.get('/api/professor/my-theses', (req, res) => {
-    const professorId = 1; // Mock professor ID for testing
+    // Check if user is logged in
+    if (!req.session || !req.session.user) {
+        return res.status(401).json({ error: 'Not logged in' });
+    }
+    
+    const professorId = req.session.user.user_id;
+    console.log('Loading theses for professor ID:', professorId);
+    
     const query = `
         SELECT 
             t.thesis_id as id,
@@ -161,9 +182,14 @@ router.get('/api/professor/debug-test-2', (req, res) => {
 
 // Create new thesis topic
 router.post('/api/professor/create-topic', uploadPDF.single('pdf'), (req, res) => {
+    // Check if user is logged in
+    if (!req.session || !req.session.user) {
+        return res.status(401).json({ success: false, message: 'Not logged in' });
+    }
+    
     const { title, description } = req.body;
     const pdfPath = req.file ? req.file.filename : null;
-    const professorId = 1; // Mock professor ID for testing
+    const professorId = req.session.user.user_id;
     
     // Validation
     if (!title || !description) {
@@ -214,8 +240,13 @@ router.post('/api/professor/create-topic', uploadPDF.single('pdf'), (req, res) =
 
 // Assign topic to student
 router.post('/api/professor/assign-topic', (req, res) => {
+    // Check if user is logged in
+    if (!req.session || !req.session.user) {
+        return res.status(401).json({ success: false, message: 'Not logged in' });
+    }
+    
     const { topicId, studentId } = req.body;
-    const professorId = 1; // Mock professor ID for testing
+    const professorId = req.session.user.user_id;
     
     // Validation
     if (!topicId || !studentId) {
@@ -296,8 +327,13 @@ router.post('/api/professor/assign-topic', (req, res) => {
 
 // Cancel initial topic assignment (UC7)
 router.post('/api/professor/cancel-assignment', (req, res) => {
+    // Check if user is logged in
+    if (!req.session || !req.session.user) {
+        return res.status(401).json({ success: false, message: 'Not logged in' });
+    }
+    
     const { thesisId } = req.body;
-    const professorId = 1; // Mock professor ID for testing
+    const professorId = req.session.user.user_id;
     
     // Validation
     if (!thesisId) {
@@ -417,8 +453,13 @@ router.post('/api/professor/cancel-assignment', (req, res) => {
 
 // Cancel active thesis (after 2 years with assembly decision)
 router.post('/api/professor/cancel-active-thesis', (req, res) => {
+    // Check if user is logged in
+    if (!req.session || !req.session.user) {
+        return res.status(401).json({ success: false, message: 'Not logged in' });
+    }
+    
     const { thesisId, assemblyNumber, assemblyYear, reason } = req.body;
-    const professorId = 1; // Mock professor ID for testing
+    const professorId = req.session.user.user_id;
     
     // Validation
     if (!thesisId || !assemblyNumber || !assemblyYear || !reason) {
@@ -565,7 +606,8 @@ router.post('/api/professor/cancel-active-thesis', (req, res) => {
 router.post('/api/professor/update-thesis/:id', uploadPDF.single('pdf'), (req, res) => {
     const thesisId = req.params.id;
     const { title, description, status } = req.body;
-    const professorId = 1; // Mock professor ID for testing
+    const professorId = getAuthenticatedProfessorId(req, res);
+    if (!professorId) return; // Error response already sent by helper
     
     // Validation
     if (!thesisId) {
@@ -696,7 +738,8 @@ router.post('/api/professor/update-thesis/:id', uploadPDF.single('pdf'), (req, r
 // Get detailed thesis information (UC9)
 router.get('/api/professor/thesis-details/:thesisId', (req, res) => {
     const thesisId = req.params.thesisId;
-    const professorId = 1; // Mock professor ID for testing
+    const professorId = getAuthenticatedProfessorId(req, res);
+    if (!professorId) return; // Error response already sent by helper
 
     // Main thesis query with join to get student and professor information
     const thesisQuery = `
@@ -873,7 +916,8 @@ router.get('/api/professor/test', (req, res) => {
 // ===== DELETE TOPIC ENDPOINT =====
 router.delete('/api/professor/delete-topic', (req, res) => {
     const { topicId } = req.body;
-    const professorId = 1; // Mock professor ID for testing
+    const professorId = getAuthenticatedProfessorId(req, res);
+    if (!professorId) return; // Error response already sent by helper
     
     if (!topicId) {
         return res.status(400).json({
@@ -1013,17 +1057,16 @@ router.delete('/api/professor/delete-topic', (req, res) => {
 
 // ===== UC12: VIEW INSTRUCTOR STATISTICS =====
 router.get('/api/professor/statistics', (req, res) => {
-    // Use the logged-in professor ID (from session logs we see id: 1)
-    const professorId = 1;
-    
-    console.log('Statistics request - Professor ID:', professorId);
-    
-    if (!professorId) {
+    // Check if user is logged in
+    if (!req.session || !req.session.user) {
         return res.status(401).json({ 
             success: false, 
             message: 'Μη εξουσιοδοτημένη πρόσβαση' 
         });
     }
+    
+    const professorId = req.session.user.user_id;
+    console.log('Statistics request - Professor ID:', professorId);
 
     // Parallel queries to get comprehensive statistics
     const queries = {
@@ -1279,11 +1322,8 @@ router.get('/api/professor/statistics', (req, res) => {
 
 // Get committee invitations for the logged-in professor
 router.get('/api/professor/committee-invitations', (req, res) => {
-    const professorId = 1; // Mock professor ID for testing
-    
-    if (!professorId) {
-        return res.status(401).json({ success: false, message: 'Unauthorized' });
-    }
+    const professorId = getAuthenticatedProfessorId(req, res);
+    if (!professorId) return; // Error response already sent by helper
     
     // Query to get all committee invitations for this professor
     const query = `
@@ -1337,12 +1377,10 @@ router.get('/api/professor/committee-invitations', (req, res) => {
 
 // Respond to a committee invitation
 router.post('/api/professor/committee-invitations/respond', (req, res) => {
-    const professorId = 1; // Mock professor ID for testing
-    const { invitation_id, response } = req.body;
+    const professorId = getAuthenticatedProfessorId(req, res);
+    if (!professorId) return; // Error response already sent by helper
     
-    if (!professorId) {
-        return res.status(401).json({ success: false, message: 'Unauthorized' });
-    }
+    const { invitation_id, response } = req.body;
     
     if (!invitation_id || !response) {
         return res.status(400).json({ success: false, message: 'Missing required fields' });
