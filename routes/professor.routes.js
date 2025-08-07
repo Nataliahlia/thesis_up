@@ -189,7 +189,7 @@ router.post('/api/professor/create-topic', uploadPDF.single('pdf'), (req, res) =
     
     const { title, description } = req.body;
     const pdfPath = req.file ? req.file.filename : null;
-    const professorId = req.session.user.user_id;
+    const professorId = req.session.user.id;
     
     // Validation
     if (!title || !description) {

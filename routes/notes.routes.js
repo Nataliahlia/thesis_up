@@ -15,7 +15,7 @@ router.get('/api/notes/:thesisId', (req, res) => {
         });
     }
     
-    const userId = req.session.user.id; // This is the professor_id
+    const userId = req.session.user.user_id; // This is the professor_id
     
     // Verify that the user has access to this thesis
     const authQuery = `
@@ -85,7 +85,7 @@ router.post('/api/notes', (req, res) => {
         });
     }
     
-    const userId = req.session.user.id; // This is the professor_id
+    const userId = req.session.user.user_id; // This is the professor_id
     
     if (!thesis_id || !title || !content || !type) {
         return res.status(400).json({
@@ -185,7 +185,7 @@ router.put('/api/notes/:noteId', (req, res) => {
         });
     }
     
-    const userId = req.session.user.id; // This is the professor_id
+    const userId = req.session.user.user_id; // This is the professor_id
     
     if (!title || !content || !type) {
         return res.status(400).json({
@@ -276,7 +276,7 @@ router.delete('/api/notes/:noteId', (req, res) => {
         });
     }
     
-    const userId = req.session.user.id; // This is the professor_id
+    const userId = req.session.user.user_id; // This is the professor_id
     
     // Verify that the user is the author of this note
     const authQuery = `

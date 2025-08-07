@@ -167,10 +167,12 @@ CREATE TABLE thesis_comments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     thesis_id INT NOT NULL,
     professor_id INT NOT NULL,
+    title VARCHAR(255),
     comment TEXT,
     grade DECIMAL(4,2),
     comment_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-    comment_type ENUM('progress', 'final', 'correction') DEFAULT 'progress',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    comment_type ENUM('progress', 'final', 'correction', 'general', 'meeting', 'deadline', 'issue', 'achievement') DEFAULT 'progress',
     FOREIGN KEY (thesis_id) REFERENCES thesis_topic(thesis_id),
     FOREIGN KEY (professor_id) REFERENCES professor(professor_id)
 );

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Committee Invitations</title>
+</head>
+<body>
+    <h1>Test Committee Invitations</h1>
+    <button onclick="testInvitations()">Test API</button>
+    <div id="result"></div>
+
+    <script>
+        async function testInvitations() {
+            try {
+                // First try to see current session info
+                let sessionResponse = await fetch('/api/session-info');
+                let sessionData = await sessionResponse.json();
+                console.log('Session info:', sessionData);
+                
+                // Try to get committee invitations
+                let response = await fetch('/api/professor/committee-invitations');
+                let data = await response.json();
+                
+                document.getElementById('result').innerHTML = 
+                    '<h2>Session:</h2><pre>' + JSON.stringify(sessionData, null, 2) + '</pre>' +
+                    '<h2>Invitations Result:</h2><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('result').innerHTML = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>
