@@ -44,7 +44,7 @@ router.get('/api/notes/:thesisId', (req, res) => {
         
         // Get notes with author information (only notes types, not grades)
         const notesQuery = `
-            SELECT tc.*, 
+            SELECT tc.id, tc.thesis_id, tc.professor_id, tc.title, tc.comment, tc.grade, tc.comment_date, tc.comment_type,
                    p.name as author_name,
                    p.surname as author_surname,
                    p.email as author_email,
@@ -121,11 +121,11 @@ router.post('/api/notes', (req, res) => {
         
         // Insert the note into thesis_comments
         const insertQuery = `
-            INSERT INTO thesis_comments (thesis_id, professor_id, comment, comment_type)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO thesis_comments (thesis_id, professor_id, title, comment, comment_type)
+            VALUES (?, ?, ?, ?, ?)
         `;
         
-        connection.query(insertQuery, [thesis_id, userId, content, type], (err, result) => {
+        connection.query(insertQuery, [thesis_id, userId, title, content, type], (err, result) => {
             if (err) {
                 console.error('Error creating note:', err);
                 return res.status(500).json({
@@ -137,7 +137,7 @@ router.post('/api/notes', (req, res) => {
             if (result && result.insertId) {
                 // Get the created note with author info
                 const noteQuery = `
-                    SELECT tc.*, 
+                    SELECT tc.id, tc.thesis_id, tc.professor_id, tc.title, tc.comment, tc.grade, tc.comment_date, tc.comment_type,
                            p.name as author_name,
                            p.surname as author_surname,
                            p.email as author_email,
@@ -220,11 +220,11 @@ router.put('/api/notes/:noteId', (req, res) => {
         // Update the note
         const updateQuery = `
             UPDATE thesis_comments 
-            SET comment = ?, comment_type = ?
+            SET title = ?, comment = ?, comment_type = ?
             WHERE id = ?
         `;
         
-        connection.query(updateQuery, [content, type, noteId], (err) => {
+        connection.query(updateQuery, [title, content, type, noteId], (err) => {
             if (err) {
                 console.error('Error updating note:', err);
                 return res.status(500).json({
@@ -235,7 +235,7 @@ router.put('/api/notes/:noteId', (req, res) => {
             
             // Get the updated note with author info
             const noteQuery = `
-                SELECT tc.*, 
+                SELECT tc.id, tc.thesis_id, tc.professor_id, tc.title, tc.comment, tc.grade, tc.comment_date, tc.comment_type,
                        p.name as author_name,
                        p.surname as author_surname,
                        p.email as author_email,

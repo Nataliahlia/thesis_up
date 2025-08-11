@@ -83,14 +83,6 @@ updatePasswords((err, count) => {
   }
 });
 
-// Add thesis details routes separately
-try {
-    app.use(require('./routes/thesis_details.routes'));
-    console.log('Thesis details routes loaded successfully');
-} catch (error) {
-    console.error('Error loading thesis details routes:', error.message);
-}
-
 // Add professor routes with error handling
 try {
     app.use(require('./routes/professor.routes'));

@@ -405,48 +405,33 @@ router.post('/api/professor/cancel-assignment', (req, res) => {
                         });
                     }
                     
-                    // Delete any pending member requests for this thesis
-                    const deleteRequestsQuery = `
-                        DELETE FROM member_request 
-                        WHERE student_id = ? AND date_of_acceptance IS NULL AND date_of_denial IS NULL
-                    `;
-                    
-                    connection.query(deleteRequestsQuery, [thesis.student_id], (err, reqResult) => {
-                        if (err) {
+                    // Commit transaction
+                    connection.commit((commitErr) => {
+                        if (commitErr) {
                             return connection.rollback(() => {
-                                console.error('Error deleting member requests:', err);
+                                console.error('Transaction commit error:', commitErr);
                                 res.status(500).json({ success: false, message: 'Database error' });
                             });
                         }
                         
-                        // Commit transaction
-                        connection.commit((commitErr) => {
-                            if (commitErr) {
-                                return connection.rollback(() => {
-                                    console.error('Transaction commit error:', commitErr);
-                                    res.status(500).json({ success: false, message: 'Database error' });
-                                });
+                        // Log the cancellation event
+                        const eventQuery = `
+                            INSERT INTO thesis_events (thesis_id, event_type, description, event_date, status, created_by)
+                            VALUES (?, 'Ακύρωση Ανάθεσης', ?, NOW(), 'Χωρίς Ανάθεση', ?)
+                        `;
+                        
+                        const eventDescription = `Ακύρωση αρχικής ανάθεσης θέματος από τον επιβλέποντα`;
+                        
+                        connection.query(eventQuery, [thesisId, eventDescription, professorId], (eventErr) => {
+                            if (eventErr) {
+                                console.error('Error recording cancellation event:', eventErr);
                             }
-                            
-                            // Log the cancellation event
-                            const eventQuery = `
-                                INSERT INTO thesis_events (thesis_id, event_type, description, event_date, status, created_by)
-                                VALUES (?, 'Ακύρωση Ανάθεσης', ?, NOW(), 'Χωρίς Ανάθεση', ?)
-                            `;
-                            
-                            const eventDescription = `Ακύρωση αρχικής ανάθεσης θέματος από τον επιβλέποντα`;
-                            
-                            connection.query(eventQuery, [thesisId, eventDescription, professorId], (eventErr) => {
-                                if (eventErr) {
-                                    console.error('Error recording cancellation event:', eventErr);
-                                }
-                            });
-                            
-                            console.log(`Professor ${professorId} cancelled assignment for thesis ${thesisId}`);
-                            res.json({ 
-                                success: true,
-                                message: 'Η ανάθεση ακυρώθηκε επιτυχώς'
-                            });
+                        });
+                        
+                        console.log(`Professor ${professorId} cancelled assignment for thesis ${thesisId}`);
+                        res.json({ 
+                            success: true,
+                            message: 'Η ανάθεση ακυρώθηκε επιτυχώς'
                         });
                     });
                 });

@@ -1200,21 +1200,21 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Student Information (only if assigned)
         const studentSection = document.getElementById('studentInfoSection');
-        if (thesis.student_id && thesis.student_name) {
+        if (thesis.student) {
             studentSection.style.display = 'block';
-            document.getElementById('studentName').textContent = thesis.student_name || '';
-            document.getElementById('studentNumber').textContent = thesis.student_number || '';
+            document.getElementById('studentName').textContent = thesis.student.name || '';
+            document.getElementById('studentNumber').textContent = thesis.student.studentNumber || '';
             
             const studentEmail = document.getElementById('studentEmail');
-            if (thesis.student_email) {
-                studentEmail.href = 'mailto:' + thesis.student_email;
-                studentEmail.textContent = thesis.student_email;
+            if (thesis.student.email) {
+                studentEmail.href = 'mailto:' + thesis.student.email;
+                studentEmail.textContent = thesis.student.email;
             } else {
                 studentEmail.textContent = 'Δεν είναι διαθέσιμο';
                 studentEmail.removeAttribute('href');
             }
             
-            document.getElementById('studentPhone').textContent = thesis.student_phone || 'Δεν είναι διαθέσιμο';
+            document.getElementById('studentPhone').textContent = thesis.student.phone || 'Δεν είναι διαθέσιμο';
         } else {
             studentSection.style.display = 'none';
         }

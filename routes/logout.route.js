@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db');
+const connection = require('../db');
 
 router.get('/logout', (req, res) => {
     // Destroy the session when logging out
