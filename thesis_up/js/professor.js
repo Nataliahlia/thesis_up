@@ -611,9 +611,11 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.success) {
                 showAlert('Το θέμα δημιουργήθηκε επιτυχώς!', 'success');
-                form.reset();
-                hideAllForms();
-                updateMainTitle('Πίνακας Ελέγχου Καθηγητή');
+                form.reset(); // Καθαρίζει το form για νέα καταχώρηση
+                
+                // Δεν κρύβουμε το form - το αφήνουμε ανοιχτό για νέα δημιουργία
+                // hideAllForms();
+                // updateMainTitle('Πίνακας Ελέγχου Καθηγητή');
                 
                 // Refresh available topics lists since we added a new topic
                 loadAvailableTopics();
@@ -1223,7 +1225,7 @@ document.addEventListener('DOMContentLoaded', function() {
         displayCommitteeDetails(thesis.committee || []);
         
         // Timeline
-        displayThesisTimeline(thesis.events || []);
+        displayThesisTimeline(thesis.timeline || []);
         
         // Final Grade Section
         const gradeSection = document.getElementById('gradeSection');
@@ -1264,13 +1266,14 @@ document.addEventListener('DOMContentLoaded', function() {
                                  member.role === 'member' ? 'bg-primary' : 
                                  member.role === 'secretary' ? 'bg-info' : 'bg-secondary';
             
+            // Create more compact layout for committee members
             html += '<div class="committee-member">' +
-                    '<div class="d-flex justify-content-between align-items-center">' +
-                    '<div>' +
-                    '<strong>' + member.professor_name + '</strong><br>' +
-                    '<small class="text-muted">' + member.email + '</small>' +
+                    '<div class="d-flex justify-content-between align-items-start">' +
+                    '<div class="flex-grow-1 me-2">' +
+                    '<strong>' + (member.professor_name || 'Όνομα δεν διαθέσιμο') + '</strong><br>' +
+                    '<small class="text-muted">' + (member.email || 'Email δεν διαθέσιμο') + '</small>' +
                     '</div>' +
-                    '<span class="badge ' + roleBadgeClass + '">' + roleText + '</span>' +
+                    '<span class="badge ' + roleBadgeClass + ' flex-shrink-0">' + roleText + '</span>' +
                     '</div>' +
                     '</div>';
         });
@@ -3334,6 +3337,15 @@ document.addEventListener('DOMContentLoaded', function() {
         // Initialize modal event listeners
         initializeInvitationModals();
         
+        // Initialize retry button
+        const retryBtn = document.getElementById('retryInvitationsBtn');
+        if (retryBtn) {
+            retryBtn.addEventListener('click', function() {
+                showInvitationsError(false);
+                loadCommitteeInvitations();
+            });
+        }
+        
         // Add event listener for clear filters custom event
         document.addEventListener('clearFilters', function() {
             applyInvitationFilters();
@@ -3425,14 +3437,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
 
-            console.log('Fetch response received:', response.ok);
+            console.log('Fetch response received:', response.ok, 'Status:', response.status);
 
             if (!response.ok) {
-                throw new Error('Αποτυχία φόρτωσης προσκλήσεων');
+                const errorText = await response.text();
+                console.error('Response error details:', errorText);
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
             }
 
             const data = await response.json();
             console.log('Data received:', data);
+            
+            // Check if response has the expected structure
+            if (!data.success) {
+                throw new Error(data.message || 'API returned unsuccessful response');
+            }
             
             // Show content first, then load data
             console.log('Hiding loading, showing content...');
@@ -3454,8 +3473,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
         } catch (error) {
             console.error('Error loading committee invitations:', error);
-            showNotification('Σφάλμα κατά τη φόρτωση των προσκλήσεων', 'error');
+            showNotification('Σφάλμα κατά τη φόρτωση των προσκλήσεων: ' + error.message, 'error');
             showInvitationsLoading(false);
+            showInvitationsError(true, error.message);
             displayInvitations([]);
         }
     }
@@ -3794,19 +3814,20 @@ document.addEventListener('DOMContentLoaded', function() {
     function showInvitationsLoading(show) {
         const loadingElement = document.getElementById('invitationsLoading');
         const contentElement = document.getElementById('invitationsContent');
+        const errorElement = document.getElementById('invitationsError');
         
         console.log('showInvitationsLoading called with:', show);
         console.log('Loading element found:', !!loadingElement);
         console.log('Content element found:', !!contentElement);
+        console.log('Error element found:', !!errorElement);
         
         if (loadingElement) {
             if (show) {
                 loadingElement.style.display = 'block';
                 loadingElement.style.visibility = 'visible';
             } else {
-                // Completely remove the loading element when hiding
-                loadingElement.remove();
-                console.log('Loading element completely removed from DOM');
+                loadingElement.style.display = 'none';
+                loadingElement.style.visibility = 'hidden';
             }
         } else {
             console.error('invitationsLoading element not found');
@@ -3822,6 +3843,35 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Content element display set to:', contentElement.style.display);
         } else {
             console.error('invitationsContent element not found');
+        }
+        
+        // Hide error when showing loading or content
+        if (errorElement) {
+            errorElement.style.display = 'none';
+        }
+    }
+
+    function showInvitationsError(show, message = 'Σφάλμα φόρτωσης προσκλήσεων') {
+        const errorElement = document.getElementById('invitationsError');
+        const errorMessageElement = document.getElementById('invitationsErrorMessage');
+        const contentElement = document.getElementById('invitationsContent');
+        const loadingElement = document.getElementById('invitationsLoading');
+        
+        if (errorElement) {
+            if (show) {
+                errorElement.style.display = 'block';
+                if (errorMessageElement) {
+                    errorMessageElement.textContent = message;
+                }
+            } else {
+                errorElement.style.display = 'none';
+            }
+        }
+        
+        // Hide other elements when showing error
+        if (show) {
+            if (contentElement) contentElement.style.display = 'none';
+            if (loadingElement) loadingElement.style.display = 'none';
         }
     }
 
@@ -3852,6 +3902,127 @@ document.addEventListener('DOMContentLoaded', function() {
             month: 'long',
             day: 'numeric'
         });
+    }
+
+    async function acceptCommitteeInvitation(thesisId, invitationId) {
+        try {
+            // First, check current committee status
+            const response = await fetch(`/api/thesis/${thesisId}/committee-status`);
+            const status = await response.json();
+            
+            if (status.acceptedMembers >= 2) {
+                alert('Η επιτροπή είναι ήδη πλήρης!');
+                return;
+            }
+            
+            // Accept the invitation
+            const acceptResponse = await fetch(`/api/committee/accept-invitation`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ invitationId, thesisId })
+            });
+            
+            const result = await acceptResponse.json();
+            
+            if (result.committeeComplete) {
+                // Committee is now complete - update UI
+                showCommitteeCompleteMessage();
+                disableOtherInvitations(thesisId);
+            }
+            
+        } catch (error) {
+            console.error('Error accepting invitation:', error);
+        }
+    }
+
+    // Helper function to show committee complete message
+    function showCommitteeCompleteMessage() {
+        showNotification('🎉 Η επιτροπή ολοκληρώθηκε! Όλες οι εκκρεμείς προσκλήσεις ακυρώθηκαν αυτόματα.', 'success');
+        
+        // Optional: Show a more detailed modal
+        const modal = document.createElement('div');
+        modal.className = 'modal fade';
+        modal.innerHTML = `
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title">
+                            <i class="fas fa-check-circle me-2"></i>Επιτροπή Ολοκληρώθηκε
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Η επιτροπή της διπλωματικής έχει ολοκληρωθεί επιτυχώς με:</p>
+                        <ul>
+                            <li>1 Επιβλέπων Καθηγητής</li>
+                            <li>2 Μέλη Επιτροπής</li>
+                        </ul>
+                        <p class="text-muted mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Όλες οι άλλες εκκρεμείς προσκλήσεις ακυρώθηκαν αυτόματα.
+                        </p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-success" data-bs-dismiss="modal">Εντάξει</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        
+        const bootstrapModal = new bootstrap.Modal(modal);
+        bootstrapModal.show();
+        
+        // Clean up modal after it's hidden
+        modal.addEventListener('hidden.bs.modal', () => {
+            document.body.removeChild(modal);
+        });
+    }
+
+    // Helper function to disable other invitations in the UI
+    function disableOtherInvitations(thesisId) {
+        // Find all pending invitation cards for this thesis
+        const invitationCards = document.querySelectorAll('.invitation-card[data-status="pending"]');
+        
+        invitationCards.forEach(card => {
+            // Add visual indication that it's been canceled
+            card.classList.add('invitation-canceled');
+            card.style.opacity = '0.6';
+            
+            // Update the status badge
+            const statusBadge = card.querySelector('.badge');
+            if (statusBadge) {
+                statusBadge.textContent = 'Ακυρώθηκε';
+                statusBadge.className = 'badge bg-secondary';
+            }
+            
+            // Disable action buttons
+            const actionButtons = card.querySelectorAll('.btn-accept-invitation, .btn-decline-invitation');
+            actionButtons.forEach(btn => {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-ban me-1"></i>Ακυρώθηκε';
+                btn.className = 'btn btn-secondary btn-sm';
+            });
+            
+            // Add a notice
+            const cardBody = card.querySelector('.card-body');
+            if (cardBody && !cardBody.querySelector('.cancellation-notice')) {
+                const notice = document.createElement('div');
+                notice.className = 'cancellation-notice mt-2 p-2 bg-light border-start border-warning border-3';
+                notice.innerHTML = `
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Αυτή η πρόσκληση ακυρώθηκε αυτόματα επειδή η επιτροπή ολοκληρώθηκε.
+                    </small>
+                `;
+                cardBody.appendChild(notice);
+            }
+        });
+        
+        // Refresh the invitations list to get updated data from server
+        setTimeout(() => {
+            loadCommitteeInvitations();
+        }, 2000);
     }
 
     // Make sure to call initializeThesisDetailsWithNotes when loading thesis details

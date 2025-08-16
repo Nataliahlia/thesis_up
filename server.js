@@ -91,6 +91,10 @@ try {
     console.error('Error loading professor routes:', error.message);
 }
 
+// Add the committee routes
+const committeeRoutes = require('./routes/committee.routes');
+app.use('/', committeeRoutes);
+
 // Serve the login page at root URL, when someone accesses the root URL send them the public_endpoint.html file
 app.get('/', (req, res) => {
   console.log('Attempting to serve index.html');

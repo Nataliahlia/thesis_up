@@ -258,6 +258,29 @@ END;
 
 DELIMITER ;
 
+DELIMITER $$
+CREATE TRIGGER check_committee_limit
+BEFORE UPDATE ON thesis_committee
+FOR EACH ROW
+BEGIN
+    DECLARE member_count INT;
+    
+    IF NEW.status = 'accepted' AND NEW.role = 'member' AND OLD.status != 'accepted' THEN
+        SELECT COUNT(*) INTO member_count
+        FROM thesis_committee 
+        WHERE thesis_id = NEW.thesis_id 
+        AND status = 'accepted' 
+        AND role = 'member'
+        AND id != NEW.id;
+        
+        IF member_count >= 2 THEN
+            SIGNAL SQLSTATE '45000' 
+            SET MESSAGE_TEXT = 'Committee already has maximum members';
+        END IF;
+    END IF;
+END$$
+DELIMITER ;
+
 DELIMITER //
 
 CREATE TRIGGER after_insert_professor

@@ -997,25 +997,50 @@ footer {
     text-decoration: underline;
 }
 
-/* Committee member styling */
+/* Committee member styling - Optimized for 3 members */
 .committee-member {
     background: linear-gradient(145deg, #f8f9fa, #e9ecef);
     border: 1px solid #dee2e6;
-    border-radius: 8px;
-    padding: 1rem;
-    margin-bottom: 0.75rem;
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.5rem;
     transition: all 0.2s ease;
+    font-size: 0.9em;
+}
+
+.committee-member:last-child {
+    margin-bottom: 0;
 }
 
 .committee-member:hover {
     background: linear-gradient(145deg, #e9ecef, #dee2e6);
-    transform: scale(1.02);
+    transform: scale(1.01);
 }
 
 .committee-member .badge {
-    font-size: 0.75em;
-    margin-bottom: 0.5rem;
-    display: inline-block;
+    font-size: 0.7em;
+    padding: 0.25em 0.5em;
+    white-space: nowrap;
+}
+
+.committee-member strong {
+    color: #495057;
+    font-size: 0.95em;
+    line-height: 1.2;
+}
+
+.committee-member small {
+    color: #6c757d;
+    font-size: 0.8em;
+    line-height: 1.1;
+}
+
+/* Ensure committee details container uses full height efficiently */
+#committeeDetails {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    justify-content: flex-start;
 }
 
 .committee-member strong {

@@ -767,24 +767,43 @@ router.get('/api/professor/thesis-details/:thesisId', (req, res) => {
 
         const thesis = thesisResult[0];
 
-        // Get committee information
+        // Get committee information (including supervisor and members)
         const committeeQuery = `
+            SELECT 
+                'supervisor' as role,
+                'accepted' as status,
+                tt.time_of_activation as invitation_date,
+                tt.time_of_activation as acceptance_date,
+                p.professor_id,
+                CONCAT(p.name, ' ', p.surname) as professor_name,
+                p.email
+            FROM thesis_topic tt
+            JOIN professor p ON tt.instructor_id = p.professor_id
+            WHERE tt.thesis_id = ?
+            
+            UNION ALL
+            
             SELECT 
                 tc.role,
                 tc.status,
                 tc.invitation_date,
                 tc.acceptance_date,
                 tc.professor_id,
-                p.name,
-                p.surname,
+                CONCAT(p.name, ' ', p.surname) as professor_name,
                 p.email
             FROM thesis_committee tc
             JOIN professor p ON tc.professor_id = p.professor_id
             WHERE tc.thesis_id = ?
-            ORDER BY tc.role, tc.invitation_date
+            ORDER BY 
+                CASE role 
+                    WHEN 'supervisor' THEN 1 
+                    WHEN 'member' THEN 2 
+                    ELSE 3 
+                END,
+                invitation_date
         `;
 
-        connection.query(committeeQuery, [thesisId], (err, committeeResult) => {
+        connection.query(committeeQuery, [thesisId, thesisId], (err, committeeResult) => {
             if (err) {
                 console.error('Error fetching committee information:', err);
                 return res.status(500).json({ success: false, message: 'Database error' });
