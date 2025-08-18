@@ -1,70 +1,408 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="el">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Thesis for University of Patras</title>
+  <title>Σύνδεση | Διπλωματικές Εργασίες - Πανεπιστήμιο Πατρών</title>
   <!-- Bootstrap CSS -->
   <link
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
     rel="stylesheet"
   />
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Custom CSS -->
-  <link rel="stylesheet" href="../style.css" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Login page specific styles */
+    .login-container {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #6A1F2B 0%, #800000 50%, #6A1F2B 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .login-container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+      opacity: 0.3;
+    }
+    
+    .login-card {
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(10px);
+      border: none;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 440px;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .login-header {
+      text-align: center;
+      margin-bottom: 2rem;
+      position: relative;
+    }
+    
+    .login-logo {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 1rem;
+      background: linear-gradient(135deg, #6A1F2B, #800000);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 30px rgba(106, 31, 43, 0.3);
+    }
+    
+    .login-logo i {
+      color: white;
+      font-size: 2rem;
+    }
+    
+    .login-title {
+      color: #6A1F2B;
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    
+    .login-subtitle {
+      color: #666;
+      font-size: 0.95rem;
+    }
+    
+    .form-floating {
+      margin-bottom: 1.5rem;
+    }
+    
+    .form-floating > .form-control {
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 1rem 0.75rem;
+      height: auto;
+      background: #f8f9fa;
+      transition: all 0.3s ease;
+    }
+    
+    .form-floating > .form-control:focus {
+      border-color: #6A1F2B;
+      background: white;
+      box-shadow: 0 0 0 0.2rem rgba(106, 31, 43, 0.1);
+    }
+    
+    .form-floating > label {
+      color: #666;
+      padding: 1rem 0.75rem;
+      font-weight: 500;
+    }
+    
+    .password-toggle {
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #666;
+      cursor: pointer;
+      font-size: 1.1rem;
+      z-index: 10;
+      transition: color 0.3s ease;
+      padding: 5px;
+    }
+    
+    .password-toggle:hover {
+      color: #6A1F2B;
+    }
+    
+    .password-toggle:focus {
+      outline: none;
+      color: #6A1F2B;
+    }
+    
+    .password-container {
+      position: relative;
+    }
+    
+    .btn-login {
+      background: linear-gradient(135deg, #6A1F2B, #800000);
+      border: none;
+      border-radius: 12px;
+      padding: 1rem;
+      font-weight: 600;
+      font-size: 1.1rem;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .btn-login:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(106, 31, 43, 0.3);
+    }
+    
+    .btn-login:active {
+      transform: translateY(0);
+    }
+    
+    .error-message {
+      background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      margin-top: 1rem;
+      font-weight: 500;
+      display: none;
+      animation: slideDown 0.3s ease;
+    }
+    
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .loading {
+      pointer-events: none;
+    }
+    
+    .loading .btn-login {
+      background: #999;
+    }
+    
+    .loading .spinner {
+      display: inline-block;
+    }
+    
+    .spinner {
+      display: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .back-link {
+      position: absolute;
+      top: 2rem;
+      left: 2rem;
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      z-index: 1;
+    }
+    
+    .back-link:hover {
+      color: white;
+      transform: translateX(-5px);
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 576px) {
+      .login-card {
+        margin: 1rem;
+        border-radius: 15px;
+      }
+      
+      .back-link {
+        top: 1rem;
+        left: 1rem;
+      }
+    }
+  </style>
 </head>
-<body class="bg-white">
-
-  <div class="d-flex justify-content-center align-items-center vh-100">
-    <div class="card p-4 shadow" style="width: 300px;">
-      <h3 class="text-center mb-4">Login</h3>
+<body>
+  <div class="login-container d-flex justify-content-center align-items-center">
+    <!-- Back to homepage link -->
+    <a href="/" class="back-link">
+      <i class="fas fa-arrow-left me-2"></i>Επιστροφή στην Αρχική
+    </a>
+    
+    <div class="login-card p-5">
+      <div class="login-header">
+        <div class="login-logo">
+          <i class="fas fa-graduation-cap"></i>
+        </div>
+        <h1 class="login-title">Σύνδεση</h1>
+        <p class="login-subtitle">Διπλωματικές Εργασίες - Πανεπιστήμιο Πατρών</p>
+      </div>
+      
       <form id="loginForm">
-        <div class="mb-3">
-          <label for="username" class="form-label">Username</label>
-          <input name="username" type="text" id="username" class="form-control" placeholder="Enter username" required />
+        <div class="form-floating">
+          <input name="username" type="text" id="username" class="form-control" placeholder="Όνομα χρήστη" required />
+          <label for="username">
+            <i class="fas fa-user me-2"></i>Όνομα Χρήστη
+          </label>
         </div>
-        <div class="mb-3">
-          <label for="password" class="form-label">Password</label>
-          <input name="password" type="password" id="password" class="form-control" placeholder="Enter password" required />
+        
+        <div class="form-floating password-container">
+          <input name="password" type="password" id="password" class="form-control" placeholder="Κωδικός πρόσβασης" required />
+          <label for="password">
+            <i class="fas fa-lock me-2"></i>Κωδικός Πρόσβασης
+          </label>
+          <button type="button" class="password-toggle" id="togglePassword" title="Εμφάνιση/Απόκρυψη κωδικού">
+            <i class="fas fa-eye" id="toggleIcon"></i>
+          </button>
         </div>
-        <button type="submit" class="btn btn-dark w-100">Log In</button>
-        <div id="error-msg" style="color:red; margin-top:10px;"></div>
+        
+        <button type="submit" class="btn btn-login w-100 text-white">
+          <span class="btn-text">
+            <i class="fas fa-sign-in-alt me-2"></i>Σύνδεση
+          </span>
+          <div class="spinner"></div>
+        </button>
+        
+        <div id="error-msg" class="error-message">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          <span class="error-text"></span>
+        </div>
       </form>
     </div>
   </div>
   
 <script>
+  // Check for error parameter in URL
   const params = new URLSearchParams(window.location.search);
   if (params.get('error') === '1') {
-    document.getElementById('error-msg').textContent = 'Wrong username or password!';
+    showError('Λάθος όνομα χρήστη ή κωδικός πρόσβασης!');
+  }
+  
+  // Enhanced error display function
+  function showError(message) {
+    const errorDiv = document.getElementById('error-msg');
+    const errorText = errorDiv.querySelector('.error-text');
+    errorText.textContent = message;
+    errorDiv.style.display = 'block';
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+      errorDiv.style.display = 'none';
+    }, 5000);
+  }
+  
+  function setLoadingState(loading) {
+    const form = document.getElementById('loginForm');
+    const btn = document.querySelector('.btn-login');
+    const btnText = document.querySelector('.btn-text');
+    const spinner = document.querySelector('.spinner');
+    
+    if (loading) {
+      form.classList.add('loading');
+      btnText.style.display = 'none';
+      spinner.style.display = 'inline-block';
+      btn.disabled = true;
+    } else {
+      form.classList.remove('loading');
+      btnText.style.display = 'inline-block';
+      spinner.style.display = 'none';
+      btn.disabled = false;
+    }
   }
 </script>
 
 <script>
   // Wait for the DOM to be fully loaded before attaching event listeners
   document.addEventListener('DOMContentLoaded', function() {
+    // Password toggle functionality
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('password');
+    const toggleIcon = document.getElementById('toggleIcon');
+    
+    togglePassword.addEventListener('click', function() {
+      // Toggle the type attribute
+      const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+      passwordInput.setAttribute('type', type);
+      
+      // Toggle the icon
+      if (type === 'text') {
+        toggleIcon.classList.remove('fa-eye');
+        toggleIcon.classList.add('fa-eye-slash');
+        togglePassword.setAttribute('title', 'Απόκρυψη κωδικού');
+      } else {
+        toggleIcon.classList.remove('fa-eye-slash');
+        toggleIcon.classList.add('fa-eye');
+        togglePassword.setAttribute('title', 'Εμφάνιση κωδικού');
+      }
+    });
+    
+    // Login form submission
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
       e.preventDefault(); // Prevent the default form submission
 
       // Get the values from the input fields
       const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
+      
+      // Hide any existing error messages
+      document.getElementById('error-msg').style.display = 'none';
+      
+      // Show loading state
+      setLoadingState(true);
 
       try {
-        // Send a POST request to the server with the login credentials, the body should be a JSON object
-        const response = await fetch('/login', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ username, password }) });
+        // Send a POST request to the server with the login credentials
+        const response = await fetch('/login', { 
+          method: 'POST', 
+          headers: {'Content-Type': 'application/json'}, 
+          body: JSON.stringify({ username, password }) 
+        });
 
         if (response.status === 200) {
-          window.location.href = await response.text(); // server sends URL to redirect to
+          // Success - redirect to dashboard
+          const redirectUrl = await response.text();
+          window.location.href = redirectUrl;
         } else if (response.status === 401) {
+          // Unauthorized - show error
           const data = await response.json();
-          document.getElementById('error-msg').textContent = data.error;
+          showError(data.error || 'Λάθος όνομα χρήστη ή κωδικός πρόσβασης!');
+          setLoadingState(false);
         } else {
+          // Other error
           const errorData = await response.json();
-          document.getElementById('error-msg').textContent = errorData.error || 'An unknown error occurred.';
+          showError(errorData.error || 'Παρουσιάστηκε σφάλμα. Παρακαλώ προσπαθήστε ξανά.');
+          setLoadingState(false);
         }
       } catch (error) {
-        document.getElementById('error-msg').textContent = 'An error occurred. Please try again.';
+        console.error('Login error:', error);
+        showError('Σφάλμα σύνδεσης. Παρακαλώ ελέγξτε τη σύνδεσή σας στο διαδίκτυο.');
+        setLoadingState(false);
       }
+    });
+    
+    // Add input focus effects
+    const inputs = document.querySelectorAll('.form-control');
+    inputs.forEach(input => {
+      input.addEventListener('focus', function() {
+        this.parentElement.classList.add('focused');
+      });
+      
+      input.addEventListener('blur', function() {
+        if (!this.value) {
+          this.parentElement.classList.remove('focused');
+        }
+      });
     });
   });
 </script>
