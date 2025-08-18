@@ -1416,6 +1416,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     '</button>';
         }
         
+        // Grading button (only for "Υπό Εξέταση" status and committee members/supervisors)
+        if (thesis.status === 'Υπό Εξέταση' && (thesis.my_role === 'supervisor' || thesis.my_role === 'member')) {
+            html += '<button type="button" class="btn btn-success" onclick="openGradingModal(' + thesis.id + ')" title="Βαθμολόγηση διπλωματικής εργασίας">' +
+                    '<i class="fas fa-star me-2"></i>Βαθμολόγηση' +
+                    '</button>';
+        }
+        
         // Export PDF button
         html += '<button type="button" class="btn btn-outline-bordeaux" onclick="exportThesisPDF(' + thesis.id + ')">' +
                 '<i class="fas fa-file-pdf me-2"></i>Εξαγωγή PDF' +
@@ -2156,6 +2163,184 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Call initialization
     initializeThesisDetailsHandlers();
+    
+    // ===== GRADING FUNCTIONALITY =====
+    
+    // Open grading modal for thesis under examination
+    window.openGradingModal = function(thesisId) {
+        console.log('Opening grading modal for thesis:', thesisId);
+        
+        // Create grading modal if it doesn't exist
+        createGradingModal();
+        
+        // Set thesis ID in modal
+        document.getElementById('gradingThesisId').value = thesisId;
+        
+        // Reset form
+        document.getElementById('gradingForm').reset();
+        document.getElementById('gradingError').style.display = 'none';
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('gradingModal'));
+        modal.show();
+    };
+    
+    // Create grading modal dynamically
+    function createGradingModal() {
+        // Check if modal already exists
+        if (document.getElementById('gradingModal')) {
+            return;
+        }
+        
+        const modalHTML = `
+            <div class="modal fade" id="gradingModal" tabindex="-1" aria-labelledby="gradingModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header" style="background-color: #6A1F2B; color: white;">
+                            <h5 class="modal-title" id="gradingModalLabel" style="background-color: transparent; color: white;">
+                                <i class="fas fa-star me-2"></i>Τελική Βαθμολογία
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="gradingForm">
+                                <input type="hidden" id="gradingThesisId" name="thesis_id">
+                                
+                                <div class="row">
+                                    <div class="col-md-12 mb-3">
+                                        <label for="gradingScore" class="form-label fw-semibold">
+                                            <i class="fas fa-calculator me-2" style="color: #6A1F2B;"></i>Βαθμός (0-10)
+                                        </label>
+                                        <input type="number" id="gradingScore" name="grade" class="form-control" 
+                                               min="0" max="10" step="0.1" placeholder="π.χ. 8.5" required>
+                                        <div class="form-text">Εισάγετε βαθμό από 0 έως 10 με δεκαδικά</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="gradingTitle" class="form-label fw-semibold">
+                                        <i class="fas fa-heading me-2" style="color: #6A1F2B;"></i>Τίτλος Αξιολόγησης
+                                    </label>
+                                    <input type="text" id="gradingTitle" name="title" class="form-control" 
+                                           placeholder="π.χ. Τελική αξιολόγηση διπλωματικής" maxlength="255">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="gradingComments" class="form-label fw-semibold">
+                                        <i class="fas fa-comment me-2" style="color: #6A1F2B;"></i>Σχόλια Αξιολόγησης
+                                    </label>
+                                    <textarea id="gradingComments" name="comment" class="form-control" rows="4" 
+                                              placeholder="Εισάγετε τα σχόλιά σας για την αξιολόγηση της διπλωματικής..."></textarea>
+                                    <div class="form-text">Προαιρετικά σχόλια για τη βαθμολόγηση</div>
+                                </div>
+                                
+                                <div id="gradingError" class="alert alert-danger" style="display: none;">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <span id="gradingErrorText"></span>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times me-2"></i>Ακύρωση
+                            </button>
+                            <button type="button" class="btn" style="background-color: #6A1F2B; color: white;" onclick="submitGrading()" id="submitGradingBtn">
+                                <i class="fas fa-save me-2"></i>Αποθήκευση Βαθμολόγησης
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Add modal to body
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+    
+    // Submit grading
+    window.submitGrading = async function() {
+        const form = document.getElementById('gradingForm');
+        const submitBtn = document.getElementById('submitGradingBtn');
+        const errorDiv = document.getElementById('gradingError');
+        const errorText = document.getElementById('gradingErrorText');
+        
+        // Validate form
+        if (!form.checkValidity()) {
+            form.classList.add('was-validated');
+            return;
+        }
+        
+        // Get form data
+        const formData = new FormData(form);
+        const gradingData = {
+            thesis_id: parseInt(formData.get('thesis_id')),
+            grade: parseFloat(formData.get('grade')),
+            comment_type: formData.get('comment_type'),
+            title: formData.get('title'),
+            comment: formData.get('comment')
+        };
+        
+        // Validate grade range
+        if (gradingData.grade < 0 || gradingData.grade > 10) {
+            showGradingError('Ο βαθμός πρέπει να είναι μεταξύ 0 και 10');
+            return;
+        }
+        
+        // Show loading state
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Αποθήκευση...';
+        submitBtn.disabled = true;
+        errorDiv.style.display = 'none';
+        
+        try {
+            const response = await fetch('/api/notes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(gradingData)
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok && result.success) {
+                showNotification('Η βαθμολόγηση αποθηκεύτηκε επιτυχώς!', 'success');
+                
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('gradingModal'));
+                modal.hide();
+                
+                // Refresh thesis details if we're currently viewing this thesis
+                const currentThesisId = getCurrentThesisId();
+                if (currentThesisId && currentThesisId == gradingData.thesis_id) {
+                    loadThesisDetails(currentThesisId);
+                }
+                
+            } else {
+                throw new Error(result.message || 'Σφάλμα κατά την αποθήκευση της βαθμολόγησης');
+            }
+            
+        } catch (error) {
+            console.error('Error submitting grading:', error);
+            showGradingError(error.message || 'Σφάλμα κατά την αποθήκευση της βαθμολόγησης');
+        } finally {
+            // Restore button state
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
+    };
+    
+    // Show grading error
+    function showGradingError(message) {
+        const errorDiv = document.getElementById('gradingError');
+        const errorText = document.getElementById('gradingErrorText');
+        
+        errorText.textContent = message;
+        errorDiv.style.display = 'block';
+        
+        // Scroll to error
+        errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
     
     // Test function for debugging
     window.testViewThesisDetails = function() {
