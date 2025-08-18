@@ -1,21 +1,230 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="el">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Thesis for University of Patras</title>
+    <title>Πρόγραμμα Παρουσιάσεων Διπλωματικών Εργασιών</title>
     <!-- Bootstrap CSS -->
     <link
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
         rel="stylesheet"
     />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="../style.css" />
+    <style>
+        :root {
+            --bordeaux-primary: #6A1F2B;
+            --bordeaux-secondary: #800000;
+            --bordeaux-light: rgba(106, 31, 43, 0.1);
+            --bordeaux-glass: rgba(106, 31, 43, 0.15);
+        }
+
+        body {
+            background: linear-gradient(135deg, #6A1F2B 0%, #800000 50%, #5a1a25 100%) !important;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 50%),
+                        radial-gradient(circle at 40% 80%, rgba(255, 255, 255, 0.06) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .glass-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1),
+                        0 0 0 1px rgba(255, 255, 255, 0.2);
+            position: relative;
+            z-index: 2;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            z-index: 1030;
+        }
+
+        .text-bordeaux {
+            color: var(--bordeaux-primary);
+        }
+
+        .bordeaux-outline {
+            border: 2px solid var(--bordeaux-primary);
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .btn-bordeaux, .btn-outline-bordeaux {
+            background: linear-gradient(45deg, var(--bordeaux-primary), var(--bordeaux-secondary));
+            border: none;
+            color: white;
+            border-radius: 10px;
+            padding: 12px 24px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(106, 31, 43, 0.3);
+        }
+
+        .btn-bordeaux:hover, .btn-outline-bordeaux:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(106, 31, 43, 0.4);
+            color: white;
+        }
+
+        .card {
+            min-width: 350px;
+            margin: 0.5rem;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .container-scrollable {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            padding: 20px 0;
+        }
+
+        .container-scrollable::-webkit-scrollbar {
+            display: none;
+        }
+
+        .form-control {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid rgba(106, 31, 43, 0.2);
+            border-radius: 10px;
+            padding: 12px 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            background: rgba(255, 255, 255, 0.95);
+            border-color: var(--bordeaux-primary);
+            box-shadow: 0 0 0 0.2rem rgba(106, 31, 43, 0.25);
+        }
+
+        .section-title {
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            font-weight: 700;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .filter-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .export-buttons {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .main-content {
+            position: relative;
+            z-index: 2;
+            margin-top: 2rem;
+        }
+
+        /* Custom alert modal styles */
+        .custom-alert-backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .custom-alert-content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .filter-section, .export-buttons {
+                margin: 1rem;
+                padding: 1.5rem;
+                border-radius: 15px;
+            }
+
+            .card {
+                min-width: 280px;
+            }
+        }
+    </style>
 </head>
-<body class="bg-white">
+<body>
 
     <!-- Create a navigation bar using Bootstrap -->
-    <nav class="navbar navbar-expand-lg bg-light border-bottom" id="navbarContainer">
+    <nav class="navbar navbar-expand-lg border-bottom" id="navbarContainer">
         <div class="container-fluid">
             <!-- Brand -->
             <a class="navbar-brand" href="#">
@@ -23,7 +232,9 @@
             </a>
             
             <!-- Login always visible -->
-            <a href="/login" class="btn btn-dark ms-auto d-lg-none d-block" type="button">Login</a>
+            <a href="/login" class="btn btn-bordeaux ms-auto d-lg-none d-block" type="button">
+                <i class="fas fa-sign-in-alt me-2"></i>Login
+            </a>
 
             <!-- Collapse menu -->
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
@@ -31,60 +242,89 @@
                 <!-- links αν χρειάζεσαι -->
             </ul>
             <!-- Login visible on desktop -->
-            <a href="/login" class="btn btn-dark ms-auto d-none d-lg-block" type="button">Login</a>
+            <a href="/login" class="btn btn-bordeaux ms-auto d-none d-lg-block" type="button">
+                <i class="fas fa-sign-in-alt me-2"></i>Login
+            </a>
             </div>
         </div>
     </nav>
 
     <div class="main-content" style="margin-left: 0; transition: margin-left 0.3s ease; width: 100%;">
-        <h1 class="h3 text-bordeaux fw-bold text-center">
+        <h1 class="section-title fade-in-up">
             Τρέχουσες Ανακοινώσεις Διπλωματικών Εργασιών
         </h1>
-        <div class="carousel-wrapper mt-5">
-            <div class="carousel-track" id="carouselContainer">
-                <!-- Cards will go here -->
+        
+        <div class="glass-container mx-auto" style="max-width: 95%; padding: 2rem;">
+            <div class="carousel-wrapper mt-3">
+                <div class="carousel-track container-scrollable" id="carouselContainer">
+                    <!-- Cards will go here -->
+                </div>
             </div>
         </div>
 
         <!-- Custom Alert Modal -->
         <!-- Background overlay -->
-        <div id="customAlert" class="custom-alert-backdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.4); z-index: 9999;">
-            <!-- This is the custom alert modal -->
-            <div style="background: white; padding: 2rem; border-radius: 10px; min-width: 300px; max-width: 90%;">
+        <div id="customAlert" class="custom-alert-backdrop" style="display: none;">
+            <div class="custom-alert-content">
                 <!-- The message that will be displayed in the alert, it can be customized dynamically -->
-                <h5 id="customAlertMessage" class="text-center mb-4">Μήνυμα</h5>
+                <h5 id="customAlertMessage" class="text-center mb-4 text-bordeaux">Μήνυμα</h5>
                 <div class="text-center">
                     <!-- The button that will close the alert -->
-                    <button id="customAlertOk" class="btn btn-outline-bordeaux">OK</button>
+                    <button id="customAlertOk" class="btn btn-bordeaux">
+                        <i class="fas fa-check me-2"></i>OK
+                    </button>
                 </div>
             </div>
         </div>
 
-            <div class="container mt-3">
-                <div class="row justify-content-end">
-                    <div class="col-auto">
-                        <button id="timeRangeButton" type="submit" class="btn btn-outline-bordeaux mt-3">Διαμόρφωση Εύρους Χρόνου</button>
-                    </div>
+        <div class="filter-section fade-in-up">
+            <div class="row justify-content-center">
+                <div class="col-auto">
+                    <button id="timeRangeButton" type="submit" class="btn btn-bordeaux">
+                        <i class="fas fa-calendar-alt me-2"></i>Διαμόρφωση Εύρους Χρόνου
+                    </button>
                 </div>
+            </div>
 
-                <!-- This stays hidden until the button is pressed -->
-                <div class="row justify-content-end mt-3" id="dateRangeFilter" style="display: none; text-align: left;">
-                    <div class="col-auto">
-                        <label for="startDate" class="form-label mb-0">Από:</label>
-                        <input type="date" id="startDate" class="form-control">
-                        <label for="endDate" class="form-label mb-0">Έως:</label>
-                        <input type="date" id="endDate" class="form-control">
-                        <div class="text-end mt-4">
-                            <button id="applyFiltersBtn" class="btn btn-outline-bordeaux">Εφαρμογή</button>
-                        </div>                     
-                    </div>
-                </div>
-                <div class="row justify-content-end" id="exportFilter" style="display: none;">
-                    <div class="col-auto">
-                        <div class="d-flex flex-row gap-3">
-                            <button id="jsonFile" type="submit" class="btn btn-outline-bordeaux">Εξαγωγή σε JSON</button>
-                            <button id="xmlFile" type="submit" class="btn btn-outline-bordeaux">Εξαγωγή σε XML</button>
+            <!-- This stays hidden until the button is pressed -->
+            <div class="row justify-content-center mt-4" id="dateRangeFilter" style="display: none;">
+                <div class="col-md-8 col-lg-6">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="startDate" class="form-label text-bordeaux fw-bold">
+                                <i class="fas fa-calendar-alt me-2"></i>Από:
+                            </label>
+                            <input type="date" id="startDate" class="form-control">
                         </div>
+                        <div class="col-md-6">
+                            <label for="endDate" class="form-label text-bordeaux fw-bold">
+                                <i class="fas fa-calendar-alt me-2"></i>Έως:
+                            </label>
+                            <input type="date" id="endDate" class="form-control">
+                        </div>
+                    </div>
+                    <div class="text-center mt-4">
+                        <button id="applyFiltersBtn" class="btn btn-bordeaux">
+                            <i class="fas fa-filter me-2"></i>Εφαρμογή Φίλτρων
+                        </button>
+                    </div>                     
+                </div>
+            </div>
+        </div>
+
+        <div class="export-buttons fade-in-up" id="exportFilter" style="display: none;">
+            <div class="row justify-content-center">
+                <div class="col-auto">
+                    <h5 class="text-bordeaux fw-bold mb-3 text-center">
+                        <i class="fas fa-download me-2"></i>Εξαγωγή Δεδομένων
+                    </h5>
+                    <div class="d-flex flex-wrap gap-3 justify-content-center">
+                        <button id="jsonFile" type="submit" class="btn btn-bordeaux">
+                            <i class="fas fa-file-code me-2"></i>Εξαγωγή σε JSON
+                        </button>
+                        <button id="xmlFile" type="submit" class="btn btn-bordeaux">
+                            <i class="fas fa-file-alt me-2"></i>Εξαγωγή σε XML
+                        </button>
                     </div>
                 </div>
             </div>
@@ -92,11 +332,13 @@
     </div>
 
     <!-- Footer -->
-    <footer class="bg-bordeaux border-top text-center text-lg-start mt-5">
-        <div class="text-center p-3"> 
+    <footer class="footer border-top text-center text-lg-start mt-5">
+        <div class="text-center p-4"> 
             <!-- Span used to apply the css class for styling to the footer text only -->
-            <span class="text-white">© 2025 Πανεπιστήμιο Πατρών</span>
-            <a class="text-white" href="https://www.upatras.gr/">www.upatras.gr</a>
+            <span class="text-white fw-bold">© 2025 Πανεπιστήμιο Πατρών</span>
+            <a class="text-white ms-3" href="https://www.upatras.gr/" target="_blank">
+                <i class="fas fa-external-link-alt me-1"></i>www.upatras.gr
+            </a>
         </div>
     </footer>
     
@@ -171,9 +413,9 @@
 
         lockExaminationFields(); // Lock the fields after submission
         // Show the export buttons
-        document.getElementById("exportFilter").style.display = 'flex'; // Show the parent container
-        jsonFile.style.display = 'flex';
-        xmlFile.style.display = 'flex';
+        document.getElementById("exportFilter").style.display = 'block'; // Show the parent container
+        jsonFile.style.display = 'inline-block';
+        xmlFile.style.display = 'inline-block';
 
         // Fetch announcements based on the selected date range
         fetch(`/api/announcements?start=${start}&end=${end}`)
@@ -219,7 +461,7 @@
 
             // This is the styling of the cards, that is according to the other cards
             const noAnnouncementsCard = document.createElement('div');
-            noAnnouncementsCard.className = 'card shadow-sm bg-white';
+            noAnnouncementsCard.className = 'card shadow-sm';
             noAnnouncementsCard.style.flex = '0 0 auto';
             noAnnouncementsCard.style.minWidth = '250px';
             noAnnouncementsCard.style.width = '400px';
@@ -344,7 +586,7 @@
             }
         });
 
-        document.querySelector('#applyFiltersBtn').style.display = 'inline-block';  // Show the button again
+        document.querySelector('#applyFiltersBtn').style.display = 'block';  // Show the button again
     }
 
     // Function to show a custom alert modal
