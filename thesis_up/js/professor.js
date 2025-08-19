@@ -1256,6 +1256,11 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        // Add CSS styling to limit container height and enable scrolling
+        container.style.maxHeight = '300px';
+        container.style.overflowY = 'auto';
+        container.style.paddingRight = '10px';
+        
         let html = '';
         committee.forEach((member, index) => {
             const roleText = member.role === 'supervisor' ? 'Επιβλέπων' : 
@@ -1267,13 +1272,13 @@ document.addEventListener('DOMContentLoaded', function() {
                                  member.role === 'secretary' ? 'bg-info' : 'bg-secondary';
             
             // Create more compact layout for committee members
-            html += '<div class="committee-member">' +
+            html += '<div class="committee-member mb-2 p-2 border rounded" style="background-color: #f8f9fa;">' +
                     '<div class="d-flex justify-content-between align-items-start">' +
                     '<div class="flex-grow-1 me-2">' +
-                    '<strong>' + (member.professor_name || 'Όνομα δεν διαθέσιμο') + '</strong><br>' +
-                    '<small class="text-muted">' + (member.email || 'Email δεν διαθέσιμο') + '</small>' +
+                    '<strong style="font-size: 0.9rem;">' + (member.professor_name || 'Όνομα δεν διαθέσιμο') + '</strong><br>' +
+                    '<small class="text-muted" style="font-size: 0.8rem;">' + (member.email || 'Email δεν διαθέσιμο') + '</small>' +
                     '</div>' +
-                    '<span class="badge ' + roleBadgeClass + ' flex-shrink-0">' + roleText + '</span>' +
+                    '<span class="badge ' + roleBadgeClass + ' flex-shrink-0" style="font-size: 0.75rem;">' + roleText + '</span>' +
                     '</div>' +
                     '</div>';
         });
@@ -2180,6 +2185,9 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('gradingForm').reset();
         document.getElementById('gradingError').style.display = 'none';
         
+        // Load existing grades for this thesis
+        loadThesisGrades(thesisId);
+        
         // Show modal
         const modal = new bootstrap.Modal(document.getElementById('gradingModal'));
         modal.show();
@@ -2203,8 +2211,22 @@ document.addEventListener('DOMContentLoaded', function() {
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
+                            <!-- Περιοχή για εμφάνιση υπαρχόντων βαθμολογιών -->
+                            <div id="existingGradesSection" class="mb-4" style="display: none;">
+                                <h6 class="fw-semibold mb-3">
+                                    <i class="fas fa-list me-2" style="color: #6A1F2B;"></i>Υποβληθείσες Βαθμολογίες
+                                </h6>
+                                <div id="existingGradesList" class="border rounded p-3" style="background-color: #f8f9fa;">
+                                    <!-- Grades will be loaded here -->
+                                </div>
+                            </div>
+
                             <form id="gradingForm">
                                 <input type="hidden" id="gradingThesisId" name="thesis_id">
+                                
+                                <h6 class="fw-semibold mb-3">
+                                    <i class="fas fa-plus me-2" style="color: #6A1F2B;"></i>Υποβολή Βαθμολογίας
+                                </h6>
                                 
                                 <div class="row">
                                     <div class="col-md-12 mb-3">
@@ -2215,14 +2237,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                                min="0" max="10" step="0.1" placeholder="π.χ. 8.5" required>
                                         <div class="form-text">Εισάγετε βαθμό από 0 έως 10 με δεκαδικά</div>
                                     </div>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <label for="gradingTitle" class="form-label fw-semibold">
-                                        <i class="fas fa-heading me-2" style="color: #6A1F2B;"></i>Τίτλος Αξιολόγησης
-                                    </label>
-                                    <input type="text" id="gradingTitle" name="title" class="form-control" 
-                                           placeholder="π.χ. Τελική αξιολόγηση διπλωματικής" maxlength="255">
                                 </div>
                                 
                                 <div class="mb-3">
@@ -2293,31 +2307,41 @@ document.addEventListener('DOMContentLoaded', function() {
         errorDiv.style.display = 'none';
         
         try {
-            const response = await fetch('/api/notes', {
+            const response = await fetch('/submit-grade', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(gradingData)
+                body: JSON.stringify({
+                    thesis_id: gradingData.thesis_id,
+                    grade: gradingData.grade,
+                    comment: gradingData.comment
+                })
             });
             
             const result = await response.json();
             
             if (response.ok && result.success) {
-                showNotification('Η βαθμολόγηση αποθηκεύτηκε επιτυχώς!', 'success');
+                let message = 'Η βαθμολόγηση αποθηκεύτηκε επιτυχώς!';
+                
+                // Προσθήκη πληροφοριών για τον τελικό βαθμό
+                if (result.allGradesSubmitted && result.finalGrade) {
+                    message += ` Η διπλωματική ολοκληρώθηκε με τελικό βαθμό: ${result.finalGrade}`;
+                } else {
+                    message += ` Υποβληθεί ${result.totalGrades}/3 βαθμολογίες.`;
+                }
+                
+                showNotification(message, 'success');
                 
                 // Close modal
                 const modal = bootstrap.Modal.getInstance(document.getElementById('gradingModal'));
                 modal.hide();
                 
-                // Refresh thesis details if we're currently viewing this thesis
-                const currentThesisId = getCurrentThesisId();
-                if (currentThesisId && currentThesisId == gradingData.thesis_id) {
-                    loadThesisDetails(currentThesisId);
-                }
+                // Refresh thesis list to show updated status
+                loadMyTheses();
                 
             } else {
-                throw new Error(result.message || 'Σφάλμα κατά την αποθήκευση της βαθμολόγησης');
+                throw new Error(result.error || 'Σφάλμα κατά την αποθήκευση της βαθμολόγησης');
             }
             
         } catch (error) {
@@ -2340,6 +2364,76 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Scroll to error
         errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    
+    // Load existing grades for a thesis
+    async function loadThesisGrades(thesisId) {
+        try {
+            const response = await fetch(`/thesis/${thesisId}/grades`);
+            const result = await response.json();
+            
+            if (response.ok && result.success) {
+                displayExistingGrades(result);
+            } else {
+                console.warn('Could not load grades:', result.error);
+                // Hide the existing grades section if there's an error
+                document.getElementById('existingGradesSection').style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Error loading thesis grades:', error);
+            document.getElementById('existingGradesSection').style.display = 'none';
+        }
+    }
+    
+    // Display existing grades in the modal
+    function displayExistingGrades(gradeData) {
+        const existingGradesSection = document.getElementById('existingGradesSection');
+        const existingGradesList = document.getElementById('existingGradesList');
+        
+        if (!gradeData.submitted_grades || gradeData.submitted_grades.length === 0) {
+            existingGradesSection.style.display = 'none';
+            return;
+        }
+        
+        let gradesHTML = '';
+        
+        // Show progress info
+        gradesHTML += `
+            <div class="alert alert-info mb-3">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Πρόοδος βαθμολόγησης:</strong> ${gradeData.total_submitted}/3 βαθμολογίες υποβληθεί
+                ${gradeData.final_grade ? `<br><strong>Τελικός Βαθμός:</strong> ${gradeData.final_grade}` : ''}
+            </div>
+        `;
+        
+        // Show committee members and their grades
+        gradeData.committee_members.forEach(member => {
+            const memberGrade = gradeData.submitted_grades.find(grade => grade.professor_id === member.professor_id);
+            
+            gradesHTML += `
+                <div class="row mb-2 p-2 border rounded">
+                    <div class="col-md-4">
+                        <strong>${member.name} ${member.surname}</strong><br>
+                        <small class="text-muted">${member.role}</small>
+                    </div>
+                    <div class="col-md-3">
+                        ${memberGrade ? 
+                            `<span class="badge bg-success">Βαθμός: ${memberGrade.grade}</span>` : 
+                            `<span class="badge bg-warning">Εκκρεμεί</span>`
+                        }
+                    </div>
+                    <div class="col-md-5">
+                        ${memberGrade && memberGrade.comment ? 
+                            `<small class="text-muted">${memberGrade.comment}</small>` : 
+                            `<small class="text-muted">Χωρίς σχόλια</small>`
+                        }
+                    </div>
+                </div>
+            `;
+        });
+        
+        existingGradesList.innerHTML = gradesHTML;
+        existingGradesSection.style.display = 'block';
     }
     
     // Test function for debugging

@@ -10,6 +10,12 @@ app.use(express.json());
 // Serve static files, tells Express to serve static files from the current directory
 app.use(express.static(path.join(__dirname, 'thesis_up')));
 app.use('/uploads/thesis-pdfs', express.static(path.join(__dirname, 'uploads/thesis-pdfs')));
+
+// Favicon route
+app.get('/favicon.ico', (req, res) => {
+  res.sendFile(path.join(__dirname, 'thesis_up', 'loggo.png'));
+});
+
 app.use(session({
   secret: 'secret-key',       // This should be a strong secret key - given it a simple value for now
   resave: false,              // This option prevents resaving the session if it hasn't changed
@@ -71,6 +77,7 @@ app.use(require('./routes/protocol_pdf.route'));
 app.use(require('./routes/nimertis.route')); 
 app.use(require('./routes/thesis_events.route')); // Thesis events routes
 app.use(require('./routes/all_profs.route')); // All professors route
+app.use(require('./routes/thesis_grading.routes')); // Thesis grading routes
 app.use(require('./routes/logout.route')); // Logout route
 
 const updatePasswords = require('./scripts/updatePasswords');

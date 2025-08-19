@@ -784,6 +784,34 @@ router.get('/api/professor/thesis-details/:thesisId', (req, res) => {
             UNION ALL
             
             SELECT 
+                'member' as role,
+                'accepted' as status,
+                tt.time_of_activation as invitation_date,
+                tt.time_of_activation as acceptance_date,
+                p1.professor_id,
+                CONCAT(p1.name, ' ', p1.surname) as professor_name,
+                p1.email
+            FROM thesis_topic tt
+            JOIN professor p1 ON tt.member1 = p1.professor_id
+            WHERE tt.thesis_id = ? AND tt.member1 IS NOT NULL
+            
+            UNION ALL
+            
+            SELECT 
+                'member' as role,
+                'accepted' as status,
+                tt.time_of_activation as invitation_date,
+                tt.time_of_activation as acceptance_date,
+                p2.professor_id,
+                CONCAT(p2.name, ' ', p2.surname) as professor_name,
+                p2.email
+            FROM thesis_topic tt
+            JOIN professor p2 ON tt.member2 = p2.professor_id
+            WHERE tt.thesis_id = ? AND tt.member2 IS NOT NULL
+            
+            UNION ALL
+            
+            SELECT 
                 tc.role,
                 tc.status,
                 tc.invitation_date,
@@ -803,7 +831,7 @@ router.get('/api/professor/thesis-details/:thesisId', (req, res) => {
                 invitation_date
         `;
 
-        connection.query(committeeQuery, [thesisId, thesisId], (err, committeeResult) => {
+        connection.query(committeeQuery, [thesisId, thesisId, thesisId, thesisId], (err, committeeResult) => {
             if (err) {
                 console.error('Error fetching committee information:', err);
                 return res.status(500).json({ success: false, message: 'Database error' });
