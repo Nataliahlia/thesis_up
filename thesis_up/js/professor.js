@@ -1174,6 +1174,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function displayThesisDetails(thesis) {
+        console.log('displayThesisDetails called with thesis:', thesis);
+        
         // Store thesis data globally for use in edit form
         window.currentThesisData = thesis;
         
@@ -1184,6 +1186,11 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('thesisTitle').textContent = thesis.title || '';
         document.getElementById('thesisDescription').textContent = thesis.description || '';
         document.getElementById('thesisCode').textContent = thesis.code || '';
+        
+        console.log('Thesis code:', thesis.code);
+        console.log('Thesis created_at:', thesis.created_at);
+        console.log('Thesis assigned_at:', thesis.assigned_at);
+        console.log('Thesis duration:', thesis.duration);
         
         // Status badge
         const statusBadge = document.getElementById('thesisStatus');
@@ -1198,7 +1205,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Dates
         document.getElementById('creationDate').textContent = formatDate(thesis.created_at);
         document.getElementById('assignmentDate').textContent = formatDate(thesis.assigned_at);
-        document.getElementById('thesisDuration').textContent = formatDuration(thesis.created_at, thesis.assigned_at);
+        document.getElementById('thesisDuration').textContent = formatDuration(thesis.duration);
         
         // Student Information (only if assigned)
         const studentSection = document.getElementById('studentInfoSection');

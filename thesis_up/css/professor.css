@@ -1394,14 +1394,24 @@ footer {
     padding: 4px 8px !important;
 }
 
-/* Target only the committee card - using the container that holds #committeeDetails */
-div:has(#committeeDetails) .card.border-0.bg-light {
+/* Target only the specific cards that need fixed height */
+
+/* Basic Information card - fixed height */
+#thesisDetailsContent .row.mb-4:first-child .card.border-0.bg-light {
     min-height: 350px;
     max-height: 350px;
+    overflow-y: auto;
 }
 
-/* Alternative approach - target the specific committee card */
-.col-md-6:has(#committeeDetails) .card.border-0.bg-light {
+/* Student Information card - fixed height */
+#studentInfoSection .col-md-6:first-child .card.border-0.bg-light {
+    min-height: 350px;
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+/* Committee card - fixed height with special scrolling */
+#studentInfoSection .col-md-6:last-child .card.border-0.bg-light {
     min-height: 350px;
     max-height: 350px;
 }

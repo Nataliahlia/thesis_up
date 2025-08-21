@@ -8,7 +8,6 @@ const connection = mysql.createConnection({
   password: 'natalia',
   database: 'thesis_up',
   connectTimeout: 60000,
-  timeout: 60000,
   multipleStatements: true
 });
 

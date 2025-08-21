@@ -139,6 +139,7 @@ router.get('/api/professor/my-theses', (req, res) => {
     const query = `
         SELECT 
             t.thesis_id as id,
+            t.thesis_id as code,
             t.title,
             s.name as student_name,
             s.surname as student_surname,
@@ -149,10 +150,15 @@ router.get('/api/professor/my-theses', (req, res) => {
                 WHEN t.member1 = ? OR t.member2 = ? THEN 'member'
                 ELSE 'other'
             END as role,
-            t.time_of_activation as assignDate,
+            t.time_of_activation as assigned_at,
             DATEDIFF(NOW(), t.time_of_activation) as duration,
             t.pdf as pdfFile,
-            p.name as professor_name
+            p.name as professor_name,
+            (SELECT MIN(te.event_date) 
+             FROM thesis_events te 
+             WHERE te.thesis_id = t.thesis_id 
+             AND te.event_type = 'Δημιουργία Θέματος'
+            ) as created_at
         FROM thesis_topic t
         LEFT JOIN student s ON t.student_id = s.student_number
         JOIN professor p ON t.instructor_id = p.professor_id
@@ -166,14 +172,19 @@ router.get('/api/professor/my-theses', (req, res) => {
             return res.status(500).json({ error: 'Database error' });
         }
         
+        console.log('Raw database results:', results);
+        
         // Transform the data for frontend
         const transformedResults = results.map(thesis => ({
             ...thesis,
             student: thesis.student_name && thesis.student_surname ? 
                 `${thesis.student_name} ${thesis.student_surname}` : 'Μη ανατεθειμένη',
-            assignDate: thesis.assignDate ? thesis.assignDate.toISOString().split('T')[0] : null,
+            assigned_at: thesis.assigned_at ? thesis.assigned_at.toISOString().split('T')[0] : null,
+            created_at: thesis.created_at ? thesis.created_at.toISOString().split('T')[0] : null,
             duration: thesis.duration || 0
         }));
+        
+        console.log('Transformed results:', transformedResults);
         
         res.json(transformedResults);
     });
@@ -727,8 +738,12 @@ router.post('/api/professor/update-thesis/:id', uploadPDF.single('pdf'), (req, r
 // Get detailed thesis information (UC9)
 router.get('/api/professor/thesis-details/:thesisId', (req, res) => {
     const thesisId = req.params.thesisId;
+    console.log('thesis-details endpoint called with thesisId:', thesisId);
+    
     const professorId = getAuthenticatedProfessorId(req, res);
     if (!professorId) return; // Error response already sent by helper
+    
+    console.log('Loading thesis details for professor:', professorId, 'thesis:', thesisId);
 
     // Main thesis query with join to get student and professor information
     const thesisQuery = `
@@ -741,7 +756,12 @@ router.get('/api/professor/thesis-details/:thesisId', (req, res) => {
             s.student_number,
             p.name as supervisor_name,
             p.surname as supervisor_surname,
-            DATEDIFF(CURDATE(), tt.time_of_activation) as duration_days
+            DATEDIFF(CURDATE(), tt.time_of_activation) as duration_days,
+            (SELECT MIN(te.event_date) 
+             FROM thesis_events te 
+             WHERE te.thesis_id = tt.thesis_id 
+             AND te.event_type = 'Δημιουργία Θέματος'
+            ) as created_at
         FROM thesis_topic tt
         LEFT JOIN student s ON tt.student_id = s.student_number
         LEFT JOIN professor p ON tt.instructor_id = p.professor_id
@@ -898,11 +918,14 @@ router.get('/api/professor/thesis-details/:thesisId', (req, res) => {
                         success: true,
                         data: {
                             id: thesis.thesis_id,
+                            code: thesis.thesis_id, // Add thesis code/id for display
                             title: thesis.title,
                             description: thesis.description,
                             status: thesis.state,
                             pdf: thesis.pdf,
                             assignDate: thesis.time_of_activation,
+                            created_at: thesis.created_at, // Add creation date
+                            assigned_at: thesis.time_of_activation, // Add assignment date
                             duration: thesis.duration_days,
                             my_role: myRole,
                             student: thesis.student_name && thesis.student_surname ? {
