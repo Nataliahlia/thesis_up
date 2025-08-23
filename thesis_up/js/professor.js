@@ -1246,7 +1246,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Files
-        displayThesisFiles(thesis.files || [], thesis.pdf_file);
+        console.log('About to display thesis files. thesis.files:', thesis.files, 'thesis.pdf:', thesis.pdf);
+        displayThesisFiles(thesis.files || [], thesis.pdf);
         
         // Action buttons
         displayThesisActions(thesis);
@@ -1345,26 +1346,31 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function displayThesisFiles(files, pdfFile = null) {
+        console.log('displayThesisFiles called with:', { files, pdfFile });
         const container = document.getElementById('thesisFiles');
         
         let allFiles = [];
         
-        // Add the original PDF file if it exists
-        if (pdfFile) {
+        // Add the original PDF file if it exists and is not empty/null
+        if (pdfFile && pdfFile.trim() !== '') {
+            console.log('Adding instructor PDF file:', pdfFile);
             allFiles.push({
-                id: 'original-pdf',
-                original_name: 'Αρχικό PDF Διπλωματικής',
+                id: 'instructor-pdf',
+                original_name: 'Περιγραφή Θέματος (PDF)',
                 file_type: 'PDF',
-                uploaded_at: null, // We don't have upload date for original PDF
+                uploaded_at: null, // We don't have upload date for instructor PDF
                 file_path: pdfFile,
-                isOriginalPdf: true
+                isInstructorPdf: true
             });
         }
         
-        // Add other files
+        // Add other files from thesis_files table
         if (files && files.length > 0) {
+            console.log('Adding other files:', files);
             allFiles = allFiles.concat(files);
         }
+        
+        console.log('All files to display:', allFiles);
         
         if (allFiles.length === 0) {
             container.innerHTML = '<p class="text-muted">Δεν υπάρχουν συνημμένα αρχεία.</p>';
@@ -1376,11 +1382,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const iconClass = getFileIcon(file.file_type);
             let downloadUrl = '';
             let fileName = file.original_name;
-            let dateInfo = file.uploaded_at ? formatDate(file.uploaded_at) : 'Αρχικό αρχείο';
+            let dateInfo = file.uploaded_at ? formatDate(file.uploaded_at) : 'Αρχείο καθηγητή';
             
-            if (file.isOriginalPdf) {
+            if (file.isInstructorPdf) {
                 downloadUrl = '/uploads/thesis-pdfs/' + file.file_path;
-                fileName = '<span class="badge bg-info text-dark me-2">Αρχικό</span>' + fileName;
+                fileName = '<span class="badge bg-info text-dark me-2">Καθηγητή</span>' + fileName;
             } else {
                 downloadUrl = '/api/thesis/file/' + file.id;
             }
@@ -2127,10 +2133,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Hide edit form
                 document.getElementById('editThesisForm').style.display = 'none';
                 
-                // Return to list after save with a short delay to show success message
-                setTimeout(() => {
-                    returnToThesesList();
-                }, 1500);
+                // Reload thesis details to show updated data
+                setTimeout(async () => {
+                    try {
+                        console.log('Reloading thesis details after successful update...');
+                        // Clear any cached data
+                        window.currentThesisData = null;
+                        
+                        // Reload the thesis details with fresh data
+                        await loadThesisDetails(thesisId);
+                        showNotification('Τα στοιχεία ανανεώθηκαν!', 'info');
+                    } catch (error) {
+                        console.error('Error reloading thesis details:', error);
+                        // If reload fails, go back to list
+                        returnToThesesList();
+                    }
+                }, 1000);
             } else {
                 showNotification('Σφάλμα: ' + (result.message || 'Αποτυχία αποθήκευσης'), 'error');
             }

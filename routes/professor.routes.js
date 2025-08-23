@@ -876,7 +876,7 @@ router.get('/api/professor/thesis-details/:thesisId', (req, res) => {
                 }
 
                 // Get thesis files - handle case where table doesn't exist
-                const filesResult = []; // Default empty array since table doesn't exist
+                const filesResult = []; // Files from thesis_files table (if it existed)
                 
                 // Get thesis comments/grades
                 const commentsQuery = `
