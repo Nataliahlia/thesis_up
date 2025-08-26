@@ -1,9 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const connection = require('../db');
+const connection = require('../../db');
 const multer = require('multer');
 const path = require('path');
 
+// -------------------------------------------------------------------- //
+// This is the file that handles everything that is related to the thesis,
+// like the updates on the thesis, the uploads of thesis file or links
+
+// Firstly we define the place where the file uploads (thesis file) will be uploaded 
 // Where the file will be stored
 const storage = multer.diskStorage({
     // Define the storage location and filename
@@ -31,6 +36,54 @@ const storage = multer.diskStorage({
 // Create the multer instance with the storage configuration
 const upload = multer({ storage: storage });
 
+// This is the router that is used so that we can get the thesis details, 
+// this is used in many places throughout the javascript implementation
+router.get('/mythesis-details', (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'student') {
+    return res.status(403).json({ error: 'Unauthorized' });
+  }
+
+  const studentId = req.session.user.id;
+  const query = `
+    SELECT 
+        tt.thesis_id,
+        tt.title, 
+        tt.description, 
+        tt.pdf, 
+        tt.state,
+        tt.draft_file,
+        tt.additional_links,
+        tt.member1,
+        tt.member2,
+        tt.instructor_id,
+        tt.nimertis_link,
+        DATEDIFF(NOW(), tt.time_of_activation) as days_since_activation,
+        instructor.name as instructor_name,
+        instructor.surname as instructor_surname,
+        m1.name as mentor_name,
+        m1.surname as mentor_surname,
+        m2.name as mentortwo_name,
+        m2.surname as mentortwo_surname,
+        CONCAT(m1.name, ' ', m1.surname) as full_mentor_name,
+        CONCAT(m2.name, ' ', m2.surname) as full_mentortwo_name,
+        CONCAT(instructor.name, ' ', instructor.surname) as full_instructor_name
+    FROM thesis_topic tt
+    LEFT JOIN professor m1 ON tt.member1 = m1.professor_id
+    LEFT JOIN professor m2 ON tt.member2 = m2.professor_id
+    LEFT JOIN professor instructor ON tt.instructor_id = instructor.professor_id
+    WHERE student_id = ?`;
+
+  connection.query(query, [studentId], (err, results) => {
+    if (err) {
+      console.error('DB error:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    res.json(results); // Send the thesis info to the frontend
+  });
+});
+
+// This is the router that is used to upload the thesis file and maybe if the student wants some additional links
 router.post('/under-examination-upload', upload.fields([ { name: 'progressFile' }, { name: 'progressLinks[]' } ]), async (req, res) => {
     try {
         if (!req.session.user || req.session.user.role !== 'student') {
@@ -103,6 +156,27 @@ router.post('/under-examination-upload', upload.fields([ { name: 'progressFile' 
     } catch (err) {
         console.error('Upload error:', err);
         return res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// This is the router that is used to save the nimertis link
+router.post('/save-nimertis-link', async (req, res) => {
+    // Get the information from the request body
+    const { thesis_id, nimertis_link } = req.body;
+
+    // Validate the information
+    if (!thesis_id || !nimertis_link) {
+        return res.status(400).json({ success: false, error: 'Missing data' });
+    }
+
+    try {
+        // The query to update the nimertis link in the database
+        const query = `UPDATE thesis_topic SET nimertis_link = ? WHERE thesis_id = ?`;
+        await connection.promise().query(query, [nimertis_link, thesis_id]);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('DB error:', err);
+        res.status(500).json({ success: false, error: 'Database error' });
     }
 });
 

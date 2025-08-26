@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const connection = require('../../db');
 
+// ------------------------------------------------------------------------------------------------ //
+// This file contains all the routes that are related to the thesis topic and everything the secretary 
+// can insert or update in a specific thesis
+
 // Router to get the thesis topics details 
 router.get('/thesis-topics', (req, res) => {
     console.log('Serving thesis topics page');
@@ -55,7 +59,7 @@ router.get('/thesis-topics', (req, res) => {
     });
 });
 
-// Route to submit the protocol number
+// Route to submit the protocol number from the secretary 
 router.post('/submit-protocol-number', (req, res) => {
     // Get thesis_id and protocol_number from request body
     const { thesis_id, protocol_number } = req.body;

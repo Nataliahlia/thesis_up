@@ -1,7 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const connection = require('../db');
+const connection = require('../../db');
 
+// ------------------------------------------------------------------------------------------------------------------------------- //
+// This route contains everything that is related to the student choosing the thesis committee members and sending them an invitation
+
+// This is used so that we can fetch all the professors and create a dropdown menu rom which the user can choose 
+// who he wants to send an invite to. (We exclude the instructor in the student.js file)
 // Return all professors excluding the instructor of a specific thesis
 router.get('/all-professors', async (req, res) => {
 
@@ -35,6 +40,7 @@ router.get('/all-professors', async (req, res) => {
         }
 });
 
+// This is the router that we use in order to send an invitation to the professor the user has choosen from the dropdown menu
 // Save the invitation to the thesis committee
 router.post('/send-committee-invitation', async (req, res) => {
     // Get the thesis_id and professor_id from the request body
@@ -73,6 +79,7 @@ router.post('/send-committee-invitation', async (req, res) => {
     }
 });
 
+// This is the router that is used for displaying purposes
 // Get all committee invitations for a specific thesis, so that the student can see which professors have been invited
 router.get('/get-committee-invitations/:thesis_id', async (req, res) => {
 

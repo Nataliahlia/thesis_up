@@ -1,7 +1,14 @@
+// For the practical 
 const express = require('express');
 const router = express.Router();
-const connection = require('../db');
+const connection = require('../../db');
+const puppeteer = require('puppeteer'); // The library we use for the pdf creation 
 
+// ------------------------------------------------------------------------------------------------------------------------------ //
+// This file contains the function that generates the HTML for the protocol and we use this function in the routers that in contains
+// so that after the protocol is made, the user can either view it or download its pdf
+
+// Function that creates the HTML for the protocol
 async function createProtocolHtml(thesisId) {
     // Fetch thesis', student' and announcement' details from the database
     const [[thesis]] = await connection.promise().query(`
@@ -146,6 +153,7 @@ async function createProtocolHtml(thesisId) {
     `;
 }
 
+// Router used so that the user can see the protocol that is being generated
 router.get('/generate-protocol/:thesis_id', async (req, res) => {
 
     // Validate thesis_id parameter
@@ -164,8 +172,43 @@ router.get('/generate-protocol/:thesis_id', async (req, res) => {
     }
 });
 
+// Router that is used so that the user can download the protocol as a PDF
+router.get('/download-protocol/:thesis_id', async (req, res) => {
+    const thesisId = req.params.thesis_id;  // Get the thesis ID from the request parameters
+
+    try {
+        const html = await createProtocolHtml(thesisId);    // Generate the protocol HTML
+        // Create a new Puppeteer browser instance
+        const browser = await puppeteer.launch({
+            headless: 'new',
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
+
+        const page = await browser.newPage();   // Open a new page in the browser
+        await page.setContent(html, { waitUntil: 'networkidle0' }); // Set the content of the page to the generated HTML
+
+        // Generate the PDF from the page content
+        const pdf = await page.pdf({
+            format: 'A4',
+            printBackground: true,
+            margin: { top: '20mm', bottom: '20mm', left: '15mm', right: '15mm' }
+        });
+
+        await browser.close();  // Close the browser instance
+
+        // Set the response headers to indicate a PDF file download
+        res.set({
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename="praktiko_exetasis_${thesisId}.pdf"`
+        });
+        // Send the generated PDF as the response
+        res.send(pdf);
+
+    } catch (err) {
+        console.error('Σφάλμα PDF Puppeteer:', err);
+        res.status(500).send('Σφάλμα κατά τη δημιουργία PDF πρακτικού.');
+    }
+});
+
 // Export the router and the createProtocolHtml function
-module.exports = {
-    router,
-    createProtocolHtml
-};
+module.exports = router;

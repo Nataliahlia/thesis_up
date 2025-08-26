@@ -453,6 +453,13 @@ body {
     word-break: break-word;       
   }
 
+  /* Make only the Nimertis input wider on small screens */
+  #gradesInfo #nimertisLink {
+    width: 100% !important;         /* override w-50 */
+    margin-left: 0 !important;       /* override ms-2 */
+    margin-right: 0 !important;      /* override me-2 */
+  }
+
   /* Used for the different parts */
   
   /* The following handles small changes in buttons etc, so that they can fit in the mobile */
