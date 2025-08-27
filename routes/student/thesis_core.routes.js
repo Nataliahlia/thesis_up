@@ -159,17 +159,17 @@ router.post('/under-examination-upload', upload.fields([ { name: 'progressFile' 
     }
 });
 
-
-
+// This is the router that handles the deletion of links 
 router.post('/remove-link', async (req, res) => {
-    const { thesis_id, link } = req.body;
-    console.log('Request to remove link:', link, 'from thesis ID:', thesis_id);
+    const { thesis_id, link } = req.body;   // Get the data from the request body
+
+    // Check the data 
     if (!thesis_id || !link) {
         return res.json({ success: false, error: 'Missing thesis_id or link' });
     }
 
     try {
-        // 1. Fetch the current additional_links array
+        // Fetch the current additional_links array
         const [rows] = await connection.promise().query(
             'SELECT additional_links FROM thesis_topic WHERE thesis_id = ?',
             [thesis_id]
@@ -185,10 +185,10 @@ router.post('/remove-link', async (req, res) => {
             links = [];
         }
 
-        // 2. Remove the link from the array
+        // Remove the link, which the student chose to remove, from the array
         const newLinks = links.filter(l => l !== link);
 
-        // 3. Update the row with the new array
+        // Update the row with the new array, so that it will not include the removed link
         await connection.promise().query(
             'UPDATE thesis_topic SET additional_links = ? WHERE thesis_id = ?',
             [JSON.stringify(newLinks), thesis_id]
@@ -200,9 +200,6 @@ router.post('/remove-link', async (req, res) => {
         res.json({ success: false, error: 'Database error' });
     }
 });
-
-
-
 
 // This is the router that is used to save the nimertis link
 router.post('/save-nimertis-link', async (req, res) => {
