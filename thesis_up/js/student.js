@@ -22,7 +22,8 @@ document.addEventListener('DOMContentLoaded', function () {
     window.showCustomAlert = showCustomAlert;
 
     // Restore active section on reload
-    const activeSection = localStorage.getItem('studentActiveSection'); // Get the saved section from the local storage
+    const activeSection = sessionStorage.getItem('studentActiveSection'); // Get the saved section from the session storage
+    console.log(activeSection); 
     if (activeSection && document.getElementById(activeSection)) {
         document.getElementById(activeSection).click();   // Simulate a click on the saved section to show it
     } else {
@@ -96,7 +97,7 @@ function initializeLogoutCustom() {
     }
     if (confirmLogoutBtn) {
         confirmLogoutBtn.addEventListener('click', function() {
-            localStorage.removeItem('studentActiveSection'); // Clear the saved section so next login starts from the default page
+            sessionStorage.removeItem('studentActiveSection'); // Clear the saved section so next login starts from the default page
             window.location.href = '/logout'; // Go to the logout route
         });
     }
@@ -108,7 +109,7 @@ function initializeSectionPersistence() {
         const btn = document.getElementById(id);    // Get the button by its id
         if (btn) {
             btn.addEventListener('click', () => {
-                localStorage.setItem('studentActiveSection', id);   // Save the id of the button in the local storage
+                sessionStorage.setItem('studentActiveSection', id);   // Save the id of the button in the local storage
             });
         }
     });
@@ -465,7 +466,7 @@ async function underExaminationThesisContent(thesis) {
         // If there are links
         if (Array.isArray(linksArray) && linksArray.length > 0) {
             // Call the function to render the submitted links
-            renderSubmittedLinks(linksArray); 
+            renderSubmittedLinks(linksArray, thesis);
         }
     } 
 
@@ -558,7 +559,7 @@ function uploadedFile(thesis) {
         // Finds all the links the user has added in the form
         const hasEmptyLink = Array.from(links).some(link => link.value.trim() === '');
         if (hasEmptyLink) {
-            showCustomAlert('Προσοχή! Υποβάλλατε κενό σύνδεσμο. Τυχόν έγκυροι σύνδεσμοι θα αγνοηθούν.');
+            showCustomAlert('Προσοχή! Υποβάλλατε κενό σύνδεσμο. Προσπαθήστε για νέα έγκυρη υποβολή.');
             return;
         }
         const formData = new FormData(form); // This is used to collect all the inputs inside the form, this data will be sent to the server
@@ -593,7 +594,7 @@ function uploadedFile(thesis) {
                             }
             
                             // Call the function to render the submitted links
-                            renderSubmittedLinks(linksArray); 
+                            renderSubmittedLinks(linksArray, thesis); 
                         }
                         if (updatedThesis.draft_file) {
                             // Call the function to render the uploaded file
@@ -1468,24 +1469,66 @@ function renderUploadedFile(filename) {
 }
 
 // Function to render the submitted links
-function renderSubmittedLinks(linksArray) {
+function renderSubmittedLinks(linksArray, thesis) {
     // Finds the container where the links will be displayed
     const container = document.getElementById('dynamicLinksArea');
     container.innerHTML = ''; // Clear the container to remove old links
+
     // Create a title for the links section and some styling
     const title = document.createElement('p');
     title.className = 'text-muted';
     title.textContent = 'Υποβεβλημένοι Σύνδεσμοι:';
     container.appendChild(title);
 
+    const thesis_id = thesis.thesis_id; // Get the thesis ID for use in the delete request
     // Loop through the links and create the elements
     linksArray.forEach(link => {
+        const row = document.createElement('div');            // Create the row, where the link and the delete will be placed
+        row.className = 'link-row d-flex align-items-center mb-1';
+
         const linkElement = document.createElement('a');      // a: clickable hyperlink element
         linkElement.href = link;
         linkElement.target = '_blank';                        // If pressed it will open in a new tab
         linkElement.className = 'd-block mb-1 text-bordeaux'; // Add a class for styling
         linkElement.innerHTML = `<i class="fas fa-link me-2"></i>${link}`;
-        container.appendChild(linkElement);
+
+        const removeBtn = document.createElement('span');     // Create the remove button element
+        removeBtn.innerHTML = '&times;';
+        removeBtn.className = 'remove-btn ms-2';
+        removeBtn.style.cursor = 'pointer';
+        removeBtn.onclick = async () => {
+            // Send a request to your backend to remove the link
+            try {
+                const response = await fetch('/remove-link', {
+                    method: 'POST', // or 'DELETE' if your backend supports it
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ link, thesis_id }) 
+                });
+                const result = await response.json();
+                if (result.success) {
+                    row.remove();   // Remove the row from the DOM
+                    // Check if there are any more link rows
+                    const container = document.getElementById('dynamicLinksArea');
+                    const remainingLinks = container.querySelectorAll('.link-row');
+                    // If there are no links left hide the title "Υποβεβλημένοι Σύνδεσμοι"
+                    if (remainingLinks.length === 0) {
+                        // Hide the title or the whole section
+                        const title = container.querySelector('p.text-muted');
+                        if (title) title.style.display = 'none';
+                        // Or hide the whole container:
+                        // container.style.display = 'none';
+                    }
+                } else {
+                    alert('Αποτυχία διαγραφής συνδέσμου από τη βάση.');
+                }
+            } catch (err) {
+                alert('Σφάλμα δικτύου κατά τη διαγραφή.');
+            }
+        };
+
+        row.appendChild(linkElement);
+        row.appendChild(removeBtn);
+        container.appendChild(row);
     });
 }
 

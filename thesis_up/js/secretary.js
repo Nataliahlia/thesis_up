@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function () {
     window.showCustomAlert = showCustomAlert;
 
     // Restore active section on reload
-    const activeSection = localStorage.getItem('secretaryActiveSection'); // Get the saved section from the local storage
+    const activeSection = sessionStorage.getItem('secretaryActiveSection'); // Get the saved section from the session storage
     if (activeSection && document.getElementById(activeSection)) {
         document.getElementById(activeSection).click();   // Simulate a click on the saved section to show it
     } else {
@@ -70,7 +70,7 @@ function initializeSectionPersistence() {
         const btn = document.getElementById(id);    // Get the button by its id
         if (btn) {
             btn.addEventListener('click', () => {
-                localStorage.setItem('secretaryActiveSection', id);   // Save the id of the button in the local storage
+                sessionStorage.setItem('secretaryActiveSection', id);   // Save the id of the button in the session storage
             });
         }
     });
@@ -567,7 +567,7 @@ function initializeLogoutCustom() {
     }
     if (confirmLogoutBtn) {
         confirmLogoutBtn.addEventListener('click', function() {
-            localStorage.removeItem('secretaryActiveSection'); // Clear the saved section so next login starts from the default page
+            sessionStorage.removeItem('secretaryActiveSection'); // Clear the saved section so next login starts from the default page
             window.location.href = '/logout'; // Go to the logout route
         });
     }

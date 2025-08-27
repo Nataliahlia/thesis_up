@@ -159,6 +159,51 @@ router.post('/under-examination-upload', upload.fields([ { name: 'progressFile' 
     }
 });
 
+
+
+router.post('/remove-link', async (req, res) => {
+    const { thesis_id, link } = req.body;
+    console.log('Request to remove link:', link, 'from thesis ID:', thesis_id);
+    if (!thesis_id || !link) {
+        return res.json({ success: false, error: 'Missing thesis_id or link' });
+    }
+
+    try {
+        // 1. Fetch the current additional_links array
+        const [rows] = await connection.promise().query(
+            'SELECT additional_links FROM thesis_topic WHERE thesis_id = ?',
+            [thesis_id]
+        );
+        if (!rows.length) {
+            return res.json({ success: false, error: 'Thesis not found' });
+        }
+
+        let links = [];
+        try {
+            links = JSON.parse(rows[0].additional_links) || [];
+        } catch {
+            links = [];
+        }
+
+        // 2. Remove the link from the array
+        const newLinks = links.filter(l => l !== link);
+
+        // 3. Update the row with the new array
+        await connection.promise().query(
+            'UPDATE thesis_topic SET additional_links = ? WHERE thesis_id = ?',
+            [JSON.stringify(newLinks), thesis_id]
+        );
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.json({ success: false, error: 'Database error' });
+    }
+});
+
+
+
+
 // This is the router that is used to save the nimertis link
 router.post('/save-nimertis-link', async (req, res) => {
     // Get the information from the request body
