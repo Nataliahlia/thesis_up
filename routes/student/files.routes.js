@@ -33,7 +33,7 @@ async function createProtocolHtml(thesisId) {
         FROM thesis_comments tc
         JOIN professor p ON p.professor_id = tc.professor_id
         JOIN thesis_topic t ON t.thesis_id = tc.thesis_id
-        WHERE tc.thesis_id = ?
+        WHERE tc.thesis_id = ? AND tc.comment_type = 'final'
     `, [thesisId]);
 
     return `
@@ -43,6 +43,10 @@ async function createProtocolHtml(thesisId) {
     <head>
         <meta charset="UTF-8">
         <title>Πρακτικό Εξέτασης</title>
+        
+        <!-- Favicon -->
+        <link rel="icon" type="image/png" href="../favicon_32x32.png">
+
         <style>
             body {
                 font-family: 'Times New Roman', serif;
