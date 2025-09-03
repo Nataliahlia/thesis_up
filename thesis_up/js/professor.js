@@ -1441,6 +1441,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     '</button>';
         }
         
+        // Draft file button (only for "Υπό Εξέταση" status and committee members/supervisors)
+        if (thesis.status === 'Υπό Εξέταση' && (thesis.my_role === 'supervisor' || thesis.my_role === 'member')) {
+            html += '<button type="button" class="btn btn-info" onclick="viewDraftFile(' + thesis.id + ')" title="Προβολή πρόχειρου κειμένου φοιτητή">' +
+                    '<i class="fas fa-file-alt me-2"></i>Πρόχειρο Κείμενο' +
+                    '</button>';
+        }
+        
         // Export PDF button
         html += '<button type="button" class="btn btn-outline-bordeaux" onclick="exportThesisPDF(' + thesis.id + ')">' +
                 '<i class="fas fa-file-pdf me-2"></i>Εξαγωγή PDF' +
@@ -2080,6 +2087,137 @@ document.addEventListener('DOMContentLoaded', function() {
         
         return content;
     }
+
+    // ===== DRAFT FILE FUNCTIONALITY =====
+    
+    // View draft file for thesis under examination
+    window.viewDraftFile = async function(thesisId) {
+        console.log('Opening draft file for thesis:', thesisId);
+        
+        try {
+            showNotification('Προετοιμασία προβολής πρόχειρου κειμένου...', 'info');
+            
+            // First, get the draft file information
+            const response = await fetch(`/thesis/${thesisId}/draft-file`);
+            const result = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(result.error || 'Αδυναμία λήψης πρόχειρου κειμένου');
+            }
+            
+            if (!result.success) {
+                throw new Error(result.error || 'Το πρόχειρο κείμενο δεν είναι διαθέσιμο');
+            }
+            
+            // Create and show draft file modal
+            createDraftFileModal(result);
+            
+            showNotification('Το πρόχειρο κείμενο φορτώθηκε επιτυχώς!', 'success');
+            
+        } catch (error) {
+            console.error('Error viewing draft file:', error);
+            showNotification('Σφάλμα κατά την προβολή του πρόχειρου κειμένου: ' + error.message, 'error');
+        }
+    };
+    
+    // Create draft file modal
+    function createDraftFileModal(draftData) {
+        // Remove existing modal if it exists
+        const existingModal = document.getElementById('draftFileModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        const modalHTML = `
+            <div class="modal fade" id="draftFileModal" tabindex="-1" aria-labelledby="draftFileModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header" style="background-color: #6A1F2B; color: white;">
+                            <h5 class="modal-title" id="draftFileModalLabel">
+                                <i class="fas fa-file-alt me-2"></i>Πρόχειρο Κείμενο Φοιτητή
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <h6 class="fw-semibold text-primary">
+                                    <i class="fas fa-info-circle me-2"></i>Στοιχεία Διπλωματικής
+                                </h6>
+                                <div class="bg-light p-3 rounded">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <strong>Τίτλος:</strong> ${draftData.thesis_title}<br>
+                                            <strong>Φοιτητής:</strong> ${draftData.student_name} ${draftData.student_surname}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <strong>Αρ. Μητρώου:</strong> ${draftData.student_number}<br>
+                                            <strong>Κατάσταση:</strong> <span class="badge bg-warning">${draftData.state}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <h6 class="fw-semibold text-success">
+                                    <i class="fas fa-file-pdf me-2"></i>Πρόχειρο Αρχείο
+                                </h6>
+                                <div class="d-flex align-items-center justify-content-between p-3 border rounded">
+                                    <div>
+                                        <strong>Όνομα Αρχείου:</strong> ${draftData.draft_file}<br>
+                                        <small class="text-muted">Αρχείο πρόχειρου κειμένου που ανέβασε ο φοιτητής</small>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-primary" onclick="downloadDraftFile(${draftData.thesis_id})">
+                                        <i class="fas fa-download me-2"></i>Κατέβασμα
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <i class="fas fa-lightbulb me-2"></i>
+                                <strong>Σημείωση:</strong> Αυτό είναι το πρόχειρο κείμενο που ανέβασε ο φοιτητής. 
+                                Μπορείτε να το κατεβάσετε για αναθεώρηση πριν από τη βαθμολόγηση.
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times me-2"></i>Κλείσιμο
+                            </button>
+                            <button type="button" class="btn btn-primary" onclick="downloadDraftFile(${draftData.thesis_id})">
+                                <i class="fas fa-download me-2"></i>Κατέβασμα Αρχείου
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Add modal to body and show it
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        const modal = new bootstrap.Modal(document.getElementById('draftFileModal'));
+        modal.show();
+    }
+    
+    // Download draft file
+    window.downloadDraftFile = async function(thesisId) {
+        try {
+            showNotification('Προετοιμασία κατεβάσματος...', 'info');
+            
+            // Create a temporary link to download the file
+            const downloadUrl = `/thesis/${thesisId}/draft-file/download`;
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = ''; // Let the server decide the filename
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showNotification('Το αρχείο κατέβηκε επιτυχώς!', 'success');
+            
+        } catch (error) {
+            console.error('Error downloading draft file:', error);
+            showNotification('Σφάλμα κατά το κατέβασμα του αρχείου: ' + error.message, 'error');
+        }
+    };
 
     // Edit form handlers
     function setupEditFormHandlers() {
