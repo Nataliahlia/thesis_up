@@ -64,6 +64,7 @@ app.use(require('./routes/public_endpoint.routes'));
 app.use(require('./routes/session.routes'));
 app.use(require('./routes/notes.routes')); // UC13 Notes routes
 app.use(require('./routes/logout.route')); // Logout route
+app.use(require('./routes/thesis_grading.routes')); // UC3 Thesis routes
 
 // The routes that are used for secretary
 const secretaryRoutes = require('./routes/secretary/index.routes');

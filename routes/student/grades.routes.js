@@ -20,6 +20,7 @@ router.get('/get-grades/:thesis_id', async (req, res) => {
             tc.thesis_id,
             tc.professor_id,
             tc.grade,
+            tc.comment_type,
             p.name AS professor_name,
             p.surname AS professor_surname,
             CONCAT(p.name, ' ', p.surname) AS professor_full_name,
@@ -30,7 +31,7 @@ router.get('/get-grades/:thesis_id', async (req, res) => {
         FROM thesis_comments tc
         JOIN professor p ON tc.professor_id = p.professor_id
         JOIN thesis_topic tt ON tc.thesis_id = tt.thesis_id
-        WHERE tc.thesis_id = ?;
+        WHERE tc.thesis_id = ? AND tc.comment_type = 'final';
     `;
 
     try {

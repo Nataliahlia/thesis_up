@@ -2818,28 +2818,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function initializeStatistics() {
         console.log('Initializing statistics...'); // Debug log
         const statisticsSection = document.getElementById('statisticsSection');
-        const backToMainFromStats = document.getElementById('backToMainFromStats');
         const retryStatsBtn = document.getElementById('retryStatsBtn');
         
         console.log('Statistics section element:', statisticsSection); // Debug log
         
-        // Back to main button
-        if (backToMainFromStats) {
-            backToMainFromStats.addEventListener('click', function(e) {
-                e.preventDefault();
-                showStatisticsAsHomePage();
-                
-                // Set home as active
-                const homeLink = document.querySelector('.nav-link:not([id])');
-                if (homeLink && homeLink.textContent.includes('Αρχική')) {
-                    document.querySelectorAll('.nav-link').forEach(navLink => {
-                        navLink.classList.remove('active');
-                    });
-                    homeLink.classList.add('active');
-                }
-            });
-        }
-        
+
         // Retry button
         if (retryStatsBtn) {
             retryStatsBtn.addEventListener('click', function() {

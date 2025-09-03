@@ -789,67 +789,70 @@ router.get('/api/professor/thesis-details/:thesisId', (req, res) => {
 
         // Get committee information (including supervisor and members)
         const committeeQuery = `
-            SELECT 
-                'supervisor' as role,
-                'accepted' as status,
-                tt.time_of_activation as invitation_date,
-                tt.time_of_activation as acceptance_date,
-                p.professor_id,
-                CONCAT(p.name, ' ', p.surname) as professor_name,
-                p.email
-            FROM thesis_topic tt
-            JOIN professor p ON tt.instructor_id = p.professor_id
-            WHERE tt.thesis_id = ?
-            
-            UNION ALL
-            
-            SELECT 
-                'member' as role,
-                'accepted' as status,
-                tt.time_of_activation as invitation_date,
-                tt.time_of_activation as acceptance_date,
-                p1.professor_id,
-                CONCAT(p1.name, ' ', p1.surname) as professor_name,
-                p1.email
-            FROM thesis_topic tt
-            JOIN professor p1 ON tt.member1 = p1.professor_id
-            WHERE tt.thesis_id = ? AND tt.member1 IS NOT NULL
-            
-            UNION ALL
-            
-            SELECT 
-                'member' as role,
-                'accepted' as status,
-                tt.time_of_activation as invitation_date,
-                tt.time_of_activation as acceptance_date,
-                p2.professor_id,
-                CONCAT(p2.name, ' ', p2.surname) as professor_name,
-                p2.email
-            FROM thesis_topic tt
-            JOIN professor p2 ON tt.member2 = p2.professor_id
-            WHERE tt.thesis_id = ? AND tt.member2 IS NOT NULL
-            
-            UNION ALL
-            
-            SELECT 
-                tc.role,
-                tc.status,
-                tc.invitation_date,
-                tc.acceptance_date,
-                tc.professor_id,
-                CONCAT(p.name, ' ', p.surname) as professor_name,
-                p.email
-            FROM thesis_committee tc
-            JOIN professor p ON tc.professor_id = p.professor_id
-            WHERE tc.thesis_id = ?
-            ORDER BY 
-                CASE role 
-                    WHEN 'supervisor' THEN 1 
-                    WHEN 'member' THEN 2 
-                    ELSE 3 
-                END,
-                invitation_date
-        `;
+                    SELECT 
+                        'supervisor' as role,
+                        'accepted' as status,
+                        tt.time_of_activation as invitation_date,
+                        tt.time_of_activation as acceptance_date,
+                        p.professor_id,
+                        CONCAT(p.name, ' ', p.surname) as professor_name,
+                        p.email
+                    FROM thesis_topic tt
+                    JOIN professor p ON tt.instructor_id = p.professor_id
+                    WHERE tt.thesis_id = ?
+                    
+                    UNION ALL
+                    
+                    SELECT 
+                        'member' as role,
+                        'accepted' as status,
+                        COALESCE(tc1.acceptance_date, tt.time_of_activation) as invitation_date,
+                        COALESCE(tc1.acceptance_date, tt.time_of_activation) as acceptance_date,
+                        p1.professor_id,
+                        CONCAT(p1.name, ' ', p1.surname) as professor_name,
+                        p1.email
+                    FROM thesis_topic tt
+                    JOIN professor p1 ON tt.member1 = p1.professor_id
+                    LEFT JOIN thesis_committee tc1 ON tc1.thesis_id = tt.thesis_id AND tc1.professor_id = p1.professor_id
+                    WHERE tt.thesis_id = ? AND tt.member1 IS NOT NULL
+                    
+                    UNION ALL
+                    
+                    SELECT 
+                        'member' as role,
+                        'accepted' as status,
+                        COALESCE(tc2.acceptance_date, tt.time_of_activation) as invitation_date,
+                        COALESCE(tc2.acceptance_date, tt.time_of_activation) as acceptance_date,
+                        p2.professor_id,
+                        CONCAT(p2.name, ' ', p2.surname) as professor_name,
+                        p2.email
+                    FROM thesis_topic tt
+                    JOIN professor p2 ON tt.member2 = p2.professor_id
+                    LEFT JOIN thesis_committee tc2 ON tc2.thesis_id = tt.thesis_id AND tc2.professor_id = p2.professor_id
+                    WHERE tt.thesis_id = ? AND tt.member2 IS NOT NULL
+                    
+                    UNION ALL
+                    
+                    SELECT 
+                        tc.role,
+                        tc.status,
+                        tc.invitation_date,
+                        tc.acceptance_date,
+                        tc.professor_id,
+                        CONCAT(p.name, ' ', p.surname) as professor_name,
+                        p.email
+                    FROM thesis_committee tc
+                    JOIN professor p ON tc.professor_id = p.professor_id
+                    WHERE tc.thesis_id = ? 
+                    AND tc.status = 'pending'  -- Only show pending invitations, accepted ones are already in thesis_topic
+                    ORDER BY 
+                        CASE role 
+                            WHEN 'supervisor' THEN 1 
+                            WHEN 'member' THEN 2 
+                            ELSE 3 
+                        END,
+                        invitation_date
+                `;
 
         connection.query(committeeQuery, [thesisId, thesisId, thesisId, thesisId], (err, committeeResult) => {
             if (err) {
@@ -1455,6 +1458,8 @@ router.post('/api/professor/committee-invitations/respond', (req, res) => {
         
         const invitation = results[0];
         
+        console.log(`DEBUG: Invitation details - ID: ${invitation.id}, Role: '${invitation.role}', Status: '${invitation.status}', Professor ID: ${professorId}`);
+        
         // Update the invitation status
         const updateQuery = `
             UPDATE thesis_committee 
@@ -1479,7 +1484,11 @@ router.post('/api/professor/committee-invitations/respond', (req, res) => {
             
             // Function to handle thesis_topic synchronization
             const syncThesisTopic = (callback) => {
+                console.log(`DEBUG: response = '${response}', invitation.role = '${invitation.role}'`);
+                console.log(`DEBUG: Condition check: response === 'accepted' = ${response === 'accepted'}, invitation.role === 'member' = ${invitation.role === 'member'}`);
+                
                 if (response === 'accepted' && invitation.role === 'member') {
+                    console.log('DEBUG: Entering thesis_topic sync for accepted member');
                     // Get current thesis_topic data to check member slots
                     const getThesisQuery = `
                         SELECT instructor_id, member1, member2 
@@ -1523,7 +1532,6 @@ router.post('/api/professor/committee-invitations/respond', (req, res) => {
                         
                         // Update thesis_topic with new committee member
                         connection.query(updateThesisQuery, updateParams, (err, updateResult) => {
-                            console.log('Executing query:', updateThesisQuery, updateParams);
                             if (err) {
                                 console.error('Error updating thesis_topic:', err);
                                 return callback(err);
@@ -1616,6 +1624,34 @@ router.post('/api/professor/committee-invitations/respond', (req, res) => {
                                 }
                                 
                                 if (activateResult.affectedRows > 0) {
+                                    // Clean up pending invitations since committee is complete
+                                    const cleanupQuery = `
+                                        DELETE FROM thesis_committee 
+                                        WHERE thesis_id = ? AND status = 'pending' AND role = 'member'
+                                    `;
+                                    
+                                    connection.query(cleanupQuery, [invitation.thesis_id], (cleanupErr, cleanupResult) => {
+                                        if (cleanupErr) {
+                                            console.error('Error cleaning up pending invitations:', cleanupErr);
+                                        } else if (cleanupResult.affectedRows > 0) {
+                                            console.log(`Cleaned up ${cleanupResult.affectedRows} pending invitations for thesis ${invitation.thesis_id}`);
+                                            
+                                            // Log the cleanup event
+                                            const cleanupEventQuery = `
+                                                INSERT INTO thesis_events (thesis_id, event_type, description, event_date, status, created_by)
+                                                VALUES (?, 'Καθαρισμός Προσκλήσεων', ?, NOW(), 'Ενεργή', ?)
+                                            `;
+                                            
+                                            const cleanupDescription = `Διαγραφή ${cleanupResult.affectedRows} pending προσκλήσεων - συμπληρώθηκε η τριμελής επιτροπή`;
+                                            
+                                            connection.query(cleanupEventQuery, [invitation.thesis_id, cleanupDescription, professorId], (eventErr) => {
+                                                if (eventErr) {
+                                                    console.error('Error recording cleanup event:', eventErr);
+                                                }
+                                            });
+                                        }
+                                    });
+                                    
                                     // Log the activation event
                                     const activateEventQuery = `
                                         INSERT INTO thesis_events (thesis_id, event_type, description, event_date, status, created_by)
