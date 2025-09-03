@@ -219,7 +219,15 @@ function showThesisDetails(container, thesis) {
         <p><strong class="text-bordeaux">Συνημμένο Αρχείο Περιγραφής:</strong> ${thesis.pdf ? thesis.pdf : 'Δεν έχει υποβληθεί αρχείο'}</p>
         <p><strong class="text-bordeaux">Επιβλέπων Καθηγητής:</strong> ${thesis.full_instructor_name ? thesis.full_instructor_name : 'Δεν έχει ορισθεί επιβλέπων καθηγητής'}</p>
         <p><strong class="text-bordeaux">Μέλη Τριμελούς:</strong> ${(thesis.member1 && thesis.member2) ? `${thesis.full_instructor_name} (Επιβλέπων), ${thesis.full_mentor_name}, ${thesis.full_mentortwo_name}` : 'Δεν έχουν ορισθεί μέλη τριμελούς'}</p>
-        <p>${thesis.days_since_activation ? thesis.days_since_activation + ' ημέρες έχουν παρέλθει από την επίσημη ανάθεση' : 'Δεν έχει γίνει ακόμη επίσημη ανάθεση'}</p>
+        <p>
+        ${
+            thesis.days_since_activation === 0
+            ? 'Η επίσημη ανάθεση έγινε σήμερα'
+            : thesis.days_since_activation
+                ? thesis.days_since_activation + ' ημέρες έχουν παρέλθει από την επίσημη ανάθεση'
+                : 'Δεν έχει γίνει ακόμη επίσημη ανάθεση'
+        }
+        </p>
 
         <div class="mt-3">
         <hr>
