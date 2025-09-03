@@ -2287,7 +2287,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }, 1000);
             } else {
-                showNotification('Σφάλμα: ' + (result.message || 'Αποτυχία αποθήκευσης'), 'error');
+                // Special handling for protocol number requirement
+                if (result.errorCode === 'PROTOCOL_NUMBER_REQUIRED') {
+                    showNotification('⚠️ Απαιτείται αριθμός πρωτοκόλλου: ' + result.message, 'warning');
+                    
+                    // Show a detailed modal with instructions
+                    showCustomConfirmation({
+                        title: 'Απαιτείται Αριθμός Πρωτοκόλλου',
+                        message: 'Για να αλλάξετε την κατάσταση σε "Υπό Εξέταση" πρέπει πρώτα η γραμματεία να προσθέσει αριθμό πρωτοκόλλου στη διπλωματική. Παρακαλώ επικοινωνήστε με τη γραμματεία.',
+                        confirmText: 'Κατάλαβα',
+                        cancelText: 'Κλείσιμο',
+                        onConfirm: () => {
+                            // Just close the modal - no action needed
+                        }
+                    });
+                } else {
+                    showNotification('Σφάλμα: ' + (result.message || 'Αποτυχία αποθήκευσης'), 'error');
+                }
             }
         } catch (error) {
             console.error('Error saving thesis changes:', error);

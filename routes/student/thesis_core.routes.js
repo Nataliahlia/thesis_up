@@ -73,14 +73,14 @@ router.get('/mythesis-details', (req, res) => {
     LEFT JOIN professor instructor ON tt.instructor_id = instructor.professor_id
     WHERE student_id = ?`;
 
-  connection.query(query, [studentId], (err, results) => {
-    if (err) {
-      console.error('DB error:', err);
-      return res.status(500).json({ error: 'Database error' });
-    }
+    connection.query(query, [studentId], (err, results) => {
+        if (err) {
+        console.error('DB error:', err);
+        return res.status(500).json({ error: 'Database error' });
+        }
 
-    res.json(results); // Send the thesis info to the frontend
-  });
+        res.json(results); // Send the thesis info to the frontend
+    });
 });
 
 // This is the router that is used to upload the thesis file and maybe if the student wants some additional links

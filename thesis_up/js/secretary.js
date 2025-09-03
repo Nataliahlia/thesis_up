@@ -486,7 +486,7 @@ function underExaminationThesisContent(topic) {
         // If the practical exam is already done, display the nimertis link and the final grade
         document.getElementById('practicalContent').innerHTML = `
             <p>Η πρακτική εξέταση έχει ολοκληρωθεί</p>
-            <p>Μπορείτε να δείτε το πρακτικό εξέτασης <a href="${topic.nimertis_link}" target="_blank">εδώ</a>.</p>
+            <p>Μπορείτε να δείτε τον σύνδεσμο προς το Νημερτή <a href="${topic.nimertis_link}" target="_blank">εδώ</a>.</p>
             <p>Τελικός Βαθμός: ${topic.final_grade}</p>
             <p>Επιλέξτε "Περάτωση Διπλωματικής Εργασίας" για να ολοκληρωθεί η διαδικασία</p>
             <button id="finalizeThesisBtn" class="btn btn-outline-bordeaux mt-3">Περάτωση Διπλωματικής Εργασίας</button>

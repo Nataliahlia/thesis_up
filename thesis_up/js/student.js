@@ -194,14 +194,16 @@ async function fetchThesisDetails() {
     try {
         const thesis = await getThesisDetails(); // Call the function to get the thesis details
 
-        const theThesis = document.getElementById('myThesis');
-        theThesis.innerHTML = ''; // Clear old content
+        // Only proceed if thesis exists
+        if (thesis) {
+            const theThesis = document.getElementById('myThesis');
+            theThesis.innerHTML = ''; // Clear old content
 
-        // Call the function that creates the thesis details element and appends it to the div
-        showThesisDetails(theThesis, thesis);
-        // Call the function that creates the back button if coming from the completed thesis info page
-        createBackButton(thesis);
-
+            // Call the function that creates the thesis details element and appends it to the div
+            showThesisDetails(theThesis, thesis);
+            // Call the function that creates the back button if coming from the completed thesis info page
+            createBackButton(thesis);
+        }
     } catch (error) {
         showCustomAlert(error.message || 'Σφάλμα κατά την ανάκτηση των στοιχείων της διπλωματικής.');
     }
@@ -460,7 +462,7 @@ function initializeThesisManagementSection() {
                 underAssignmentThesisContent(thesis); // Call the function that handles under assignment thesis
             } else if (thesis.state === "Ενεργή") {
                 activeThesisContent(thesis); // Call the function that handles active thesis
-            }
+            } 
         });
     }
 }

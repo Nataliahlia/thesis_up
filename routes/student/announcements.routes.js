@@ -18,8 +18,8 @@ router.post('/submit-examination-info', (req, res) => {
 
     // The sql query to insert the examination information into the database
     const sql = `
-        INSERT INTO announcements (thesis_id, date, time, type, location_or_link)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO announcements (thesis_id, date, time, type, location_or_link, state)
+        VALUES (?, ?, ?, ?, ?, 'waiting')
     `;
     
     // Execute the query with the provided data, insert into the announcements table
@@ -45,12 +45,12 @@ router.post('/update-examination-info', (req, res) => {
     // The sql query to update the examination information in the database
     const sql = `
             UPDATE announcements
-            SET date = ?, time = ?, type = ?, location_or_link = ?
+            SET date = ?, time = ?, type = ?, location_or_link = ?, state = 'waiting'
             WHERE thesis_id = ?
     `;
     
     // Execute the query with the provided data, update the announcements table
-    connection.query(sql, [date, time, type, location_or_link, thesis_id], (err, results) => {
+    connection.query(sql, [date, time, type, location_or_link, 'waiting', thesis_id], (err, results) => {
         if (err) {
             console.error('DB error:', err);
             return res.status(500).json({ success: false });

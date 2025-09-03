@@ -21,6 +21,7 @@ router.get('/api/announcements', (req, res) => {
     LEFT JOIN thesis_topic t ON a.thesis_id = t.thesis_id
     LEFT JOIN professor p ON t.instructor_id = p.professor_id
     LEFT JOIN student s ON t.student_id = s.student_number
+    WHERE a.state = 'uploaded' AND a.date >= CURDATE()
   `;
 
   // Add date filtering if provided

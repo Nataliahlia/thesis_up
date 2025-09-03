@@ -653,30 +653,69 @@ router.post('/api/professor/update-thesis/:id', uploadPDF.single('pdf'), (req, r
         
         const currentThesis = checkResult[0];
         
-        // Prepare update query
-        let updateQuery = `
-            UPDATE thesis_topic 
-            SET title = ?, description = ?
-        `;
-        let queryParams = [title, description];
-        
-        // Add status update if provided and different
+        // Special validation for state changes
         if (status && status !== currentThesis.state) {
-            updateQuery += ', state = ?';
-            queryParams.push(status);
+            // Check if changing from "Ενεργή" to "Υπό Εξέταση" - require protocol_number
+            if (currentThesis.state === 'Ενεργή' && status === 'Υπό Εξέταση') {
+                // Check if protocol_number exists for this thesis
+                const protocolCheckQuery = `
+                    SELECT protocol_number 
+                    FROM thesis_topic 
+                    WHERE thesis_id = ? AND protocol_number IS NOT NULL
+                `;
+                
+                connection.query(protocolCheckQuery, [thesisId], (protocolErr, protocolResult) => {
+                    if (protocolErr) {
+                        console.error('Error checking protocol number:', protocolErr);
+                        return res.status(500).json({ 
+                            success: false, 
+                            message: 'Σφάλμα ελέγχου αριθμού πρωτοκόλλου' 
+                        });
+                    }
+                    
+                    if (protocolResult.length === 0 || !protocolResult[0].protocol_number) {
+                        return res.status(400).json({ 
+                            success: false, 
+                            message: 'Δεν μπορείτε να αλλάξετε την κατάσταση σε "Υπό Εξέταση" χωρίς να έχετε προσθέσει αριθμό πρωτοκόλλου στη διπλωματική.',
+                            errorCode: 'PROTOCOL_NUMBER_REQUIRED'
+                        });
+                    }
+                    
+                    // If protocol number exists, proceed with the update
+                    proceedWithUpdate();
+                });
+                return; // Exit here to wait for the protocol check
+            }
         }
         
-        // Add PDF file if uploaded
-        if (req.file) {
-            updateQuery += ', pdf = ?';
-            queryParams.push(req.file.filename);
-        }
+        // If no special validation needed, proceed with update
+        proceedWithUpdate();
         
-        updateQuery += ' WHERE thesis_id = ? AND instructor_id = ?';
-        queryParams.push(thesisId, professorId);
-        
-        // Execute update
-        connection.query(updateQuery, queryParams, (updateErr, updateResult) => {
+        function proceedWithUpdate() {
+            // Prepare update query
+            let updateQuery = `
+                UPDATE thesis_topic 
+                SET title = ?, description = ?
+            `;
+            let queryParams = [title, description];
+            
+            // Add status update if provided and different
+            if (status && status !== currentThesis.state) {
+                updateQuery += ', state = ?';
+                queryParams.push(status);
+            }
+            
+            // Add PDF file if uploaded
+            if (req.file) {
+                updateQuery += ', pdf = ?';
+                queryParams.push(req.file.filename);
+            }
+            
+            updateQuery += ' WHERE thesis_id = ? AND instructor_id = ?';
+            queryParams.push(thesisId, professorId);
+            
+            // Execute update
+            connection.query(updateQuery, queryParams, (updateErr, updateResult) => {
             if (updateErr) {
                 console.error('Error updating thesis:', updateErr);
                 return res.status(500).json({ 
@@ -731,7 +770,8 @@ router.post('/api/professor/update-thesis/:id', uploadPDF.single('pdf'), (req, r
                 message: 'Η διπλωματική ενημερώθηκε επιτυχώς',
                 thesisId: thesisId
             });
-        });
+            });
+        }
     });
 });
 
