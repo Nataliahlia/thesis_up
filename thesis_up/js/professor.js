@@ -2146,12 +2146,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <div class="bg-light p-3 rounded">
                                     <div class="row">
                                         <div class="col-md-6">
-                                            <strong>Τίτλος:</strong> ${draftData.thesis_title}<br>
-                                            <strong>Φοιτητής:</strong> ${draftData.student_name} ${draftData.student_surname}
+                                            <strong>Τίτλος:</strong> ${draftData.thesis_title || 'Δεν διατίθεται'}<br>
+                                            <strong>Φοιτητής:</strong> ${draftData.student_info?.name || 'Δεν διατίθεται'} ${draftData.student_info?.surname || ''}
                                         </div>
                                         <div class="col-md-6">
-                                            <strong>Αρ. Μητρώου:</strong> ${draftData.student_number}<br>
-                                            <strong>Κατάσταση:</strong> <span class="badge bg-warning">${draftData.state}</span>
+                                            <strong>Αρ. Μητρώου:</strong> ${draftData.student_info?.student_number || 'Δεν διατίθεται'}
                                         </div>
                                     </div>
                                 </div>
@@ -2163,7 +2162,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </h6>
                                 <div class="d-flex align-items-center justify-content-between p-3 border rounded">
                                     <div>
-                                        <strong>Όνομα Αρχείου:</strong> ${draftData.draft_file}<br>
+                                        <strong>Όνομα Αρχείου:</strong> ${draftData.draft_file?.filename || 'Δεν διατίθεται'}<br>
                                         <small class="text-muted">Αρχείο πρόχειρου κειμένου που ανέβασε ο φοιτητής</small>
                                     </div>
                                     <button type="button" class="btn btn-outline-primary" onclick="downloadDraftFile(${draftData.thesis_id})">
