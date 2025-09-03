@@ -311,4 +311,187 @@ router.get('/thesis/:thesis_id/grades', requireAuth, requireProfessor, (req, res
     });
 });
 
+// GET route για να δει ο διδάσκων το draft file του φοιτητή
+router.get('/thesis/:thesis_id/draft-file', requireAuth, requireProfessor, (req, res) => {
+    const { thesis_id } = req.params;
+    const professor_id = req.session.user.id;
+
+    // Έλεγχος ότι η διπλωματική υπάρχει και ο καθηγητής είναι μέλος της τριμελούς επιτροπής
+    const thesisCheckQuery = `
+        SELECT 
+            tt.state, 
+            tt.instructor_id, 
+            tt.member1,
+            tt.member2,
+            tt.draft_file,
+            tt.title,
+            s.name as student_name,
+            s.surname as student_surname,
+            s.student_number
+        FROM thesis_topic tt
+        LEFT JOIN student s ON tt.student_id = s.student_number
+        WHERE tt.thesis_id = ?
+    `;
+    
+    connection.query(thesisCheckQuery, [thesis_id], (err, thesisResults) => {
+        if (err) {
+            console.error('Error checking thesis:', err);
+            return res.status(500).json({ 
+                error: 'Internal server error',
+                details: err.message 
+            });
+        }
+
+        if (thesisResults.length === 0) {
+            return res.status(404).json({ error: 'Thesis not found' });
+        }
+
+        const thesis = thesisResults[0];
+
+        // Έλεγχος ότι ο καθηγητής είναι μέλος της τριμελούς επιτροπής
+        const isCommitteeMember = [thesis.instructor_id, thesis.member1, thesis.member2]
+            .includes(professor_id);
+            
+        if (!isCommitteeMember) {
+            return res.status(403).json({ 
+                error: 'Access denied. Only thesis committee members can view the draft file.' 
+            });
+        }
+
+        // Έλεγχος ότι η διπλωματική είναι "Υπό Εξέταση"
+        if (thesis.state !== 'Υπό Εξέταση') {
+            return res.status(400).json({ 
+                error: 'Draft file can only be viewed when thesis is under examination.' 
+            });
+        }
+
+        // Έλεγχος ότι υπάρχει draft file
+        if (!thesis.draft_file) {
+            return res.status(404).json({ 
+                error: 'No draft file has been uploaded by the student yet.',
+                errorCode: 'DRAFT_FILE_NOT_FOUND'
+            });
+        }
+
+        // Επιστροφή των πληροφοριών του draft file
+        res.json({
+            success: true,
+            thesis_id,
+            thesis_title: thesis.title,
+            student_info: {
+                name: thesis.student_name,
+                surname: thesis.student_surname,
+                student_number: thesis.student_number
+            },
+            draft_file: {
+                filename: thesis.draft_file,
+                // Για security, επιστρέφουμε μόνο το όνομα του αρχείου
+                // Το πραγματικό download θα γίνει από ξεχωριστό endpoint
+                download_url: `/api/thesis/${thesis_id}/draft-file/download`
+            },
+            message: 'Draft file information retrieved successfully'
+        });
+    });
+});
+
+// GET route για download του draft file (ο πραγματικός download)
+router.get('/thesis/:thesis_id/draft-file/download', requireAuth, requireProfessor, (req, res) => {
+    const { thesis_id } = req.params;
+    const professor_id = req.session.user.id;
+    const path = require('path');
+    const fs = require('fs');
+
+    // Έλεγχος δικαιωμάτων και λήψη πληροφοριών αρχείου
+    const thesisCheckQuery = `
+        SELECT 
+            tt.state, 
+            tt.instructor_id, 
+            tt.member1,
+            tt.member2,
+            tt.draft_file
+        FROM thesis_topic tt
+        WHERE tt.thesis_id = ?
+    `;
+    
+    connection.query(thesisCheckQuery, [thesis_id], (err, thesisResults) => {
+        if (err) {
+            console.error('Error checking thesis:', err);
+            return res.status(500).json({ 
+                error: 'Internal server error',
+                details: err.message 
+            });
+        }
+
+        if (thesisResults.length === 0) {
+            return res.status(404).json({ error: 'Thesis not found' });
+        }
+
+        const thesis = thesisResults[0];
+
+        // Έλεγχος ότι ο καθηγητής είναι μέλος της τριμελούς επιτροπής
+        const isCommitteeMember = [thesis.instructor_id, thesis.member1, thesis.member2]
+            .includes(professor_id);
+            
+        if (!isCommitteeMember) {
+            return res.status(403).json({ 
+                error: 'Access denied. Only thesis committee members can download the draft file.' 
+            });
+        }
+
+        if (thesis.state !== 'Υπό Εξέταση') {
+            return res.status(400).json({ 
+                error: 'Draft file can only be downloaded when thesis is under examination.' 
+            });
+        }
+
+        if (!thesis.draft_file) {
+            return res.status(404).json({ 
+                error: 'No draft file available for download.' 
+            });
+        }
+
+        // Κατασκευή του path προς το αρχείο
+        // Υποθέτω ότι τα draft files αποθηκεύονται στο uploads/draft_files/
+        const filePath = path.join(__dirname, '..', 'uploads', 'draft_files', thesis.draft_file);
+
+        // Έλεγχος ότι το αρχείο υπάρχει
+        fs.access(filePath, fs.constants.F_OK, (err) => {
+            if (err) {
+                console.error('Draft file not found on disk:', filePath, err);
+                return res.status(404).json({ 
+                    error: 'Draft file not found on server.' 
+                });
+            }
+
+            // Καθορισμός του content type βάσει επέκτασης
+            const ext = path.extname(thesis.draft_file).toLowerCase();
+            let contentType = 'application/octet-stream';
+            
+            if (ext === '.pdf') {
+                contentType = 'application/pdf';
+            } else if (ext === '.doc') {
+                contentType = 'application/msword';
+            } else if (ext === '.docx') {
+                contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+            }
+
+            // Ορισμός headers για download
+            res.setHeader('Content-Type', contentType);
+            res.setHeader('Content-Disposition', `inline; filename="${thesis.draft_file}"`);
+
+            // Αποστολή του αρχείου
+            res.sendFile(filePath, (err) => {
+                if (err) {
+                    console.error('Error sending draft file:', err);
+                    if (!res.headersSent) {
+                        res.status(500).json({ 
+                            error: 'Error downloading file' 
+                        });
+                    }
+                }
+            });
+        });
+    });
+});
+
 module.exports = router;
