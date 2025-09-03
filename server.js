@@ -61,24 +61,17 @@ app.use('/dashboards', isAuthenticated, express.static(path.join(__dirname, 'das
 app.use(require('./routes/auth.routes'));
 app.use(require('./routes/dashboard.routes'));  
 app.use(require('./routes/public_endpoint.routes'));
-app.use(require('./routes/upload_users.routes'));
-app.use(require('./routes/thesis_topics.routes'));
-app.use(require('./routes/mythesis_details.routes'));
 app.use(require('./routes/session.routes'));
-app.use(require('./routes/myprofile_edit.route'));
-app.use(require('./routes/under_examination_update.route'));
-app.use(require('./routes/student_examination.route'));
 app.use(require('./routes/notes.routes')); // UC13 Notes routes
-app.use(require('./routes/secretary_active.route')); 
-app.use(require('./routes/thesis_completion.routes'));
-const { router: protocolRouter } = require('./routes/protocol.route');
-app.use(protocolRouter);
-app.use(require('./routes/protocol_pdf.route'));
-app.use(require('./routes/nimertis.route')); 
-app.use(require('./routes/thesis_events.route')); // Thesis events routes
-app.use(require('./routes/all_profs.route')); // All professors route
-app.use(require('./routes/thesis_grading.routes')); // Thesis grading routes
 app.use(require('./routes/logout.route')); // Logout route
+
+// The routes that are used for secretary
+const secretaryRoutes = require('./routes/secretary/index.routes');
+app.use(secretaryRoutes);
+
+// The routes that are used for student
+const studentRoutes = require('./routes/student/index.routes');
+app.use(studentRoutes);
 
 const updatePasswords = require('./scripts/updatePasswords');
 

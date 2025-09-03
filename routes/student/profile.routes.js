@@ -1,7 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const connection = require('../db');
+const connection = require('../../db');
 
+// ---------------------------------------------------------------------------------- //
+// This file contains the routers that are related to the editing of a student's profile
+
+// This is the router that is used to get the information of a student and we can then display it to him so that he/she can edit it
 router.get('/myprofile-edit', (req, res) => {
   if (!req.session.user || req.session.user.role !== 'student') {
     return res.status(403).json({ error: 'Unauthorized' });
@@ -33,6 +37,8 @@ router.get('/myprofile-edit', (req, res) => {
   });
 });
 
+// This is the router that is used after a student has finished editing his/hers profile
+// and handles the form submission and the db update
 router.post('/myprofile-edit', (req, res) => {
     if (!req.session.user || req.session.user.role !== 'student') {
         return res.status(403).json({ success: false, error: 'Unauthorized' });
@@ -123,6 +129,5 @@ router.post('/myprofile-edit', (req, res) => {
 
   });
 });
-
 
 module.exports = router;

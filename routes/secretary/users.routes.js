@@ -1,11 +1,14 @@
 const express = require('express');
 const bcrypt = require('bcrypt'); // Import bcrypt for password hashing
 const router = express.Router(); // Create a new router instance, to handle routes related to authentication
-const connection = require('../db'); // Import the database connection
+const connection = require('../../db'); // Import the database connection
 const path = require('path'); // Import the path module to handle file paths
 const multer = require('multer'); // Import multer for handling file uploads
 const saltRounds = 10; // Number of rounds for bcrypt hashing, the higher the number the more secure but also slower
 const fs = require('fs'); // Import fs for file system operations, used to read the uploaded file
+
+// --------------------------------------------------------------------------------------------------- //
+// This file handles the users upload from the secretary, the files are stored in the uploads destination
 
 // The post request contains a json file named userAddingFile, which contains the data of the user to be added
 // First we need to read the file and then parse it to JSON

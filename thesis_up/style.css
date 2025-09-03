@@ -74,6 +74,14 @@ a:hover .text-bordeaux {
   cursor: pointer;
 }
 
+/* This styles the remove button inside each link row in the uploaded links area */
+.link-row .remove-btn {
+  position: static;
+  margin-left: 0.5rem;
+  font-size: 1.2em;
+  vertical-align: middle;
+}
+
 /* This defines a fade-in animation */
 /* It starts with invisibility (opacity 0) and a slight downward translation (10px) */
 /* and ends with full visibility (opacity 1) and no translation */
@@ -451,6 +459,13 @@ body {
     width: 100% !important;        
     white-space: normal !important;
     word-break: break-word;       
+  }
+
+  /* Make only the Nimertis input wider on small screens */
+  #gradesInfo #nimertisLink {
+    width: 100% !important;         /* override w-50 */
+    margin-left: 0 !important;       /* override ms-2 */
+    margin-right: 0 !important;      /* override me-2 */
   }
 
   /* Used for the different parts */

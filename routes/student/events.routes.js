@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router(); // Create a new router instance, to handle routes related to authentication
-const connection = require('../db'); // Import the database connection
+const connection = require('../../db'); // Import the database connection
+
+// ------------------------------------------------------------------------------------------------------------------- //
+// This is the router that we use so that we can get the events that have happened, its the chronological order of events
+// and it is used for the Χρονολόγιο part in the thesis management section
 
 router.get('/get-thesis-events/:thesis_id', async (req, res) => {
     const thesisId = req.params.thesis_id;
