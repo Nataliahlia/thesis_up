@@ -728,8 +728,8 @@ async function showNimertisLinks(thesis) {
 
     const gradesCard = document.getElementById('gradesCard');
 
-    gradesCard.style.display = 'block';
     if (Array.isArray(grades) && grades.length > 0) {
+        gradesCard.style.display = 'block'; // Display the grades card (protocol etc), only if there are grades uploaded from the professors
         // Create a container for the protocol content
         // if the 3 grades have been submitted
         const gradesInfo = document.getElementById('gradesInfo');

@@ -354,25 +354,23 @@ body {
 
   /* Used for the different parts */
   
-  /* Centers the cards */
+  /* Centers the cards - simplified for compatibility with index.html */
   #carouselContainer {
     display: flex;
-    justify-content: center !important;
+    justify-content: flex-start !important;
     align-items: center;
     overflow-x: auto !important;      
-    /* scroll-snap-type: x mandatory; */
     -webkit-overflow-scrolling: touch; 
     scroll-snap-type: x proximity; 
   }
 
   /* Styling for the cards, so they fit nicely in the smaller screen */
+  /* Note: Main card sizing is now handled in index.html for better control */
   #carouselContainer .card {
-    min-width: 220px;     
-    width: 250px !important;  
+    min-width: 280px;     
     height: auto !important;   
     padding: 0.5rem !important;
-    margin-right: 1rem !important; 
-    margin-left: 1rem !important;
+    margin: 0.5rem !important;
   }
 
   /* Smaller text */
@@ -396,17 +394,6 @@ body {
   /* Card alignes to the start of the scroll container */ 
   .carousel-track > .card {
     scroll-snap-align: start;      
-  }
-
-  /* Show a scroll bar */
-  #carouselContainer::-webkit-scrollbar {
-    height: 6px;
-  }
-
-  /* Custom scrollbar track */
-  #carouselContainer::-webkit-scrollbar-thumb {
-    background: rgba(106,31,43,0.5);
-    border-radius: 3px;
   }
 
   /* Used for the different parts */

@@ -118,6 +118,38 @@
             display: none;
         }
 
+        /* Show scrollbar on mobile devices */
+        @media (max-width: 768px) {
+            .container-scrollable::-webkit-scrollbar {
+                display: block !important;
+                height: 10px !important;
+                -webkit-appearance: none;
+            }
+            
+            .container-scrollable::-webkit-scrollbar-track {
+                background: rgba(0,0,0,0.2) !important;
+                border-radius: 5px;
+                border: 1px solid rgba(255,255,255,0.3);
+            }
+            
+            .container-scrollable::-webkit-scrollbar-thumb {
+                background: rgba(106,31,43,0.9) !important;
+                border-radius: 5px;
+                border: 1px solid rgba(255,255,255,0.4);
+                min-width: 50px;
+            }
+
+            .container-scrollable::-webkit-scrollbar-thumb:hover {
+                background: rgba(106,31,43,1) !important;
+            }
+
+            /* Force scrollbar to always be visible */
+            .container-scrollable {
+                scrollbar-width: thin !important;
+                scrollbar-color: rgba(106,31,43,0.9) rgba(0,0,0,0.2) !important;
+            }
+        }
+
         .form-control {
             background: rgba(255, 255, 255, 0.9);
             border: 2px solid rgba(106, 31, 43, 0.2);
@@ -218,7 +250,41 @@
             }
 
             .card {
-                min-width: 280px;
+                min-width: 280px !important;
+                width: 300px !important;
+                height: auto !important;
+                margin: 0.5rem !important;
+                flex: 0 0 auto !important;
+            }
+
+            .container-scrollable {
+                padding: 10px 0 !important;
+            }
+
+            /* Prevent conflicts with external CSS */
+            #carouselContainer.container-scrollable {
+                overflow-x: auto !important;
+                scroll-snap-type: x proximity;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            /* Force scrollbar visibility on mobile carousel */
+            #carouselContainer::-webkit-scrollbar {
+                display: block !important;
+                height: 12px !important;
+            }
+            
+            #carouselContainer::-webkit-scrollbar-track {
+                background: rgba(0,0,0,0.25) !important;
+                border-radius: 6px;
+                margin: 0 10px;
+            }
+            
+            #carouselContainer::-webkit-scrollbar-thumb {
+                background: linear-gradient(45deg, rgba(106,31,43,0.9), rgba(128,0,0,0.9)) !important;
+                border-radius: 6px;
+                border: 2px solid rgba(255,255,255,0.3);
+                min-width: 60px;
             }
         }
     </style>
@@ -370,7 +436,11 @@
                 }   
 
                 cardCreate(container, announcements);  // Create announcement cards
-                startScrolling(container);             // Start the scrolling effect
+                
+                // Add small delay to ensure CSS is fully applied before starting scroll
+                setTimeout(() => {
+                    startScrolling(container);             // Start the scrolling effect
+                }, 300);
             })
             .catch(err => {
                 console.error("Fetch error:", err);
@@ -441,7 +511,11 @@
                     if (animationFrameId) {
                         cancelAnimationFrame(animationFrameId);
                     }
-                    startScrolling(container);              // Start the scrolling effect
+                    
+                    // Add small delay for mobile CSS application
+                    setTimeout(() => {
+                        startScrolling(container);              // Start the scrolling effect
+                    }, 100);
                 })
                 .catch(err => {
                     console.error("Fetch error:", err);
@@ -502,16 +576,19 @@
         let currentWidth = container.scrollWidth;       // Get the current width of the content inside the container
         const isMobile = window.innerWidth <= 768;      // Check if the screen is mobile size
 
+        // If its a mobile device, we set the overflow to auto and don't duplicate content
+        if (isMobile) {
+            container.style.overflowX = 'auto';
+            container.style.scrollBehavior = 'smooth';
+            // Don't duplicate content on mobile - let users scroll naturally
+            return;
+        }
+
+        // Only duplicate content for desktop infinite scroll
         // Repeat the content until it fills at least 3 times the container width
         while (currentWidth < containerWidth * 3) {
             container.innerHTML += originalContent;
             currentWidth = container.scrollWidth;
-        }
-
-        // If its a mobile device, we set the overflow to auto, so the user can scroll manually
-        if (isMobile) {
-            container.style.overflowX = 'auto';
-            return;
         }
 
         // If the width of the content is greater than the width of the container, start the scrolling effect
