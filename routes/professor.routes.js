@@ -1477,78 +1477,172 @@ router.post('/api/professor/committee-invitations/respond', (req, res) => {
             
             const responseText = response === 'accepted' ? 'αποδεκτή' : 'απορριφθείσα';
             
-            // Log the committee response event
-            const eventQuery = `
-                INSERT INTO thesis_events (thesis_id, event_type, description, event_date, created_by)
-                VALUES (?, 'Απόκριση Τριμελούς', ?, NOW(), ?)
-            `;
-            
-            const eventDescription = `Μέλος τριμελούς επιτροπής: Πρόσκληση ${responseText}`;
-            
-            connection.query(eventQuery, [invitation.thesis_id, eventDescription, professorId], (eventErr) => {
-                if (eventErr) {
-                    console.error('Error recording committee response event:', eventErr);
-                }
-            });
-            
-            // If invitation was accepted, check if we now have enough accepted members to make thesis active
-            if (response === 'accepted') {
-                const checkAcceptedQuery = `
-                    SELECT COUNT(*) as accepted_count 
-                    FROM thesis_committee 
-                    WHERE thesis_id = ? AND status = 'accepted'
-                `;
-                
-                connection.query(checkAcceptedQuery, [invitation.thesis_id], (err, countResult) => {
-                    if (err) {
-                        console.error('Error checking accepted count:', err);
-                        // Don't fail the main operation
-                        return;
-                    }
+            // Function to handle thesis_topic synchronization
+            const syncThesisTopic = (callback) => {
+                if (response === 'accepted' && invitation.role === 'member') {
+                    // Get current thesis_topic data to check member slots
+                    const getThesisQuery = `
+                        SELECT instructor_id, member1, member2 
+                        FROM thesis_topic 
+                        WHERE thesis_id = ?
+                    `;
                     
-                    const acceptedCount = countResult[0].accepted_count;
-                    
-                    // If we have 2 accepted members, change thesis status to "Ενεργή"
-                    if (acceptedCount >= 2) {
-                        const activateQuery = `
-                            UPDATE thesis_topic 
-                            SET state = 'Ενεργή', time_of_activation = NOW() 
-                            WHERE thesis_id = ? AND state = 'Υπό Ανάθεση'
-                        `;
+                    connection.query(getThesisQuery, [invitation.thesis_id], (err, thesisResults) => {
+                        if (err) {
+                            console.error('Error getting thesis data:', err);
+                            return callback(err);
+                        }
                         
-                        connection.query(activateQuery, [invitation.thesis_id], (err, activateResult) => {
+                        if (thesisResults.length === 0) {
+                            console.error('Thesis not found for ID:', invitation.thesis_id);
+                            return callback(new Error('Thesis not found'));
+                        }
+                        
+                        const thesis = thesisResults[0];
+                        
+                        // Don't add supervisor as committee member
+                        if (professorId === thesis.instructor_id) {
+                            console.log('Supervisor cannot be added as committee member');
+                            return callback();
+                        }
+                        
+                        // Determine which member slot to fill
+                        let updateThesisQuery = '';
+                        let updateParams = [];
+                        
+                        if (!thesis.member1) {
+                            updateThesisQuery = 'UPDATE thesis_topic SET member1 = ? WHERE thesis_id = ?';
+                            updateParams = [professorId, invitation.thesis_id];
+                        } else if (!thesis.member2) {
+                            updateThesisQuery = 'UPDATE thesis_topic SET member2 = ? WHERE thesis_id = ?';
+                            updateParams = [professorId, invitation.thesis_id];
+                        } else {
+                            console.log('All committee member slots are already filled');
+                            return callback();
+                        }
+                        
+                        // Update thesis_topic with new committee member
+                        connection.query(updateThesisQuery, updateParams, (err, updateResult) => {
+                            console.log('Executing query:', updateThesisQuery, updateParams);
                             if (err) {
-                                console.error('Error activating thesis:', err);
-                                return;
+                                console.error('Error updating thesis_topic:', err);
+                                return callback(err);
                             }
                             
-                            if (activateResult.affectedRows > 0) {
-                                // Log the activation event
-                                const activateEventQuery = `
-                                    INSERT INTO thesis_events (thesis_id, event_type, description, event_date, status, created_by)
-                                    VALUES (?, 'Ενεργοποίηση', ?, NOW(), 'Ενεργή', ?)
-                                `;
-                                
-                                const activateDescription = `Η διπλωματική ενεργοποιήθηκε - Συμπληρώθηκε η τριμελής επιτροπή`;
-                                
-                                connection.query(activateEventQuery, [invitation.thesis_id, activateDescription, professorId], (eventErr) => {
-                                    if (eventErr) {
-                                        console.error('Error recording activation event:', eventErr);
-                                    }
-                                });
-                                
-                                console.log(`Thesis ${invitation.thesis_id} activated - committee complete`);
-                            }
+                            console.log(`Successfully added professor ${professorId} to thesis ${invitation.thesis_id} committee`);
+                            callback();
                         });
+                    });
+                } else if (response === 'declined' && invitation.role === 'member') {
+                    // Remove professor from thesis_topic if they declined
+                    const removeFromThesisQuery = `
+                        UPDATE thesis_topic 
+                        SET member1 = CASE 
+                                        WHEN member1 = ? THEN NULL 
+                                        ELSE member1 
+                                      END,
+                            member2 = CASE 
+                                        WHEN member2 = ? THEN NULL 
+                                        ELSE member2 
+                                      END
+                        WHERE thesis_id = ?
+                    `;
+                    
+                    connection.query(removeFromThesisQuery, [professorId, professorId, invitation.thesis_id], (err, updateResult) => {
+                        if (err) {
+                            console.error('Error removing professor from thesis_topic:', err);
+                            return callback(err);
+                        }
+                        
+                        console.log(`Successfully removed professor ${professorId} from thesis ${invitation.thesis_id} committee`);
+                        callback();
+                    });
+                } else {
+                    // No thesis_topic update needed
+                    callback();
+                }
+            };
+            
+            // Sync thesis_topic table
+            syncThesisTopic((syncErr) => {
+                if (syncErr) {
+                    console.error('Error syncing thesis_topic:', syncErr);
+                    // Continue with the response even if sync failed
+                }
+                
+                // Log the committee response event
+                const eventQuery = `
+                    INSERT INTO thesis_events (thesis_id, event_type, description, event_date, created_by)
+                    VALUES (?, 'Απόκριση Τριμελούς', ?, NOW(), ?)
+                `;
+                
+                const eventDescription = `Μέλος τριμελούς επιτροπής: Πρόσκληση ${responseText}`;
+                
+                connection.query(eventQuery, [invitation.thesis_id, eventDescription, professorId], (eventErr) => {
+                    if (eventErr) {
+                        console.error('Error recording committee response event:', eventErr);
                     }
                 });
-            }
-            
-            res.json({ 
-                success: true, 
-                message: `Η πρόσκληση έγινε ${responseText} επιτυχώς`,
-                invitation_id: invitation_id,
-                status: response
+                
+                // If invitation was accepted, check if we now have enough accepted members to make thesis active
+                if (response === 'accepted') {
+                    const checkAcceptedQuery = `
+                        SELECT COUNT(*) as accepted_count 
+                        FROM thesis_committee 
+                        WHERE thesis_id = ? AND status = 'accepted'
+                    `;
+                    
+                    connection.query(checkAcceptedQuery, [invitation.thesis_id], (err, countResult) => {
+                        if (err) {
+                            console.error('Error checking accepted count:', err);
+                            // Don't fail the main operation
+                            return;
+                        }
+                        
+                        const acceptedCount = countResult[0].accepted_count;
+                        
+                        // If we have 2 accepted members, change thesis status to "Ενεργή"
+                        if (acceptedCount >= 2) {
+                            const activateQuery = `
+                                UPDATE thesis_topic 
+                                SET state = 'Ενεργή', time_of_activation = NOW() 
+                                WHERE thesis_id = ? AND state = 'Υπό Ανάθεση'
+                            `;
+                            
+                            connection.query(activateQuery, [invitation.thesis_id], (err, activateResult) => {
+                                if (err) {
+                                    console.error('Error activating thesis:', err);
+                                    return;
+                                }
+                                
+                                if (activateResult.affectedRows > 0) {
+                                    // Log the activation event
+                                    const activateEventQuery = `
+                                        INSERT INTO thesis_events (thesis_id, event_type, description, event_date, status, created_by)
+                                        VALUES (?, 'Ενεργοποίηση', ?, NOW(), 'Ενεργή', ?)
+                                    `;
+                                    
+                                    const activateDescription = `Η διπλωματική ενεργοποιήθηκε - Συμπληρώθηκε η τριμελής επιτροπή`;
+                                    
+                                    connection.query(activateEventQuery, [invitation.thesis_id, activateDescription, professorId], (eventErr) => {
+                                        if (eventErr) {
+                                            console.error('Error recording activation event:', eventErr);
+                                        }
+                                    });
+                                    
+                                    console.log(`Thesis ${invitation.thesis_id} activated - committee complete`);
+                                }
+                            });
+                        }
+                    });
+                }
+                
+                res.json({ 
+                    success: true, 
+                    message: `Η πρόσκληση έγινε ${responseText} επιτυχώς`,
+                    invitation_id: invitation_id,
+                    status: response
+                });
             });
         });
     });

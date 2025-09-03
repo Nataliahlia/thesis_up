@@ -4043,7 +4043,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const data = await result.json();
-            
+
             // Close modal
             const activeModal = document.querySelector('.modal.show');
             if (activeModal) {

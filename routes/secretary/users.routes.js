@@ -65,7 +65,17 @@ router.post('/upload-user', upload.single('userAddingFile'), async (req, res) =>
                     const sql = `INSERT INTO student (student_number, email, password_hash, name, surname, street, number, city, postcode, father_name, landline_telephone, mobile_telephone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
                     console.log('Inserting student:', student_number, email, name, surname);
                     // Wait until the query is done
-                    await connection.promise().query(sql, [student_number, email, hashedPassword, name, surname, street ?? null, number ?? null, city ?? null, postcode ?? null, father_name, landline_telephone ?? null, mobile_telephone ?? null]);
+                    try {
+                        await connection.promise().query(sql, [student_number, email, hashedPassword, name, surname, street ?? null, number ?? null, city ?? null, postcode ?? null, father_name, landline_telephone ?? null, mobile_telephone ?? null]);
+                    } catch (dbError) {
+                        if (dbError.code === 'ER_DUP_ENTRY') {
+                            skippedStudents.push(student);
+                            // Send a custom error for duplicate student
+                            return res.status(409).json({ error: 'Σφάλμα κατά την αποθήκευση χρηστών. Ελέγξτε για διπλότυπα δεδομένα.', email });
+                        } else {
+                            throw dbError; // Let other errors bubble up
+                        }
+                    }
                 }
             } 
             if (Array.isArray(parsed.professor)) {
@@ -89,7 +99,17 @@ router.post('/upload-user', upload.single('userAddingFile'), async (req, res) =>
                     // Insert the professor into the database
                     const sql = `INSERT INTO professor (email, password_hash, name, surname, topic, department, university, landline, mobile) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
                     // Wait until the query is done
-                    await connection.promise().query(sql, [email, hashedPassword, name, surname, topic, department, university, landline, mobile]);
+                    try {
+                        await connection.promise().query(sql, [email, hashedPassword, name, surname, topic, department, university, landline, mobile]);
+                    } catch (dbError) {
+                        if (dbError.code === 'ER_DUP_ENTRY') {
+                            skippedProfessors.push(professor);
+                            // Send a custom error for duplicate professor
+                            return res.status(409).json({ error: 'Σφάλμα κατά την αποθήκευση χρηστών. Ελέγξτε για διπλότυπα δεδομένα.', email });
+                        } else {
+                            throw dbError; // Let other errors bubble up
+                        }
+                    }
                 }
             }
             if (addedStudents === 0 && addedProfessors === 0) {

@@ -55,7 +55,7 @@ router.post('/send-committee-invitation', async (req, res) => {
     try {
         const [result] = await connection.promise().query(
             `INSERT INTO thesis_committee (thesis_id, professor_id, role, invitation_date)
-            VALUES (?, ?, NULL, CURDATE())`,
+            VALUES (?, ?, 'member', CURDATE())`,
             [thesis_id, professor_id]
         );
 
