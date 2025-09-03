@@ -38,7 +38,7 @@ router.post('/submit-grade', requireAuth, requireProfessor, (req, res) => {
     }
 
     // Έλεγχος ότι η διπλωματική είναι "Υπό Εξέταση"
-    const thesisCheckQuery = 'SELECT state, instructor_id, member1, member2 FROM thesis_topic WHERE thesis_id = ?';
+    const thesisCheckQuery = 'SELECT state, instructor_id, member1, member2, draft_file FROM thesis_topic WHERE thesis_id = ?';
     
     connection.query(thesisCheckQuery, [thesis_id], (err, thesisResults) => {
         if (err) {
@@ -61,59 +61,87 @@ router.post('/submit-grade', requireAuth, requireProfessor, (req, res) => {
             });
         }
 
-        // Έλεγχος ότι ο καθηγητής είναι μέλος της επιτροπής
-        const isCommitteeMember = [thesis.instructor_id, thesis.member1, thesis.member2]
-            .includes(professor_id);
-
-        if (!isCommitteeMember) {
-            return res.status(403).json({ 
-                error: 'You are not a member of this thesis committee' 
+        // ΝΕΟΣ ΕΛΕΓΧΟΣ: Έλεγχος ότι έχει καταβληθεί το προσχέδιο
+        if (!thesis.draft_file) {
+            return res.status(400).json({ 
+                error: 'Η βαθμολόγηση δεν είναι διαθέσιμη. Ο φοιτητής πρέπει πρώτα να καταβάλει το προσχέδιο της διπλωματικής.',
+                errorCode: 'DRAFT_FILE_MISSING'
             });
         }
 
-        // Έλεγχος ότι ο καθηγητής δεν έχει ήδη υποβάλει βαθμό
-        const existingGradeQuery = 'SELECT id FROM thesis_comments WHERE thesis_id = ? AND professor_id = ? AND comment_type = "final"';
+        // ΝΕΟΣ ΕΛΕΓΧΟΣ: Έλεγχος ότι έχουν καταβληθεί οι πληροφορίες εξέτασης
+        const announcementCheckQuery = 'SELECT id FROM announcements WHERE thesis_id = ?';
         
-        connection.query(existingGradeQuery, [thesis_id, professor_id], (err, existingResults) => {
+        connection.query(announcementCheckQuery, [thesis_id], (err, announcementResults) => {
             if (err) {
-                console.error('Error checking existing grade:', err);
+                console.error('Error checking examination details:', err);
                 return res.status(500).json({ 
                     error: 'Internal server error',
                     details: err.message 
                 });
             }
 
-            if (existingResults.length > 0) {
-                // Ενημέρωση υπάρχοντος βαθμού
-                const updateQuery = 'UPDATE thesis_comments SET grade = ?, comment = ?, comment_date = NOW() WHERE thesis_id = ? AND professor_id = ? AND comment_type = "final"';
-                
-                connection.query(updateQuery, [grade, comment || '', thesis_id, professor_id], (err) => {
-                    if (err) {
-                        console.error('Error updating grade:', err);
-                        return res.status(500).json({ 
-                            error: 'Internal server error',
-                            details: err.message 
-                        });
-                    }
-                    
-                    checkAllGrades(thesis_id, thesis, res);
-                });
-            } else {
-                // Εισαγωγή νέου βαθμού
-                const insertQuery = 'INSERT INTO thesis_comments (thesis_id, professor_id, comment, grade, comment_type) VALUES (?, ?, ?, ?, "final")';
-                
-                connection.query(insertQuery, [thesis_id, professor_id, comment || '', grade], (err) => {
-                    if (err) {
-                        console.error('Error inserting grade:', err);
-                        return res.status(500).json({ 
-                            error: 'Internal server error',
-                            details: err.message 
-                        });
-                    }
-                    
-                    checkAllGrades(thesis_id, thesis, res);
+            if (announcementResults.length === 0) {
+                return res.status(400).json({ 
+                    error: 'Η βαθμολόγηση δεν είναι διαθέσιμη. Ο φοιτητής πρέπει πρώτα να καταβάλει τις πληροφορίες εξέτασης (ημερομηνία, ώρα, τρόπος εξέτασης).',
+                    errorCode: 'EXAMINATION_DETAILS_MISSING'
                 });
             }
+
+            // Έλεγχος ότι ο καθηγητής είναι μέλος της επιτροπής
+            const isCommitteeMember = [thesis.instructor_id, thesis.member1, thesis.member2]
+                .includes(professor_id);
+
+            if (!isCommitteeMember) {
+                return res.status(403).json({ 
+                    error: 'You are not a member of this thesis committee' 
+                });
+            }
+
+            // Έλεγχος ότι ο καθηγητής δεν έχει ήδη υποβάλει βαθμό
+            const existingGradeQuery = 'SELECT id FROM thesis_comments WHERE thesis_id = ? AND professor_id = ? AND comment_type = "final"';
+            
+            connection.query(existingGradeQuery, [thesis_id, professor_id], (err, existingResults) => {
+                if (err) {
+                    console.error('Error checking existing grade:', err);
+                    return res.status(500).json({ 
+                        error: 'Internal server error',
+                        details: err.message 
+                    });
+                }
+
+                if (existingResults.length > 0) {
+                    // Ενημέρωση υπάρχοντος βαθμού
+                    const updateQuery = 'UPDATE thesis_comments SET grade = ?, comment = ?, comment_date = NOW() WHERE thesis_id = ? AND professor_id = ? AND comment_type = "final"';
+                    
+                    connection.query(updateQuery, [grade, comment || '', thesis_id, professor_id], (err) => {
+                        if (err) {
+                            console.error('Error updating grade:', err);
+                            return res.status(500).json({ 
+                                error: 'Internal server error',
+                                details: err.message 
+                            });
+                        }
+                        
+                        checkAllGrades(thesis_id, thesis, res);
+                    });
+                } else {
+                    // Εισαγωγή νέου βαθμού
+                    const insertQuery = 'INSERT INTO thesis_comments (thesis_id, professor_id, comment, grade, comment_type) VALUES (?, ?, ?, ?, "final")';
+                    
+                    connection.query(insertQuery, [thesis_id, professor_id, comment || '', grade], (err) => {
+                        if (err) {
+                            console.error('Error inserting grade:', err);
+                            return res.status(500).json({ 
+                                error: 'Internal server error',
+                                details: err.message 
+                            });
+                        }
+                        
+                        checkAllGrades(thesis_id, thesis, res);
+                    });
+                }
+            });
         });
     });
 
@@ -180,7 +208,7 @@ router.get('/thesis/:thesis_id/grades', requireAuth, requireProfessor, (req, res
     const professor_id = req.session.user.id;
 
     // Έλεγχος ότι ο καθηγητής είναι μέλος της επιτροπής
-    const thesisCheckQuery = 'SELECT instructor_id, member1, member2, final_grade, state FROM thesis_topic WHERE thesis_id = ?';
+    const thesisCheckQuery = 'SELECT instructor_id, member1, member2, final_grade, state, draft_file FROM thesis_topic WHERE thesis_id = ?';
     
     connection.query(thesisCheckQuery, [thesis_id], (err, thesisResults) => {
         if (err) {
@@ -205,50 +233,78 @@ router.get('/thesis/:thesis_id/grades', requireAuth, requireProfessor, (req, res
             });
         }
 
-        // Παίρνουμε όλους τους βαθμούς της διπλωματικής
-        const gradesQuery = `SELECT tc.professor_id, tc.grade, tc.comment, tc.comment_date,
-                p.name, p.surname
-         FROM thesis_comments tc
-         JOIN professor p ON tc.professor_id = p.professor_id
-         WHERE tc.thesis_id = ? AND tc.comment_type = 'final'
-         ORDER BY tc.comment_date`;
+        // Έλεγχος για τα απαραίτητα αρχεία
+        const announcementCheckQuery = 'SELECT id FROM announcements WHERE thesis_id = ?';
         
-        connection.query(gradesQuery, [thesis_id], (err, gradesResults) => {
+        connection.query(announcementCheckQuery, [thesis_id], (err, announcementResults) => {
             if (err) {
-                console.error('Error fetching grades:', err);
+                console.error('Error checking examination details:', err);
                 return res.status(500).json({ 
                     error: 'Internal server error',
                     details: err.message 
                 });
             }
 
-            // Παίρνουμε τα ονόματα όλων των μελών της επιτροπής
-            const committeeMembersQuery = `SELECT professor_id, name, surname,
-                    CASE 
-                        WHEN professor_id = ? THEN 'Επιβλέπων'
-                        ELSE 'Μέλος Επιτροπής'
-                    END as role
-             FROM professor 
-             WHERE professor_id IN (?, ?, ?)`;
+            const canGrade = thesis.draft_file && announcementResults.length > 0;
+            const missingRequirements = [];
+
+            if (!thesis.draft_file) {
+                missingRequirements.push('Προσχέδιο της διπλωματικής');
+            }
+            if (announcementResults.length === 0) {
+                missingRequirements.push('Πληροφορίες εξέτασης (ημερομηνία, ώρα, τρόπος)');
+            }
+
+            // Παίρνουμε όλους τους βαθμούς της διπλωματικής
+            const gradesQuery = `SELECT tc.professor_id, tc.grade, tc.comment, tc.comment_date,
+                    p.name, p.surname
+             FROM thesis_comments tc
+             JOIN professor p ON tc.professor_id = p.professor_id
+             WHERE tc.thesis_id = ? AND tc.comment_type = 'final'
+             ORDER BY tc.comment_date`;
             
-            connection.query(committeeMembersQuery, [thesis.instructor_id, thesis.instructor_id, thesis.member1, thesis.member2], (err, committeeResults) => {
+            connection.query(gradesQuery, [thesis_id], (err, gradesResults) => {
                 if (err) {
-                    console.error('Error fetching committee members:', err);
+                    console.error('Error fetching grades:', err);
                     return res.status(500).json({ 
                         error: 'Internal server error',
                         details: err.message 
                     });
                 }
 
-                res.json({
-                    success: true,
-                    thesis_id,
-                    state: thesis.state,
-                    final_grade: thesis.final_grade,
-                    committee_members: committeeResults,
-                    submitted_grades: gradesResults,
-                    total_submitted: gradesResults.length,
-                    all_grades_submitted: gradesResults.length === 3
+                // Παίρνουμε τα ονόματα όλων των μελών της επιτροπής
+                const committeeMembersQuery = `SELECT professor_id, name, surname,
+                        CASE 
+                            WHEN professor_id = ? THEN 'Επιβλέπων'
+                            ELSE 'Μέλος Επιτροπής'
+                        END as role
+                 FROM professor 
+                 WHERE professor_id IN (?, ?, ?)`;
+                
+                connection.query(committeeMembersQuery, [thesis.instructor_id, thesis.instructor_id, thesis.member1, thesis.member2], (err, committeeResults) => {
+                    if (err) {
+                        console.error('Error fetching committee members:', err);
+                        return res.status(500).json({ 
+                            error: 'Internal server error',
+                            details: err.message 
+                        });
+                    }
+
+                    res.json({
+                        success: true,
+                        thesis_id,
+                        state: thesis.state,
+                        final_grade: thesis.final_grade,
+                        committee_members: committeeResults,
+                        submitted_grades: gradesResults,
+                        total_submitted: gradesResults.length,
+                        all_grades_submitted: gradesResults.length === 3,
+                        can_grade: canGrade,
+                        grading_blocked: !canGrade,
+                        missing_requirements: missingRequirements,
+                        draft_file_uploaded: !!thesis.draft_file,
+                        examination_details_submitted: announcementResults.length > 0
+                    });
                 });
             });
         });

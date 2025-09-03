@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initializeThesisManagementSection();
     initializeBackButtonFunctionality();
     initializeEditExaminationButton();
+    initializeDateValidation();
 
     // The helpers
     window.showCustomAlert = showCustomAlert;
@@ -145,6 +146,27 @@ function initializeEditExaminationButton() {
     }
 }
 
+// Function to handle the examination date being after the current date 
+function initializeDateValidation() {
+    const dateInput = document.getElementById('dateOfExamination');
+    if (dateInput) {
+        // Get today's date in YYYY-MM-DD format
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.setAttribute('min', today);
+        
+        // Optional: Add event listener for additional validation
+        dateInput.addEventListener('change', function() {
+            const selectedDate = new Date(this.value);
+            const todayDate = new Date();
+            todayDate.setHours(0, 0, 0, 0); // Reset time to compare only dates
+            
+            if (selectedDate < todayDate) {
+                alert('Δεν μπορείτε να επιλέξετε παρελθούσα ημερομηνία για την εξέταση.');
+                this.value = ''; // Clear the invalid date
+            }
+        });
+    }
+}
 // --------------------------------------------------------------------------------------- //
 // My Thesis Functionality
 function initializeMyThesisSection() {

@@ -1,0 +1,69 @@
+{
+  "student": [
+    {
+      "student_number": 10007,
+      "email": "up10007@ac.upatras.gr",
+      "name": "Ελένη",
+      "surname": "Αθανασοπούλου",
+      "street": "Καλαβρύτων",
+      "number": 12,
+      "city": "Πάτρα",
+      "postcode": 26331,
+      "father_name": "Παναγιώτης",
+      "landline_telephone": "2610457890",
+      "mobile_telephone": "6987654321"
+    },
+    {
+      "student_number": 10008,
+      "email": "up10008@ac.upatras.gr",
+      "name": "Γιώργος",
+      "surname": "Καρράς",
+      "street": "Ιωάννου Δασκάλου",
+      "number": 4,
+      "city": "Πάτρα",
+      "postcode": 26334,
+      "father_name": "Σπύρος",
+      "landline_telephone": "2610246890",
+      "mobile_telephone": "6974123456"
+    },
+    {
+      "student_number": 10009,
+      "email": "up10009@ac.upatras.gr",
+      "name": "Μαρία",
+      "surname": "Κυριακοπούλου",
+      "street": "Αγίου Γεωργίου",
+      "number": 9,
+      "city": "Πάτρα",
+      "postcode": 26333,
+      "father_name": "Χρήστος",
+      "landline_telephone": "2610451234",
+      "mobile_telephone": "6948123789"
+    },
+    {
+      "student_number": 10010,
+      "email": "up10010@ac.upatras.gr",
+      "name": "Νικόλας",
+      "surname": "Τριανταφύλλου",
+      "street": "Νόρμαν",
+      "number": 18,
+      "city": "Πάτρα",
+      "postcode": 26332,
+      "father_name": "Ευστάθιος",
+      "landline_telephone": "2610556789",
+      "mobile_telephone": "6900123456"
+    },
+    {
+      "student_number": 10011,
+      "email": "up10011@ac.upatras.gr",
+      "name": "Αναστασία",
+      "surname": "Βασιλείου",
+      "street": "Ελευθερίου Βενιζέλου",
+      "number": 7,
+      "city": "Πάτρα",
+      "postcode": 26330,
+      "father_name": "Ιωάννης",
+      "landline_telephone": "2610678912",
+      "mobile_telephone": "6977000001"
+    }
+  ]
+}
