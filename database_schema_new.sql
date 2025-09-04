@@ -146,6 +146,9 @@ CREATE TABLE announcements (
     FOREIGN KEY (thesis_id) REFERENCES thesis_topic(thesis_id)
 );
 
+ALTER TABLE announcements 
+ADD COLUMN state ENUM('waiting', 'uploaded');
+
 -- Create table for thesis committee members
 CREATE TABLE thesis_committee (
     id INT AUTO_INCREMENT PRIMARY KEY,
