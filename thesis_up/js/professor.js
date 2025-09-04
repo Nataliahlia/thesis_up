@@ -1436,7 +1436,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Grading button (only for "Υπό Εξέταση" status and committee members/supervisors)
         if (thesis.status === 'Υπό Εξέταση' && (thesis.my_role === 'supervisor' || thesis.my_role === 'member')) {
-            html += '<button type="button" class="btn btn-success" onclick="openGradingModal(' + thesis.id + ')" title="Βαθμολόγηση διπλωματικής εργασίας">' +
+            const tooltipText = thesis.my_role === 'supervisor' 
+                ? 'Ως επιβλέπων, θα ενεργοποιήσετε τη βαθμολόγηση για την επιτροπή'
+                : 'Βαθμολόγηση διπλωματικής εργασίας';
+            
+            html += '<button type="button" class="btn btn-success" onclick="openGradingModal(' + thesis.id + ')" title="' + tooltipText + '">' +
                     '<i class="fas fa-star me-2"></i>Βαθμολόγηση' +
                     '</button>';
         }
@@ -2359,9 +2363,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // Set thesis ID in modal
         document.getElementById('gradingThesisId').value = thesisId;
         
-        // Reset form
+        // Reset form and interface
         document.getElementById('gradingForm').reset();
         document.getElementById('gradingError').style.display = 'none';
+        document.getElementById('enableGradingRadio').checked = false;
+        
+        // Check if current user is supervisor for this thesis
+        checkUserRoleAndSetupModal(thesisId);
         
         // Load existing grades for this thesis
         loadThesisGrades(thesisId);
@@ -2389,48 +2397,67 @@ document.addEventListener('DOMContentLoaded', function() {
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <!-- Περιοχή για εμφάνιση υπαρχόντων βαθμολογιών -->
-                            <div id="existingGradesSection" class="mb-4" style="display: none;">
-                                <h6 class="fw-semibold mb-3">
-                                    <i class="fas fa-list me-2" style="color: #6A1F2B;"></i>Υποβληθείσες Βαθμολογίες
-                                </h6>
-                                <div id="existingGradesList" class="border rounded p-3" style="background-color: #f8f9fa;">
-                                    <!-- Grades will be loaded here -->
+                            <!-- Supervisor Grade Enable Section (only for supervisors) -->
+                            <div id="supervisorGradeEnableSection" class="mb-4" style="display: none;">
+                                <div class="alert alert-info">
+                                    <h6 class="fw-semibold mb-3">
+                                        <i class="fas fa-user-check me-2" style="color: #6A1F2B;"></i>Ενεργοποίηση Βαθμολόγησης Επιτροπής
+                                    </h6>
+                                    <p class="mb-3">Ως επιβλέπων της διπλωματικής, η ενεργοποίηση αυτής της επιλογής θα επιτρέψει σε όλα τα μέλη της επιτροπής (συμπεριλαμβανομένου εσάς) να υποβάλλουν βαθμολογίες για τη διπλωματική εργασία.</p>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="enableGrading" id="enableGradingRadio" onchange="toggleGradingInterface()">
+                                        <label class="form-check-label fw-semibold" for="enableGradingRadio">
+                                            Ενεργοποίηση βαθμολόγησης για όλα τα μέλη της επιτροπής
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
 
-                            <form id="gradingForm">
-                                <input type="hidden" id="gradingThesisId" name="thesis_id">
-                                
-                                <h6 class="fw-semibold mb-3">
-                                    <i class="fas fa-plus me-2" style="color: #6A1F2B;"></i>Υποβολή Βαθμολογίας
-                                </h6>
-                                
-                                <div class="row">
-                                    <div class="col-md-12 mb-3">
-                                        <label for="gradingScore" class="form-label fw-semibold">
-                                            <i class="fas fa-calculator me-2" style="color: #6A1F2B;"></i>Βαθμός (0-10)
-                                        </label>
-                                        <input type="number" id="gradingScore" name="grade" class="form-control" 
-                                               min="0" max="10" step="0.1" placeholder="π.χ. 8.5" required>
-                                        <div class="form-text">Εισάγετε βαθμό από 0 έως 10 με δεκαδικά</div>
+                            <!-- Main Grading Content (hidden initially for supervisors) -->
+                            <div id="gradingMainContent">
+                                <!-- Περιοχή για εμφάνιση υπαρχόντων βαθμολογιών -->
+                                <div id="existingGradesSection" class="mb-4" style="display: none;">
+                                    <h6 class="fw-semibold mb-3">
+                                        <i class="fas fa-list me-2" style="color: #6A1F2B;"></i>Υποβληθείσες Βαθμολογίες
+                                    </h6>
+                                    <div id="existingGradesList" class="border rounded p-3" style="background-color: #f8f9fa;">
+                                        <!-- Grades will be loaded here -->
                                     </div>
                                 </div>
-                                
-                                <div class="mb-3">
-                                    <label for="gradingComments" class="form-label fw-semibold">
-                                        <i class="fas fa-comment me-2" style="color: #6A1F2B;"></i>Σχόλια Αξιολόγησης
-                                    </label>
-                                    <textarea id="gradingComments" name="comment" class="form-control" rows="4" 
-                                              placeholder="Εισάγετε τα σχόλιά σας για την αξιολόγηση της διπλωματικής..."></textarea>
-                                    <div class="form-text">Προαιρετικά σχόλια για τη βαθμολόγηση</div>
-                                </div>
-                                
-                                <div id="gradingError" class="alert alert-danger" style="display: none;">
-                                    <i class="fas fa-exclamation-triangle me-2"></i>
-                                    <span id="gradingErrorText"></span>
-                                </div>
-                            </form>
+
+                                <form id="gradingForm">
+                                    <input type="hidden" id="gradingThesisId" name="thesis_id">
+                                    
+                                    <h6 class="fw-semibold mb-3">
+                                        <i class="fas fa-plus me-2" style="color: #6A1F2B;"></i>Υποβολή Βαθμολογίας
+                                    </h6>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-12 mb-3">
+                                            <label for="gradingScore" class="form-label fw-semibold">
+                                                <i class="fas fa-calculator me-2" style="color: #6A1F2B;"></i>Βαθμός (0-10)
+                                            </label>
+                                            <input type="number" id="gradingScore" name="grade" class="form-control" 
+                                                   min="0" max="10" step="0.1" placeholder="π.χ. 8.5" required>
+                                            <div class="form-text">Εισάγετε βαθμό από 0 έως 10 με δεκαδικά</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="gradingComments" class="form-label fw-semibold">
+                                            <i class="fas fa-comment me-2" style="color: #6A1F2B;"></i>Σχόλια Αξιολόγησης
+                                        </label>
+                                        <textarea id="gradingComments" name="comment" class="form-control" rows="4" 
+                                                  placeholder="Εισάγετε τα σχόλιά σας για την αξιολόγηση της διπλωματικής..."></textarea>
+                                        <div class="form-text">Προαιρετικά σχόλια για τη βαθμολόγηση</div>
+                                    </div>
+                                    
+                                    <div id="gradingError" class="alert alert-danger" style="display: none;">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        <span id="gradingErrorText"></span>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
@@ -2448,7 +2475,89 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add modal to body
         document.body.insertAdjacentHTML('beforeend', modalHTML);
     }
-    
+
+    // Check user role and setup modal interface accordingly
+    async function checkUserRoleAndSetupModal(thesisId) {
+        try {
+            // Find the thesis in our allTheses array to get the user's role
+            const thesis = allTheses.find(t => t.id === thesisId);
+            
+            const supervisorSection = document.getElementById('supervisorGradeEnableSection');
+            const mainContent = document.getElementById('gradingMainContent');
+            const submitBtn = document.getElementById('submitGradingBtn');
+            
+            if (thesis && thesis.my_role === 'supervisor') {
+                // Show supervisor enable section and hide main content initially
+                supervisorSection.style.display = 'block';
+                mainContent.style.display = 'none';
+                submitBtn.style.display = 'none';
+            } else {
+                // For committee members, show main content directly
+                supervisorSection.style.display = 'none';
+                mainContent.style.display = 'block';
+                submitBtn.style.display = 'inline-block';
+            }
+            
+        } catch (error) {
+            console.error('Error checking user role:', error);
+            // Default to showing main content
+            document.getElementById('supervisorGradeEnableSection').style.display = 'none';
+            document.getElementById('gradingMainContent').style.display = 'block';
+            document.getElementById('submitGradingBtn').style.display = 'inline-block';
+        }
+    }
+
+    // Toggle grading interface when supervisor enables grading
+    window.toggleGradingInterface = function() {
+        const enableRadio = document.getElementById('enableGradingRadio');
+        const mainContent = document.getElementById('gradingMainContent');
+        const submitBtn = document.getElementById('submitGradingBtn');
+        
+        if (enableRadio.checked) {
+            mainContent.style.display = 'block';
+            submitBtn.style.display = 'inline-block';
+            
+            // Enable grading for committee members
+            const thesisId = document.getElementById('gradingThesisId').value;
+            enableCommitteeGrading(thesisId);
+            
+            // Show notification about enabling grading for committee members
+            showNotification('Η βαθμολόγηση ενεργοποιήθηκε για όλα τα μέλη της επιτροπής. Τώρα μπορείτε να υποβάλετε τον βαθμό σας.', 'success');
+        } else {
+            mainContent.style.display = 'none';
+            submitBtn.style.display = 'none';
+        }
+    };
+
+    // Enable grading for committee members when supervisor activates it
+    async function enableCommitteeGrading(thesisId) {
+        try {
+            const response = await fetch('/enable-committee-grading', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    thesis_id: parseInt(thesisId)
+                })
+            });
+
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                console.warn('Could not enable committee grading:', result.error);
+                // Show warning but don't block the interface
+                showNotification('Προειδοποίηση: Δεν ήταν δυνατή η αυτόματη ενεργοποίηση της βαθμολόγησης για την επιτροπή. Παρακαλώ επικοινωνήστε με τον διαχειριστή.', 'warning');
+            } else {
+                console.log('Committee grading enabled successfully');
+            }
+        } catch (error) {
+            console.error('Error enabling committee grading:', error);
+            // Show warning but don't block the interface
+            showNotification('Προειδοποίηση: Σφάλμα κατά την ενεργοποίηση της βαθμολόγησης για την επιτροπή.', 'warning');
+        }
+    }
+
     // Submit grading
     window.submitGrading = async function() {
         const form = document.getElementById('gradingForm');
@@ -2584,15 +2693,46 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
         
+        // Check if supervisor has submitted grade (to determine if committee can grade)
+        const supervisorGrade = gradeData.submitted_grades.find(grade => 
+            gradeData.committee_members.find(member => 
+                member.professor_id === grade.professor_id && member.role === 'supervisor'
+            )
+        );
+        
+        // Check if current user is supervisor to show different messages
+        const currentThesisId = document.getElementById('gradingThesisId').value;
+        const currentThesis = allTheses.find(t => t.id == currentThesisId);
+        const isCurrentUserSupervisor = currentThesis && currentThesis.my_role === 'supervisor';
+        
+        if (!supervisorGrade && !isCurrentUserSupervisor) {
+            gradesHTML += `
+                <div class="alert alert-warning mb-3">
+                    <i class="fas fa-clock me-2"></i>
+                    <strong>Αναμονή επιβλέποντα:</strong> Η βαθμολόγηση θα ενεργοποιηθεί μετά την ενεργοποίηση από τον επιβλέποντα καθηγητή.
+                </div>
+            `;
+        } else if (!supervisorGrade && isCurrentUserSupervisor) {
+            gradesHTML += `
+                <div class="alert alert-info mb-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Ενεργοποίηση βαθμολόγησης:</strong> Χρησιμοποιήστε το παραπάνω radio button για να ενεργοποιήσετε τη βαθμολόγηση για όλα τα μέλη της επιτροπής.
+                </div>
+            `;
+        }
+        
         // Show committee members and their grades
         gradeData.committee_members.forEach(member => {
             const memberGrade = gradeData.submitted_grades.find(grade => grade.professor_id === member.professor_id);
+            const isSupervisor = member.role === 'supervisor';
             
             gradesHTML += `
-                <div class="row mb-2 p-2 border rounded">
+                <div class="row mb-2 p-2 border rounded ${isSupervisor ? 'border-success bg-light' : ''}">
                     <div class="col-md-4">
-                        <strong>${member.name} ${member.surname}</strong><br>
-                        <small class="text-muted">${member.role}</small>
+                        <strong>${member.name} ${member.surname}</strong>
+                        ${isSupervisor ? '<i class="fas fa-crown text-warning ms-1" title="Επιβλέπων"></i>' : ''}
+                        <br>
+                        <small class="text-muted">${member.role === 'supervisor' ? 'Επιβλέπων' : 'Μέλος Επιτροπής'}</small>
                     </div>
                     <div class="col-md-3">
                         ${memberGrade ? 

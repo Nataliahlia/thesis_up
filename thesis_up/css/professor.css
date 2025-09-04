@@ -1434,3 +1434,63 @@ footer {
 #committeeDetails::-webkit-scrollbar-thumb:hover {
     background: #660000;
 }
+
+/* Grading Modal Styles */
+#supervisorGradeEnableSection {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+#supervisorGradeEnableSection .alert-info {
+    background: linear-gradient(135deg, #d1ecf1 0%, #b8daff 100%);
+    border: 1px solid #bee5eb;
+    border-radius: 6px;
+}
+
+#supervisorGradeEnableSection .form-check-input:checked {
+    background-color: #8B0000;
+    border-color: #8B0000;
+    transform: scale(1.1);
+    transition: transform 0.2s ease;
+}
+
+#supervisorGradeEnableSection .form-check-input:focus {
+    border-color: #8B0000;
+    box-shadow: 0 0 0 0.25rem rgba(139, 0, 0, 0.25);
+}
+
+#supervisorGradeEnableSection .form-check-label {
+    color: #495057;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+#supervisorGradeEnableSection .form-check-label:hover {
+    color: #8B0000;
+}
+
+/* Fade transition for grading content */
+#gradingMainContent {
+    transition: opacity 0.3s ease, display 0.3s ease;
+}
+
+/* Enhanced styling for existing grades */
+.border-success.bg-light {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%) !important;
+    border-color: #198754 !important;
+}
+
+/* Crown icon animation */
+.fa-crown {
+    animation: gentle-glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes gentle-glow {
+    from {
+        text-shadow: 0 0 5px rgba(255, 193, 7, 0.5);
+    }
+    to {
+        text-shadow: 0 0 10px rgba(255, 193, 7, 0.8);
+    }
+}

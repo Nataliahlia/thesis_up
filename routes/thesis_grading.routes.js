@@ -202,6 +202,63 @@ router.post('/submit-grade', requireAuth, requireProfessor, (req, res) => {
     }
 });
 
+// POST route για ενεργοποίηση βαθμολόγησης από supervisor
+router.post('/enable-committee-grading', requireAuth, requireProfessor, (req, res) => {
+    const { thesis_id } = req.body;
+    const professor_id = req.session.user.id;
+
+    // Validation
+    if (!thesis_id) {
+        return res.status(400).json({ 
+            error: 'Thesis ID is required' 
+        });
+    }
+
+    // Έλεγχος ότι η διπλωματική υπάρχει και ότι ο καθηγητής είναι supervisor
+    const thesisCheckQuery = 'SELECT state, instructor_id, member1, member2 FROM thesis_topic WHERE thesis_id = ?';
+    
+    connection.query(thesisCheckQuery, [thesis_id], (err, thesisResults) => {
+        if (err) {
+            console.error('Error checking thesis:', err);
+            return res.status(500).json({ 
+                error: 'Internal server error',
+                details: err.message 
+            });
+        }
+
+        if (thesisResults.length === 0) {
+            return res.status(404).json({ error: 'Thesis not found' });
+        }
+
+        const thesis = thesisResults[0];
+        
+        // Έλεγχος ότι ο καθηγητής είναι supervisor (instructor)
+        if (thesis.instructor_id !== professor_id) {
+            return res.status(403).json({ 
+                error: 'Only the supervisor can enable committee grading' 
+            });
+        }
+
+        if (thesis.state !== 'Υπό Εξέταση') {
+            return res.status(400).json({ 
+                error: 'Thesis must be under examination to enable grading' 
+            });
+        }
+
+        // Εδώ μπορούμε να προσθέσουμε λογική για να ειδοποιήσουμε τα μέλη της επιτροπής
+        // Προς το παρόν απλά επιστρέφουμε επιτυχία
+        // Στο μέλλον μπορούμε να προσθέσουμε notifications, emails κτλ.
+
+        console.log(`Supervisor ${professor_id} enabled grading for thesis ${thesis_id}`);
+        
+        res.json({
+            success: true,
+            message: 'Committee grading enabled successfully',
+            thesis_id: thesis_id
+        });
+    });
+});
+
 // GET route για να δει ο καθηγητής τους βαθμούς μιας διπλωματικής
 router.get('/thesis/:thesis_id/grades', requireAuth, requireProfessor, (req, res) => {
     const { thesis_id } = req.params;
