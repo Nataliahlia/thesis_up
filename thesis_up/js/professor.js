@@ -2325,7 +2325,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Only send status if it has actually changed
         const currentStatus = document.getElementById('editStatus').value;
-        const originalThesis = authenticThesisData;
+        const originalThesis = window.currentThesisData;
         if (originalThesis && currentStatus !== originalThesis.status) {
             formData.append('status', currentStatus);
         }

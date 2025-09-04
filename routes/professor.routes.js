@@ -1003,7 +1003,7 @@ router.get('/api/professor/thesis-details/:thesisId', (req, res) => {
                             created_at: thesis.created_at, // Add creation date
                             assigned_at: thesis.time_of_activation, // Add assignment date
                             duration: thesis.duration_days,
-                            protocol_number: thesis.protocol_number, // Add protocol number
+                            protocol_number: thesis.protocol_number || null, // Add protocol number (safe)
                             my_role: myRole,
                             student: thesis.student_name && thesis.student_surname ? {
                                 name: `${thesis.student_name} ${thesis.student_surname}`,
