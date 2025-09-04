@@ -170,7 +170,7 @@ router.get('/api/professor/my-theses', (req, res) => {
             (SELECT COUNT(*) 
              FROM announcements a 
              WHERE a.thesis_id = t.thesis_id 
-             AND a.status = 'waiting'
+             AND a.state = 'waiting'
             ) > 0 as has_waiting_announcement
         FROM thesis_topic t
         LEFT JOIN student s ON t.student_id = s.student_number
@@ -823,7 +823,7 @@ router.get('/api/professor/thesis-details/:thesisId', (req, res) => {
             (SELECT COUNT(*) 
              FROM announcements a 
              WHERE a.thesis_id = tt.thesis_id 
-             AND a.status = 'waiting'
+             AND a.state = 'waiting'
             ) > 0 as has_waiting_announcement
         FROM thesis_topic tt
         LEFT JOIN student s ON tt.student_id = s.student_number
@@ -1824,9 +1824,9 @@ router.post('/professor/thesis/:thesisId/publish-announcement', (req, res) => {
 
         // Check if announcement exists with waiting status
         const checkAnnouncementQuery = `
-            SELECT announcement_id, status
+            SELECT id, state
             FROM announcements
-            WHERE thesis_id = ? AND status = 'waiting'
+            WHERE thesis_id = ? AND state = 'waiting'
         `;
 
         connection.query(checkAnnouncementQuery, [thesisId], (err, announcementResult) => {
@@ -1845,8 +1845,8 @@ router.post('/professor/thesis/:thesisId/publish-announcement', (req, res) => {
             // Update announcement status from waiting to uploaded
             const updateQuery = `
                 UPDATE announcements 
-                SET status = 'uploaded', updated_at = NOW()
-                WHERE thesis_id = ? AND status = 'waiting'
+                SET state = 'uploaded'
+                WHERE thesis_id = ? AND state = 'waiting'
             `;
 
             connection.query(updateQuery, [thesisId], (err, updateResult) => {
