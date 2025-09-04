@@ -13,7 +13,7 @@
     />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="../style.css" />
+    <link rel="stylesheet" href="../css/style.css" />
     <style>
         :root {
             --bordeaux-primary: #6A1F2B;
@@ -286,6 +286,11 @@
                 border: 2px solid rgba(255,255,255,0.3);
                 min-width: 60px;
             }
+
+            .scrollable-announcements {
+  max-height: 300px;
+  overflow-y: auto;
+}
         }
     </style>
 </head>
@@ -324,7 +329,7 @@
         
         <div class="glass-container mx-auto" style="max-width: 95%; padding: 2rem;">
             <div class="carousel-wrapper mt-3">
-                <div class="carousel-track container-scrollable" id="carouselContainer">
+                <div class="carousel-track" id="carouselContainer">
                     <!-- Cards will go here -->
                 </div>
             </div>
@@ -439,7 +444,10 @@
                 
                 // Add small delay to ensure CSS is fully applied before starting scroll
                 setTimeout(() => {
-                    startScrolling(container);             // Start the scrolling effect
+                    // Only start scrolling if there are more than 4 cards
+                    if (container.children.length > 4) {
+                        startScrolling(container);             // Start the scrolling effect
+                    }
                 }, 300);
             })
             .catch(err => {
@@ -514,7 +522,10 @@
                     
                     // Add small delay for mobile CSS application
                     setTimeout(() => {
-                        startScrolling(container);              // Start the scrolling effect
+                        // Only start scrolling if there are more than 4 cards
+                        if (container.children.length > 4) {
+                            startScrolling(container);              // Start the scrolling effect
+                        }
                     }, 100);
                 })
                 .catch(err => {
@@ -636,6 +647,17 @@
             `;
             container.appendChild(card);
         });
+
+        // Check the number of cards, if more than 4 we add the scrollable class
+        const cards = container.children.length;
+        console.log(`Number of cards: ${cards}`);
+        if (cards > 4) {
+            container.classList.add('container-scrollable');
+            container.style.justifyContent = 'flex-start';  // Left-aligned for scrolling
+        } else {
+            container.classList.remove('container-scrollable');
+            container.style.justifyContent = 'center';      // Center-aligned when no scroll
+        }
     }
     
     // Function for the successful submission of the thesis

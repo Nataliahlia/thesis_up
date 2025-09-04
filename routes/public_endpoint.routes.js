@@ -26,7 +26,7 @@ router.get('/api/announcements', (req, res) => {
 
   // Add date filtering if provided
   if (start && end) {
-    sql += ` WHERE DATE(a.date) BETWEEN '${start}' AND '${end}'`;
+    sql += ` AND DATE(a.date) BETWEEN '${start}' AND '${end}'`;
   }
 
   sql += ` ORDER BY a.date, a.time`;
