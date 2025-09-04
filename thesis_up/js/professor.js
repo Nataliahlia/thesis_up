@@ -1855,6 +1855,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('editTitle').value = thesis.title || '';
                 document.getElementById('editDescription').value = thesis.description || '';
                 
+                // Set protocol number value (if exists) or clear placeholder
+                const protocolField = document.getElementById('editProtocolNumber');
+                if (thesis.protocol_number) {
+                    protocolField.value = thesis.protocol_number;
+                    protocolField.placeholder = '';
+                } else {
+                    protocolField.value = '';
+                    protocolField.placeholder = 'Δεν έχει οριστεί ακόμη';
+                }
+                
                 // Handle status dropdown with restrictions
                 const statusSelect = document.getElementById('editStatus');
                 const currentStatus = thesis.status || '';
@@ -2312,7 +2322,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData();
         formData.append('title', document.getElementById('editTitle').value);
         formData.append('description', document.getElementById('editDescription').value);
-        formData.append('status', document.getElementById('editStatus').value);
+        
+        // Only send status if it has actually changed
+        const currentStatus = document.getElementById('editStatus').value;
+        const originalThesis = authenticThesisData;
+        if (originalThesis && currentStatus !== originalThesis.status) {
+            formData.append('status', currentStatus);
+        }
         
         // Add PDF file if uploaded
         const pdfFile = document.getElementById('editPdf').files[0];
@@ -2413,7 +2429,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Reset form and interface
         document.getElementById('gradingForm').reset();
         document.getElementById('gradingError').style.display = 'none';
-        document.getElementById('enableGradingRadio').checked = false;
+        // Radio button state will be set by checkUserRoleAndSetupModal
         
         // Check if current user is supervisor for this thesis
         checkUserRoleAndSetupModal(thesisId);
@@ -2532,12 +2548,49 @@ document.addEventListener('DOMContentLoaded', function() {
             const supervisorSection = document.getElementById('supervisorGradeEnableSection');
             const mainContent = document.getElementById('gradingMainContent');
             const submitBtn = document.getElementById('submitGradingBtn');
+            const enableRadio = document.getElementById('enableGradingRadio');
             
             if (thesis && thesis.my_role === 'supervisor') {
-                // Show supervisor enable section and hide main content initially
+                // Show supervisor enable section
                 supervisorSection.style.display = 'block';
-                mainContent.style.display = 'none';
-                submitBtn.style.display = 'none';
+                
+                // Check if grading is already enabled by checking for existing grades
+                try {
+                    const response = await fetch(`/api/thesis/${thesisId}/grades`);
+                    const result = await response.json();
+                    
+                    if (response.ok && result.success) {
+                        // Check if supervisor has already activated grading (has submitted grade)
+                        const supervisorGrade = result.submitted_grades && result.submitted_grades.find(grade => 
+                            result.committee_members && result.committee_members.find(member => 
+                                member.professor_id === grade.professor_id && member.role === 'Επιβλέπων'
+                            )
+                        );
+                        
+                        if (supervisorGrade) {
+                            // Grading is already enabled - check the radio and show main content
+                            enableRadio.checked = true;
+                            mainContent.style.display = 'block';
+                            submitBtn.style.display = 'inline-block';
+                        } else {
+                            // Grading not yet enabled - hide main content
+                            enableRadio.checked = false;
+                            mainContent.style.display = 'none';
+                            submitBtn.style.display = 'none';
+                        }
+                    } else {
+                        // Default to not enabled
+                        enableRadio.checked = false;
+                        mainContent.style.display = 'none';
+                        submitBtn.style.display = 'none';
+                    }
+                } catch (error) {
+                    console.error('Error checking grading status:', error);
+                    // Default to not enabled
+                    enableRadio.checked = false;
+                    mainContent.style.display = 'none';
+                    submitBtn.style.display = 'none';
+                }
             } else {
                 // For committee members, show main content directly
                 supervisorSection.style.display = 'none';

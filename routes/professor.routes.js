@@ -764,13 +764,19 @@ router.post('/api/professor/update-thesis/:id', uploadPDF.single('pdf'), (req, r
             
             // Record the general update in thesis events table
             const eventQuery = `
-                INSERT INTO thesis_events (thesis_id, event_type, description, event_date, created_by)
-                VALUES (?, 'Ενημέρωση', ?, NOW(), ?)
+                INSERT INTO thesis_events (thesis_id, event_type, description, event_date, status, created_by)
+                VALUES (?, 'Ενημέρωση', ?, NOW(), ?, ?)
             `;
             
             const eventDescription = `Ενημέρωση στοιχείων διπλωματικής: ${title}`;
             
-            connection.query(eventQuery, [thesisId, eventDescription, professorId], (eventErr) => {
+            // Use the current state after update - if status was changed, use the new status, otherwise use current state
+            let finalState = currentThesis.state;
+            if (status && status !== currentThesis.state) {
+                finalState = status; // Status was actually changed
+            }
+            
+            connection.query(eventQuery, [thesisId, eventDescription, finalState, professorId], (eventErr) => {
                 if (eventErr) {
                     console.error('Error recording thesis event:', eventErr);
                     // Don't fail the main operation, just log the error
@@ -1652,39 +1658,62 @@ router.post('/api/professor/committee-invitations/respond', (req, res) => {
                     // Continue with the response even if sync failed
                 }
                 
-                // Log the committee response event
-                const eventQuery = `
-                    INSERT INTO thesis_events (thesis_id, event_type, description, event_date, created_by)
-                    VALUES (?, 'Απόκριση Τριμελούς', ?, NOW(), ?)
-                `;
-                
-                const eventDescription = `Μέλος τριμελούς επιτροπής: Πρόσκληση ${responseText}`;
-                
-                connection.query(eventQuery, [invitation.thesis_id, eventDescription, professorId], (eventErr) => {
-                    if (eventErr) {
-                        console.error('Error recording committee response event:', eventErr);
+                // Get current thesis state for the event
+                const getThesisStateQuery = 'SELECT state FROM thesis_topic WHERE thesis_id = ?';
+                connection.query(getThesisStateQuery, [invitation.thesis_id], (stateErr, stateResult) => {
+                    let currentState = 'Υπό Ανάθεση'; // default fallback
+                    if (!stateErr && stateResult.length > 0) {
+                        currentState = stateResult[0].state;
                     }
-                });
                 
-                // If invitation was accepted, check if we now have enough accepted members to make thesis active
-                if (response === 'accepted') {
-                    const checkAcceptedQuery = `
-                        SELECT COUNT(*) as accepted_count 
-                        FROM thesis_committee 
-                        WHERE thesis_id = ? AND status = 'accepted'
+                    // Log the committee response event with current state
+                    const eventQuery = `
+                        INSERT INTO thesis_events (thesis_id, event_type, description, event_date, status, created_by)
+                        VALUES (?, 'Απόκριση Τριμελούς', ?, NOW(), ?, ?)
                     `;
                     
-                    connection.query(checkAcceptedQuery, [invitation.thesis_id], (err, countResult) => {
+                    const eventDescription = `Μέλος τριμελούς επιτροπής: Πρόσκληση ${responseText}`;
+                    
+                    connection.query(eventQuery, [invitation.thesis_id, eventDescription, currentState, professorId], (eventErr) => {
+                        if (eventErr) {
+                            console.error('Error recording committee response event:', eventErr);
+                        }
+                    });
+                });
+                
+                // If invitation was accepted, check if we now have complete committee to make thesis active
+                if (response === 'accepted') {
+                    const checkCommitteeQuery = `
+                        SELECT 
+                            COUNT(tc.id) as accepted_count,
+                            tt.member1,
+                            tt.member2
+                        FROM thesis_topic tt
+                        LEFT JOIN thesis_committee tc ON tt.thesis_id = tc.thesis_id 
+                            AND tc.status = 'accepted' AND tc.role = 'member'
+                        WHERE tt.thesis_id = ?
+                        GROUP BY tt.thesis_id, tt.member1, tt.member2
+                    `;
+                    
+                    connection.query(checkCommitteeQuery, [invitation.thesis_id], (err, countResult) => {
                         if (err) {
-                            console.error('Error checking accepted count:', err);
+                            console.error('Error checking committee status:', err);
                             // Don't fail the main operation
                             return;
                         }
                         
-                        const acceptedCount = countResult[0].accepted_count;
+                        if (countResult.length === 0) {
+                            console.log('No committee data found for thesis', invitation.thesis_id);
+                            return;
+                        }
                         
-                        // If we have 2 accepted members, change thesis status to "Ενεργή"
-                        if (acceptedCount >= 2) {
+                        const result = countResult[0];
+                        const acceptedCount = result.accepted_count;
+                        const member1Filled = result.member1 !== null;
+                        const member2Filled = result.member2 !== null;
+                        
+                        // Committee is complete when we have exactly 2 accepted members AND both member slots are filled
+                        if (acceptedCount === 2 && member1Filled && member2Filled) {
                             const activateQuery = `
                                 UPDATE thesis_topic 
                                 SET state = 'Ενεργή', time_of_activation = NOW() 
