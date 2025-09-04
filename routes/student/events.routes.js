@@ -18,13 +18,22 @@ router.get('/get-thesis-events/:thesis_id', async (req, res) => {
 
         // Query the database for thesis events related to the given thesis ID
         const [rows] = await connection.promise().query(`
-            SELECT event_date, status
+            SELECT 
+                event_date, 
+                status,
+                LAG(status) OVER (ORDER BY event_date) AS previous_status
             FROM thesis_events
             WHERE thesis_id = ?
             ORDER BY event_date ASC
         `, [thesisId]);
 
-        res.json({ events: rows });
+        // Filter to only include records where status changed
+        const stateChanges = rows.filter((row, index) => {
+            if (index === 0) return true; // Always include first record
+            return row.status !== row.previous_status; // Only include if status changed
+        });
+
+        res.json({ events: stateChanges });
     } catch (err) {
         res.status(500).json({ error: 'Database error', details: err.message });
     }

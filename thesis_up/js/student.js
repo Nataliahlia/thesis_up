@@ -729,9 +729,15 @@ async function getExaminationInfo(thesis) {
         setTimeout(() => {
             if (type === 'Διά Ζώσης') {
                 document.getElementById('examinationRoom').value = location_or_link;
-                lockExaminationFields();
             } else if (type === 'Διαδικτυακά') {
                 document.getElementById('examinationLink').value = location_or_link;
+            }
+
+            // Lock fields regardless of type, and completely hide edit button if uploaded
+            if (state === 'uploaded') {
+                lockExaminationFieldsPermanently();
+            } else {
+                lockExaminationFields();
             }
         } , 100); // Delay to ensure the input is rendered before setting its value
     } catch (error) {
@@ -1618,6 +1624,27 @@ function lockExaminationFields() {
 
     document.querySelector('#timeOfExaminationForm button[type="submit"]').style.display = 'none';  // Hide the submit button after submission
     document.getElementById('editExaminationButton').style.display = 'inline-block';                // Show the edit button after submission
+}
+
+// Function for permanently locking the examination fields after it is in the announcements
+function lockExaminationFieldsPermanently() {
+    // Call the regular lock function first
+    lockExaminationFields();
+    
+    // Additionally hide the edit button completely for uploaded state
+    const editButton = document.getElementById('editExaminationButton');
+    if (editButton) {
+        editButton.style.display = 'none';
+    }
+    
+    // Maybe add a message indicating the info is finalized
+    const submitButton = document.querySelector('#timeOfExaminationForm button[type="submit"]');
+    if (submitButton && submitButton.parentNode) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'alert alert-info mt-2';
+        messageDiv.innerHTML = '<i class="fas fa-info-circle"></i> Τα στοιχεία εξέτασης έχουν οριστικοποιηθεί και δεν μπορούν να τροποποιηθούν.';
+        submitButton.parentNode.appendChild(messageDiv);
+    }
 }
 
 // Function to edit the examination details

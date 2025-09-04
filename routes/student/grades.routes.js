@@ -39,13 +39,13 @@ router.get('/get-grades/:thesis_id', async (req, res) => {
         const grades = rows.map(r => parseFloat(r.grade)).filter(g => !isNaN(g));
 
         console.log('Grades fetched:', grades);
-        if (grades.length === 3) {
-            const average = grades.reduce((sum, g) => sum + g, 0) / 3;
-            await connection.promise().query(
-                'UPDATE thesis_topic SET final_grade = ? WHERE thesis_id = ?',
-                [average.toFixed(2), thesisId]
-            );
-        }
+        // if (grades.length === 3) {
+        //     const average = grades.reduce((sum, g) => sum + g, 0) / 3;
+        //     await connection.promise().query(
+        //         'UPDATE thesis_topic SET final_grade = ? WHERE thesis_id = ?',
+        //         [average.toFixed(2), thesisId]
+        //     );
+        // }
         // Return success
         return res.json({ success: true, grades: rows });
     } catch (err) {

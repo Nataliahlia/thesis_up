@@ -45,7 +45,7 @@ router.post('/update-examination-info', (req, res) => {
     // The sql query to update the examination information in the database
     const sql = `
             UPDATE announcements
-            SET date = ?, time = ?, type = ?, location_or_link = ?, state = 'waiting'
+            SET date = ?, time = ?, type = ?, location_or_link = ?, state = ?
             WHERE thesis_id = ?
     `;
     
@@ -66,7 +66,7 @@ router.get('/get-examination-info/:thesis_id', (req, res) => {
 
     // The sql query to get the examination information for a specific thesis
     const sql = `
-        SELECT date, time, type, location_or_link
+        SELECT date, time, type, location_or_link, state
         FROM announcements
         WHERE thesis_id = ?
     `;
