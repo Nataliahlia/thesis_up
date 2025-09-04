@@ -4756,7 +4756,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 showNotification('Η ανακοίνωση δημοσιεύτηκε επιτυχώς!', 'success');
                 // Reload the dashboard to update button visibility
-                loadDashboard();
+                loadMyTheses();
             } else {
                 showNotification('Σφάλμα: ' + (data.message || 'Αποτυχία δημοσίευσης'), 'error');
             }
