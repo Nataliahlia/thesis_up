@@ -1455,10 +1455,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     '</button>';
         }
 
-        // Announcement generation button (only for "Υπό Εξέταση" status and supervisors with presentation details)
-        if (thesis.status === 'Υπό Εξέταση' && thesis.my_role === 'supervisor' && thesis.has_presentation_details) {
-            html += '<button type="button" class="btn btn-warning" onclick="openAnnouncementModal(' + thesis.id + ')" title="Δημιουργία ανακοίνωσης παρουσίασης διπλωματικής">' +
-                    '<i class="fas fa-bullhorn me-2"></i>Ανακοίνωση' +
+        // Announcement generation button (only for supervisors with waiting announcement)
+        if (thesis.status === 'Υπό Εξέταση' && thesis.my_role === 'supervisor' && thesis.has_waiting_announcement) {
+            html += '<button type="button" class="btn btn-warning" onclick="openEditableAnnouncementModal(' + thesis.id + ')" title="Επεξεργασία ανακοίνωσης παρουσίασης διπλωματικής">' +
+                    '<i class="fas fa-bullhorn me-2"></i>Επεξεργασία Ανακοίνωσης' +
                     '</button>';
         }
         
@@ -3442,6 +3442,14 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        // Check if we have data
+        if (!monthlyData || !Array.isArray(monthlyData) || monthlyData.length === 0) {
+            console.log('No monthly data available, showing fallback message');
+            const container = canvas.parentElement;
+            container.innerHTML = '<div class="text-center py-4"><i class="fas fa-chart-line fa-2x text-muted mb-2"></i><p class="text-muted">Δεν υπάρχουν δεδομένα για εμφάνιση</p></div>';
+            return;
+        }
+        
         // Check if Chart.js is loaded
         if (typeof Chart === 'undefined') {
             console.error('Chart.js is not loaded for monthly chart, showing fallback');
@@ -3470,7 +3478,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const labels = monthlyData.map(item => item.label);
         const data = monthlyData.map(item => item.count);
         
-        console.log('Monthly chart data:', { labels, data });
+        console.log('Monthly chart data prepared:', { labels, data });
         
         try {
             monthlyChart = new Chart(ctx, {
@@ -3511,7 +3519,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         y: {
                             beginAtZero: true,
                             ticks: {
-                                stepSize: 1
+                                stepSize: 1,
+                                precision: 0
                             },
                             grid: {
                                 color: 'rgba(0, 0, 0, 0.1)'
@@ -3520,6 +3529,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         x: {
                             grid: {
                                 color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 0
                             }
                         }
                     }
@@ -3528,6 +3541,18 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Monthly chart created successfully');
         } catch (error) {
             console.error('Error creating monthly chart:', error);
+            // Show fallback on error
+            const container = canvas.parentElement;
+            let fallbackHTML = '<div class="text-center py-4"><i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i><p class="text-muted">Σφάλμα δημιουργίας διαγράμματος</p>';
+            if (monthlyData && monthlyData.length > 0) {
+                fallbackHTML += '<div class="chart-fallback text-start mt-3"><h6 class="mb-3">Μηνιαία Δημιουργία:</h6><ul class="list-unstyled">';
+                monthlyData.forEach(item => {
+                    fallbackHTML += `<li class="mb-2"><strong>${item.label}:</strong> ${item.count} θέματα</li>`;
+                });
+                fallbackHTML += '</ul></div>';
+            }
+            fallbackHTML += '</div>';
+            container.innerHTML = fallbackHTML;
         }
     }
     
@@ -4667,6 +4692,190 @@ document.addEventListener('DOMContentLoaded', function() {
         // Show modal
         const modal = new bootstrap.Modal(document.getElementById('announcementModal'));
         modal.show();
+    };
+
+    // Open editable announcement modal
+    window.openEditableAnnouncementModal = function(thesisId) {
+        console.log('Opening editable announcement modal for thesis:', thesisId);
+        
+        const modalId = 'editableAnnouncementModal';
+        let existingModal = document.getElementById(modalId);
+        
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Create editable modal HTML
+        const modalHTML = createEditableAnnouncementModal(thesisId);
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Load existing announcement if exists
+        loadExistingAnnouncement(thesisId);
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById(modalId));
+        modal.show();
+        
+        // Clean up on modal close
+        document.getElementById(modalId).addEventListener('hidden.bs.modal', function() {
+            this.remove();
+        });
+    };
+
+    // Create editable announcement modal
+    function createEditableAnnouncementModal(thesisId) {
+        return `
+            <div class="modal fade" id="editableAnnouncementModal" tabindex="-1" aria-labelledby="editableAnnouncementModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header" style="background-color: #6A1F2B; color: white;">
+                            <h5 class="modal-title" id="editableAnnouncementModalLabel">
+                                <i class="fas fa-edit me-2"></i>Επεξεργασία Ανακοίνωσης Παρουσίασης
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <!-- State info -->
+                            <div id="announcementStateInfo" class="mb-3"></div>
+                            
+                            <!-- Form -->
+                            <form id="announcementForm">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="announcementDate" class="form-label">Ημερομηνία *</label>
+                                            <input type="date" class="form-control" id="announcementDate" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="announcementTime" class="form-label">Ώρα *</label>
+                                            <input type="time" class="form-control" id="announcementTime" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="announcementType" class="form-label">Τρόπος Παρουσίασης *</label>
+                                    <select class="form-select" id="announcementType" required>
+                                        <option value="">Επιλέξτε τρόπο παρουσίασης</option>
+                                        <option value="Δια ζώσης">Δια ζώσης</option>
+                                        <option value="Διαδικτυακά">Διαδικτυακά</option>
+                                        <option value="Υβριδικά">Υβριδικά</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="announcementLocation" class="form-label">Τοποθεσία/Σύνδεσμος *</label>
+                                    <textarea class="form-control" id="announcementLocation" rows="3" placeholder="Εισάγετε την τοποθεσία ή τον σύνδεσμο για την παρουσίαση" required></textarea>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times me-2"></i>Ακύρωση
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" onclick="saveAnnouncement(${thesisId}, 'save')">
+                                <i class="fas fa-save me-2"></i>Αποθήκευση
+                            </button>
+                            <button type="button" class="btn btn-success" onclick="saveAnnouncement(${thesisId}, 'publish')">
+                                <i class="fas fa-upload me-2"></i>Δημοσίευση
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Load existing announcement data
+    function loadExistingAnnouncement(thesisId) {
+        fetch(`/professor/thesis/${thesisId}/announcement`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.announcement) {
+                    const announcement = data.announcement;
+                    document.getElementById('announcementDate').value = announcement.date || '';
+                    document.getElementById('announcementTime').value = announcement.time || '';
+                    document.getElementById('announcementType').value = announcement.type || '';
+                    document.getElementById('announcementLocation').value = announcement.location_or_link || '';
+                    
+                    // Show current state
+                    const stateInfo = document.getElementById('announcementStateInfo');
+                    if (announcement.state === 'uploaded') {
+                        stateInfo.innerHTML = '<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i>Η ανακοίνωση είναι δημοσιευμένη</div>';
+                    } else if (announcement.state === 'waiting') {
+                        stateInfo.innerHTML = '<div class="alert alert-warning"><i class="fas fa-clock me-2"></i>Η ανακοίνωση είναι αποθηκευμένη ως προσχέδιο</div>';
+                    } else {
+                        stateInfo.innerHTML = '<div class="alert alert-info"><i class="fas fa-info-circle me-2"></i>Νέα ανακοίνωση - συμπληρώστε τα στοιχεία</div>';
+                    }
+                } else {
+                    // No existing announcement
+                    const stateInfo = document.getElementById('announcementStateInfo');
+                    stateInfo.innerHTML = '<div class="alert alert-info"><i class="fas fa-info-circle me-2"></i>Νέα ανακοίνωση - συμπληρώστε τα στοιχεία</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading announcement:', error);
+                const stateInfo = document.getElementById('announcementStateInfo');
+                stateInfo.innerHTML = '<div class="alert alert-info"><i class="fas fa-info-circle me-2"></i>Νέα ανακοίνωση - συμπληρώστε τα στοιχεία</div>';
+            });
+    }
+
+    // Save announcement
+    window.saveAnnouncement = function(thesisId, action = 'save') {
+        const date = document.getElementById('announcementDate').value;
+        const time = document.getElementById('announcementTime').value;
+        const type = document.getElementById('announcementType').value;
+        const location = document.getElementById('announcementLocation').value;
+        
+        if (!date || !time || !type || !location) {
+            alert('Παρακαλώ συμπληρώστε όλα τα στοιχεία της ανακοίνωσης');
+            return;
+        }
+        
+        const requestData = {
+            date: date,
+            time: time,
+            type: type,
+            location_or_link: location,
+            action: action
+        };
+        
+        // Disable buttons during save
+        const saveBtn = document.querySelector('[onclick="saveAnnouncement(' + thesisId + ', \'save\')"]');
+        const publishBtn = document.querySelector('[onclick="saveAnnouncement(' + thesisId + ', \'publish\')"]');
+        
+        if (saveBtn) saveBtn.disabled = true;
+        if (publishBtn) publishBtn.disabled = true;
+        
+        fetch(`/professor/thesis/${thesisId}/announcement`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editableAnnouncementModal'));
+                modal.hide();
+                // Refresh the dashboard to show updated state
+                loadDashboard();
+            } else {
+                alert('Σφάλμα: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error saving announcement:', error);
+            alert('Παρουσιάστηκε σφάλμα κατά την αποθήκευση');
+        })
+        .finally(() => {
+            // Re-enable buttons
+            if (saveBtn) saveBtn.disabled = false;
+            if (publishBtn) publishBtn.disabled = false;
+        });
     };
 
     // Create announcement modal dynamically

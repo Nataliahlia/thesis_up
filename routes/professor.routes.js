@@ -166,7 +166,12 @@ router.get('/api/professor/my-theses', (req, res) => {
              AND a.time IS NOT NULL 
              AND a.type IS NOT NULL 
              AND a.location_or_link IS NOT NULL
-            ) > 0 as has_presentation_details
+            ) > 0 as has_presentation_details,
+            (SELECT COUNT(*) 
+             FROM announcements a 
+             WHERE a.thesis_id = t.thesis_id 
+             AND a.state = 'waiting'
+            ) > 0 as has_waiting_announcement
         FROM thesis_topic t
         LEFT JOIN student s ON t.student_id = s.student_number
         JOIN professor p ON t.instructor_id = p.professor_id
@@ -1179,13 +1184,20 @@ router.get('/api/professor/statistics', (req, res) => {
         // Monthly thesis creation trend (last 12 months)
         monthlyTrend: `
             SELECT 
-                DATE_FORMAT(time_of_activation, '%Y-%m') as month,
+                DATE_FORMAT(date_created, '%Y-%m') as month,
                 COUNT(*) as count
-            FROM thesis_topic 
-            WHERE instructor_id = ? 
-                AND time_of_activation >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
-                AND time_of_activation IS NOT NULL
-            GROUP BY DATE_FORMAT(time_of_activation, '%Y-%m')
+            FROM (
+                SELECT DATE_SUB(CURDATE(), INTERVAL n MONTH) as date_created
+                FROM (
+                    SELECT 0 as n UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION 
+                    SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION 
+                    SELECT 8 UNION SELECT 9 UNION SELECT 10 UNION SELECT 11
+                ) nums
+            ) months
+            LEFT JOIN thesis_topic t ON DATE_FORMAT(t.time_of_activation, '%Y-%m') = DATE_FORMAT(months.date_created, '%Y-%m')
+                AND t.instructor_id = ?
+                AND t.time_of_activation IS NOT NULL
+            GROUP BY DATE_FORMAT(date_created, '%Y-%m')
             ORDER BY month ASC
         `,
         
@@ -1832,6 +1844,13 @@ router.get('/thesis/:thesis_id/presentation-details', (req, res) => {
                         student: studentResults[0],
                         supervisor: supervisor,
                         committee_members: members,
+                        announcement: {
+                            date: presentation.date,
+                            time: presentation.time,
+                            type: presentation.type,
+                            location_or_link: presentation.location_or_link,
+                            state: presentation.state || 'waiting'
+                        },
                         presentation: {
                             date: presentation.date,
                             time: presentation.time,
@@ -1844,6 +1863,235 @@ router.get('/thesis/:thesis_id/presentation-details', (req, res) => {
                         success: true,
                         data: responseData
                     });
+                });
+            });
+        });
+    });
+});
+
+// Get announcement for editing (allows incomplete data)
+router.get('/professor/thesis/:thesis_id/announcement', (req, res) => {
+    const professorId = getAuthenticatedProfessorId(req, res);
+    if (!professorId) return;
+
+    const { thesis_id } = req.params;
+
+    // Check if professor is supervisor
+    const supervisorCheckQuery = `
+        SELECT instructor_id 
+        FROM thesis_topic 
+        WHERE thesis_id = ? AND instructor_id = ? AND state = 'Υπό Εξέταση'
+    `;
+
+    connection.query(supervisorCheckQuery, [thesis_id, professorId], (err, supervisorResults) => {
+        if (err) {
+            console.error('Error checking supervisor:', err);
+            return res.status(500).json({ 
+                success: false, 
+                error: 'Internal server error' 
+            });
+        }
+
+        if (supervisorResults.length === 0) {
+            return res.status(403).json({ 
+                success: false, 
+                error: 'Δεν έχετε δικαίωμα επεξεργασίας' 
+            });
+        }
+
+        // Get announcement data (even if incomplete)
+        const announcementQuery = `
+            SELECT * FROM announcements WHERE thesis_id = ?
+        `;
+
+        connection.query(announcementQuery, [thesis_id], (err, announcementResults) => {
+            if (err) {
+                console.error('Error fetching announcement:', err);
+                return res.status(500).json({ 
+                    success: false, 
+                    error: 'Database error' 
+                });
+            }
+
+            if (announcementResults.length === 0) {
+                return res.json({
+                    success: true,
+                    announcement: null
+                });
+            }
+
+            res.json({
+                success: true,
+                announcement: announcementResults[0]
+            });
+        });
+    });
+});
+
+// Frontend compatibility routes with /professor prefix
+router.get('/professor/thesis/:thesis_id/presentation-details', (req, res) => {
+    const professorId = getAuthenticatedProfessorId(req, res);
+    if (!professorId) return;
+
+    const { thesis_id } = req.params;
+
+    // Έλεγχος ότι ο καθηγητής είναι supervisor της διπλωματικής
+    const supervisorCheckQuery = `
+        SELECT instructor_id 
+        FROM thesis_topic 
+        WHERE thesis_id = ? AND instructor_id = ? AND state = 'Υπό Εξέταση'
+    `;
+
+    connection.query(supervisorCheckQuery, [thesis_id, professorId], (err, supervisorResults) => {
+        if (err) {
+            console.error('Error checking supervisor:', err);
+            return res.status(500).json({ 
+                success: false, 
+                error: 'Internal server error' 
+            });
+        }
+
+        if (supervisorResults.length === 0) {
+            return res.status(403).json({ 
+                success: false, 
+                error: 'Δεν έχετε δικαίωμα επεξεργασίας' 
+            });
+        }
+
+        // Get announcement data (even if incomplete)
+        const announcementQuery = `
+            SELECT * FROM announcements WHERE thesis_id = ?
+        `;
+
+        connection.query(announcementQuery, [thesis_id], (err, announcementResults) => {
+            if (err) {
+                console.error('Error fetching announcement:', err);
+                return res.status(500).json({ 
+                    success: false, 
+                    error: 'Database error' 
+                });
+            }
+
+            if (announcementResults.length === 0) {
+                return res.json({
+                    success: true,
+                    announcement: null
+                });
+            }
+
+            res.json({
+                success: true,
+                announcement: announcementResults[0]
+            });
+        });
+    });
+});
+
+// POST endpoint for professor frontend compatibility
+router.post('/professor/thesis/:thesis_id/announcement', (req, res) => {
+    const professorId = getAuthenticatedProfessorId(req, res);
+    if (!professorId) return;
+
+    const { thesis_id } = req.params;
+    const { date, time, type, location_or_link, action } = req.body;
+
+    // Validation
+    if (!date || !time || !type || !location_or_link) {
+        return res.status(400).json({
+            success: false,
+            error: 'Όλα τα στοιχεία παρουσίασης είναι υποχρεωτικά'
+        });
+    }
+
+    // Έλεγχος ότι ο καθηγητής είναι supervisor της διπλωματικής
+    const supervisorCheckQuery = `
+        SELECT instructor_id 
+        FROM thesis_topic 
+        WHERE thesis_id = ? AND instructor_id = ? AND state = 'Υπό Εξέταση'
+    `;
+
+    connection.query(supervisorCheckQuery, [thesis_id, professorId], (err, supervisorResults) => {
+        if (err) {
+            console.error('Error checking supervisor:', err);
+            return res.status(500).json({ 
+                success: false, 
+                error: 'Internal server error' 
+            });
+        }
+
+        if (supervisorResults.length === 0) {
+            return res.status(403).json({ 
+                success: false, 
+                error: 'Δεν έχετε δικαίωμα επεξεργασίας. Μόνο ο επιβλέπων καθηγητής μπορεί να επεξεργαστεί την ανακοίνωση.' 
+            });
+        }
+
+        // Determine state based on action
+        const state = (action === 'publish') ? 'uploaded' : 'waiting';
+
+        // Check if announcement already exists
+        const checkQuery = 'SELECT id FROM announcements WHERE thesis_id = ?';
+        
+        connection.query(checkQuery, [thesis_id], (err, existingResults) => {
+            if (err) {
+                console.error('Error checking existing announcement:', err);
+                return res.status(500).json({ 
+                    success: false, 
+                    error: 'Database error' 
+                });
+            }
+
+            let query, params;
+            if (existingResults.length > 0) {
+                // Update existing announcement
+                query = `
+                    UPDATE announcements 
+                    SET date = ?, time = ?, type = ?, location_or_link = ?, state = ?, updated_at = NOW()
+                    WHERE thesis_id = ?
+                `;
+                params = [date, time, type, location_or_link, state, thesis_id];
+            } else {
+                // Insert new announcement
+                query = `
+                    INSERT INTO announcements (thesis_id, date, time, type, location_or_link, state, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
+                `;
+                params = [thesis_id, date, time, type, location_or_link, state];
+            }
+
+            connection.query(query, params, (err, result) => {
+                if (err) {
+                    console.error('Error saving announcement:', err);
+                    return res.status(500).json({ 
+                        success: false, 
+                        error: 'Σφάλμα κατά την αποθήκευση της ανακοίνωσης' 
+                    });
+                }
+
+                // Record the event
+                const eventQuery = `
+                    INSERT INTO thesis_events (thesis_id, event_type, description, event_date, status, created_by)
+                    VALUES (?, ?, ?, NOW(), ?, ?)
+                `;
+                
+                const eventType = state === 'uploaded' ? 'Δημοσίευση Ανακοίνωσης' : 'Αποθήκευση Ανακοίνωσης';
+                const eventDescription = state === 'uploaded' ? 
+                    'Δημοσιεύτηκε η ανακοίνωση παρουσίασης διπλωματικής' : 
+                    'Αποθηκεύτηκε προσωρινά η ανακοίνωση παρουσίασης διπλωματικής';
+                
+                connection.query(eventQuery, [thesis_id, eventType, eventDescription, state, professorId], (eventErr) => {
+                    if (eventErr) {
+                        console.error('Error recording announcement event:', eventErr);
+                        // Don't fail the main operation
+                    }
+                });
+
+                res.json({
+                    success: true,
+                    message: state === 'uploaded' ? 
+                        'Η ανακοίνωση δημοσιεύτηκε επιτυχώς!' : 
+                        'Η ανακοίνωση αποθηκεύτηκε επιτυχώς!',
+                    state: state
                 });
             });
         });
