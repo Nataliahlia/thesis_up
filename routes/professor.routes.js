@@ -149,7 +149,7 @@ router.get('/api/professor/my-theses', (req, res) => {
                 WHEN t.instructor_id = ? THEN 'supervisor'
                 WHEN t.member1 = ? OR t.member2 = ? THEN 'member'
                 ELSE 'other'
-            END as role,
+            END as my_role,
             t.time_of_activation as assigned_at,
             DATEDIFF(NOW(), t.time_of_activation) as duration,
             t.pdf as pdfFile,
