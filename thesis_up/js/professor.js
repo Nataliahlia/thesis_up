@@ -1844,12 +1844,40 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 document.getElementById('editTitle').value = thesis.title || '';
                 document.getElementById('editDescription').value = thesis.description || '';
-                document.getElementById('editStatus').value = thesis.status || '';
+                
+                // Handle status dropdown with restrictions
+                const statusSelect = document.getElementById('editStatus');
+                const currentStatus = thesis.status || '';
+                
+                // Clear all options first
+                statusSelect.innerHTML = '';
+                
+                // Logic for status changes
+                if (currentStatus === 'Ενεργή') {
+                    // If thesis is "Ενεργή", allow change to "Υπό Εξέταση" or keep current
+                    statusSelect.innerHTML = `
+                        <option value="Ενεργή" selected>Ενεργή</option>
+                        <option value="Υπό Εξέταση">Υπό Εξέταση</option>
+                    `;
+                    statusSelect.disabled = false;
+                    
+                    // Add explanation
+                    addStatusExplanation('Μπορείτε να αλλάξετε την κατάσταση σε "Υπό Εξέταση" όταν ο φοιτητής είναι έτοιμος για παρουσίαση.');
+                    
+                } else {
+                    // For all other statuses, lock the current status
+                    statusSelect.innerHTML = `<option value="${currentStatus}" selected>${currentStatus}</option>`;
+                    statusSelect.disabled = true;
+                    
+                    // Add simple explanation
+                    addStatusExplanation('Η κατάσταση μπορεί να αλλάξει μόνο όταν η διπλωματική είναι "Ενεργή".');
+                }
                 
                 console.log('Edit form populated with authentic data:', {
                     title: thesis.title,
                     description: thesis.description,
-                    status: thesis.status
+                    status: currentStatus,
+                    statusEditable: currentStatus === 'Ενεργή'
                 });
             } else {
                 console.error('No authentic thesis data available for edit form');
@@ -1859,6 +1887,23 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error populating edit form:', error);
             showNotification('Σφάλμα κατά τη φόρτωση των στοιχείων επεξεργασίας', 'error');
         }
+    }
+
+    // Helper function to add status explanation
+    function addStatusExplanation(text) {
+        const statusSelect = document.getElementById('editStatus');
+        
+        // Remove existing explanation if any
+        const existingExplanation = statusSelect.parentElement.querySelector('.status-explanation');
+        if (existingExplanation) {
+            existingExplanation.remove();
+        }
+        
+        // Add new explanation
+        const explanation = document.createElement('div');
+        explanation.className = 'status-explanation form-text text-muted mt-1';
+        explanation.innerHTML = `<i class="fas fa-info-circle me-1"></i>${text}`;
+        statusSelect.parentElement.appendChild(explanation);
     }
 
     // Export PDF functionality
@@ -2298,23 +2343,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }, 1000);
             } else {
-                // Special handling for protocol number requirement
-                if (result.errorCode === 'PROTOCOL_NUMBER_REQUIRED') {
-                    showNotification('⚠️ Απαιτείται αριθμός πρωτοκόλλου: ' + result.message, 'warning');
-                    
-                    // Show a detailed modal with instructions
-                    showCustomConfirmation({
-                        title: 'Απαιτείται Αριθμός Πρωτοκόλλου',
-                        message: 'Για να αλλάξετε την κατάσταση σε "Υπό Εξέταση" πρέπει πρώτα η γραμματεία να προσθέσει αριθμό πρωτοκόλλου στη διπλωματική. Παρακαλώ επικοινωνήστε με τη γραμματεία.',
-                        confirmText: 'Κατάλαβα',
-                        cancelText: 'Κλείσιμο',
-                        onConfirm: () => {
-                            // Just close the modal - no action needed
-                        }
-                    });
-                } else {
-                    showNotification('Σφάλμα: ' + (result.message || 'Αποτυχία αποθήκευσης'), 'error');
-                }
+                // Show error message from server
+                showNotification('Σφάλμα: ' + (result.message || 'Αποτυχία αποθήκευσης'), 'error');
             }
         } catch (error) {
             console.error('Error saving thesis changes:', error);

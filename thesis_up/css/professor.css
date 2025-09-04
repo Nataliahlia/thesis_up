@@ -1542,3 +1542,24 @@ footer {
     background-color: #e0a800;
     border-color: #d39e00;
 }
+
+/* Status explanation in edit form */
+.status-explanation {
+    background-color: #f8f9fa;
+    border-left: 3px solid #6A1F2B;
+    padding: 8px 12px;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.9em;
+    margin-top: 6px;
+}
+
+.status-explanation .fa-info-circle {
+    color: #6A1F2B;
+}
+
+/* Disabled select styling */
+select:disabled {
+    background-color: #e9ecef;
+    opacity: 0.8;
+    cursor: not-allowed;
+}

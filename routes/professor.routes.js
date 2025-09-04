@@ -663,36 +663,27 @@ router.post('/api/professor/update-thesis/:id', uploadPDF.single('pdf'), (req, r
         
         // Special validation for state changes
         if (status && status !== currentThesis.state) {
-            // Check if changing from "Ενεργή" to "Υπό Εξέταση" - require protocol_number
-            if (currentThesis.state === 'Ενεργή' && status === 'Υπό Εξέταση') {
-                // Check if protocol_number exists for this thesis
-                const protocolCheckQuery = `
-                    SELECT protocol_number 
-                    FROM thesis_topic 
-                    WHERE thesis_id = ? AND protocol_number IS NOT NULL
-                `;
+            // Only allow specific state transitions
+            const currentState = currentThesis.state;
+            
+            // Only allow change from "Ενεργή" to "Υπό Εξέταση"
+            if (currentState === 'Ενεργή' && status === 'Υπό Εξέταση') {
+                // This transition is allowed, proceed with update
+            } else {
+                // All other transitions are not allowed
+                let errorMessage = `Δεν επιτρέπεται η αλλαγή κατάστασης από "${currentState}" σε "${status}".`;
                 
-                connection.query(protocolCheckQuery, [thesisId], (protocolErr, protocolResult) => {
-                    if (protocolErr) {
-                        console.error('Error checking protocol number:', protocolErr);
-                        return res.status(500).json({ 
-                            success: false, 
-                            message: 'Σφάλμα ελέγχου αριθμού πρωτοκόλλου' 
-                        });
-                    }
-                    
-                    if (protocolResult.length === 0 || !protocolResult[0].protocol_number) {
-                        return res.status(400).json({ 
-                            success: false, 
-                            message: 'Δεν μπορείτε να αλλάξετε την κατάσταση σε "Υπό Εξέταση" χωρίς να έχετε προσθέσει αριθμό πρωτοκόλλου στη διπλωματική.',
-                            errorCode: 'PROTOCOL_NUMBER_REQUIRED'
-                        });
-                    }
-                    
-                    // If protocol number exists, proceed with the update
-                    proceedWithUpdate();
+                if (currentState === 'Ενεργή') {
+                    errorMessage += ' Μπορείτε να αλλάξετε μόνο σε "Υπό Εξέταση".';
+                } else {
+                    errorMessage += ' Η κατάσταση μπορεί να αλλάξει μόνο όταν η διπλωματική είναι "Ενεργή".';
+                }
+                
+                return res.status(400).json({ 
+                    success: false, 
+                    message: errorMessage,
+                    errorCode: 'INVALID_STATUS_TRANSITION'
                 });
-                return; // Exit here to wait for the protocol check
             }
         }
         
