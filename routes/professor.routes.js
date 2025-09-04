@@ -895,8 +895,12 @@ router.get('/api/professor/thesis-details/:thesisId', (req, res) => {
                         p.email
                     FROM thesis_committee tc
                     JOIN professor p ON tc.professor_id = p.professor_id
+                    JOIN thesis_topic tt ON tc.thesis_id = tt.thesis_id
                     WHERE tc.thesis_id = ? 
-                    AND tc.status = 'accepted'  -- Only show accepted committee members
+                    AND tc.status = 'accepted'
+                    AND tc.professor_id != tt.instructor_id  -- Exclude supervisor
+                    AND tc.professor_id != COALESCE(tt.member1, -1)  -- Exclude member1 if exists
+                    AND tc.professor_id != COALESCE(tt.member2, -1)  -- Exclude member2 if exists
                     ORDER BY 
                         CASE role 
                             WHEN 'supervisor' THEN 1 
@@ -910,6 +914,17 @@ router.get('/api/professor/thesis-details/:thesisId', (req, res) => {
             if (err) {
                 console.error('Error fetching committee information:', err);
                 return res.status(500).json({ success: false, message: 'Database error' });
+            }
+
+            // Remove duplicates based on professor_id
+            const uniqueCommittee = [];
+            const seenProfessors = new Set();
+            
+            for (const member of committeeResult) {
+                if (!seenProfessors.has(member.professor_id)) {
+                    seenProfessors.add(member.professor_id);
+                    uniqueCommittee.push(member);
+                }
             }
 
             // Get thesis timeline/events
@@ -960,7 +975,7 @@ router.get('/api/professor/thesis-details/:thesisId', (req, res) => {
                         myRole = 'supervisor';
                     } else {
                         // Check if professor is in committee
-                        const isCommitteeMember = committeeResult.some(member => 
+                        const isCommitteeMember = uniqueCommittee.some(member => 
                             member.professor_id === professorId
                         );
                         if (isCommitteeMember) {
@@ -992,7 +1007,7 @@ router.get('/api/professor/thesis-details/:thesisId', (req, res) => {
                             supervisor: {
                                 name: `${thesis.supervisor_name} ${thesis.supervisor_surname}`
                             },
-                            committee: committeeResult,
+                            committee: uniqueCommittee,
                             timeline: eventsResult,
                             files: filesResult,
                             comments: commentsResult
