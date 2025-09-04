@@ -641,7 +641,7 @@ router.post('/api/professor/update-thesis/:id', uploadPDF.single('pdf'), (req, r
     
     // Check if thesis exists and professor has permission to edit
     const checkQuery = `
-        SELECT thesis_id, title, state, instructor_id 
+        SELECT thesis_id, title, state, instructor_id, protocol_number 
         FROM thesis_topic 
         WHERE thesis_id = ? AND instructor_id = ?
     `;
@@ -668,7 +668,15 @@ router.post('/api/professor/update-thesis/:id', uploadPDF.single('pdf'), (req, r
             
             // Only allow change from "Ενεργή" to "Υπό Εξέταση"
             if (currentState === 'Ενεργή' && status === 'Υπό Εξέταση') {
-                // This transition is allowed, proceed with update
+                // Check if protocol number exists for this transition
+                if (!currentThesis.protocol_number) {
+                    return res.status(400).json({ 
+                        success: false, 
+                        message: 'Για να αλλάξει η κατάσταση σε "Υπό Εξέταση" πρέπει πρώτα να προστεθεί ο αριθμός πρωτοκόλλου της διπλωματικής.',
+                        errorCode: 'PROTOCOL_NUMBER_REQUIRED'
+                    });
+                }
+                // This transition is allowed and protocol number exists, proceed with update
             } else {
                 // All other transitions are not allowed
                 let errorMessage = `Δεν επιτρέπεται η αλλαγή κατάστασης από "${currentState}" σε "${status}".`;
@@ -883,7 +891,7 @@ router.get('/api/professor/thesis-details/:thesisId', (req, res) => {
                     FROM thesis_committee tc
                     JOIN professor p ON tc.professor_id = p.professor_id
                     WHERE tc.thesis_id = ? 
-                    AND tc.status = 'pending'  -- Only show pending invitations, accepted ones are already in thesis_topic
+                    AND tc.status = 'accepted'  -- Only show accepted committee members
                     ORDER BY 
                         CASE role 
                             WHEN 'supervisor' THEN 1 

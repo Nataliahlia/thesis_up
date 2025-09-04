@@ -1264,13 +1264,23 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        // Filter to show only accepted committee members
+        const acceptedMembers = committee.filter(member => 
+            member.status === 'accepted' || member.role === 'supervisor'
+        );
+        
+        if (acceptedMembers.length === 0) {
+            container.innerHTML = '<p class="text-muted">Δεν υπάρχουν αποδεκτά μέλη επιτροπής ακόμα.</p>';
+            return;
+        }
+        
         // Add CSS styling to limit container height and enable scrolling
         container.style.maxHeight = '300px';
         container.style.overflowY = 'auto';
         container.style.paddingRight = '10px';
         
         let html = '';
-        committee.forEach((member, index) => {
+        acceptedMembers.forEach((member, index) => {
             const roleText = member.role === 'supervisor' ? 'Επιβλέπων' : 
                            member.role === 'member' ? 'Μέλος' : 
                            member.role === 'secretary' ? 'Γραμματέας' : member.role;
