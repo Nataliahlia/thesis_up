@@ -1,0 +1,14 @@
+{
+  "professor": [
+    {
+      "email": "prof14@ac.upatras.gr",
+      "name": "Νικόλαος",
+      "surname": "Χριστοδούλου",
+      "topic": "Τεχνητή Νοημοσύνη",
+      "department": "Τομέας Λογισμικού",
+      "university": "Πανεπιστήμιο Πατρών",
+      "landline": "2610789034",
+      "mobile": "6948034576"
+    }
+  ]
+}

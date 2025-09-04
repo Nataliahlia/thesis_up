@@ -116,6 +116,8 @@ ALTER TABLE thesis_topic
 ADD COLUMN nimertis_link VARCHAR(255) NULL;
 ALTER TABLE thesis_topic
 ADD COLUMN final_grade INT NULL;
+ALTER TABLE thesis_topic
+MODIFY COLUMN final_grade DECIMAL(4,2) NULL;
 
 CREATE TABLE canceled_thesis (
 	submission_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -391,13 +393,7 @@ BEGIN
             UPDATE thesis_topic 
             SET final_grade = ROUND(avg_grade, 2)
             WHERE thesis_id = NEW.thesis_id;
-            
-            -- Προαιρετικά: αλλάζουμε την κατάσταση της διπλωματικής σε "Περατωμένη"
-            UPDATE thesis_topic 
-            SET state = 'Περατωμένη'
-            WHERE thesis_id = NEW.thesis_id AND state = 'Υπό Εξέταση';
         END IF;
-        
     END IF;
 END$$
 
