@@ -170,7 +170,7 @@ router.get('/api/professor/my-theses', (req, res) => {
             (SELECT COUNT(*) 
              FROM announcements a 
              WHERE a.thesis_id = t.thesis_id 
-             AND a.state = 'waiting'
+             AND a.status = 'waiting'
             ) > 0 as has_waiting_announcement
         FROM thesis_topic t
         LEFT JOIN student s ON t.student_id = s.student_number
@@ -819,7 +819,12 @@ router.get('/api/professor/thesis-details/:thesisId', (req, res) => {
              FROM thesis_events te 
              WHERE te.thesis_id = tt.thesis_id 
              AND te.event_type = 'Δημιουργία Θέματος'
-            ) as created_at
+            ) as created_at,
+            (SELECT COUNT(*) 
+             FROM announcements a 
+             WHERE a.thesis_id = tt.thesis_id 
+             AND a.status = 'waiting'
+            ) > 0 as has_waiting_announcement
         FROM thesis_topic tt
         LEFT JOIN student s ON tt.student_id = s.student_number
         LEFT JOIN professor p ON tt.instructor_id = p.professor_id
@@ -1004,6 +1009,7 @@ router.get('/api/professor/thesis-details/:thesisId', (req, res) => {
                             assigned_at: thesis.time_of_activation, // Add assignment date
                             duration: thesis.duration_days,
                             protocol_number: thesis.protocol_number || null, // Add protocol number (safe)
+                            has_waiting_announcement: thesis.has_waiting_announcement || false,
                             my_role: myRole,
                             student: thesis.student_name && thesis.student_surname ? {
                                 name: `${thesis.student_name} ${thesis.student_surname}`,
@@ -1789,354 +1795,90 @@ router.post('/api/professor/committee-invitations/respond', (req, res) => {
 });
 
 // ===== PRESENTATION DETAILS ENDPOINT =====
-// GET route για τα στοιχεία παρουσίασης διπλωματικής
-router.get('/thesis/:thesis_id/presentation-details', (req, res) => {
+
+// Publish announcement - change status from waiting to uploaded
+router.post('/professor/thesis/:thesisId/publish-announcement', (req, res) => {
+    const thesisId = req.params.thesisId;
     const professorId = getAuthenticatedProfessorId(req, res);
-    if (!professorId) return;
+    if (!professorId) return; // Error response already sent by helper
 
-    const { thesis_id } = req.params;
-
-    // Έλεγχος ότι ο καθηγητής είναι supervisor της διπλωματικής
-    const supervisorCheckQuery = `
-        SELECT instructor_id 
-        FROM thesis_topic 
-        WHERE thesis_id = ? AND instructor_id = ? AND state = 'Υπό Εξέταση'
+    // Verify professor is the supervisor of this thesis
+    const checkSupervisorQuery = `
+        SELECT thesis_id, instructor_id
+        FROM thesis_topic
+        WHERE thesis_id = ? AND instructor_id = ?
     `;
 
-    connection.query(supervisorCheckQuery, [thesis_id, professorId], (err, supervisorResults) => {
+    connection.query(checkSupervisorQuery, [thesisId, professorId], (err, supervisorResult) => {
         if (err) {
             console.error('Error checking supervisor:', err);
-            return res.status(500).json({ 
-                success: false, 
-                error: 'Internal server error',
-                details: err.message 
-            });
+            return res.status(500).json({ success: false, message: 'Database error' });
         }
 
-        if (supervisorResults.length === 0) {
+        if (supervisorResult.length === 0) {
             return res.status(403).json({ 
                 success: false, 
-                error: 'Δεν έχετε δικαίωμα προβολής. Μόνο ο επιβλέπων καθηγητής μπορεί να δει τα στοιχεία παρουσίασης.' 
+                message: 'Δεν έχετε δικαίωμα δημοσίευσης ανακοίνωσης για αυτή τη διπλωματική' 
             });
         }
 
-        // Έλεγχος ότι υπάρχουν στοιχεία παρουσίασης
-        const presentationCheckQuery = `
-            SELECT a.*, tt.title as thesis_title, tt.student_id, tt.instructor_id, tt.member1, tt.member2
-            FROM announcements a
-            JOIN thesis_topic tt ON a.thesis_id = tt.thesis_id
-            WHERE a.thesis_id = ? AND a.date IS NOT NULL AND a.time IS NOT NULL 
-                AND a.type IS NOT NULL AND a.location_or_link IS NOT NULL
+        // Check if announcement exists with waiting status
+        const checkAnnouncementQuery = `
+            SELECT announcement_id, status
+            FROM announcements
+            WHERE thesis_id = ? AND status = 'waiting'
         `;
 
-        connection.query(presentationCheckQuery, [thesis_id], (err, presentationResults) => {
+        connection.query(checkAnnouncementQuery, [thesisId], (err, announcementResult) => {
             if (err) {
-                console.error('Error checking presentation details:', err);
-                return res.status(500).json({ 
+                console.error('Error checking announcement:', err);
+                return res.status(500).json({ success: false, message: 'Database error' });
+            }
+
+            if (announcementResult.length === 0) {
+                return res.status(404).json({ 
                     success: false, 
-                    error: 'Internal server error',
-                    details: err.message 
+                    message: 'Δεν βρέθηκε ανακοίνωση σε αναμονή για αυτή τη διπλωματική' 
                 });
             }
 
-            if (presentationResults.length === 0) {
-                return res.status(400).json({ 
-                    success: false, 
-                    error: 'Δεν υπάρχουν πλήρη στοιχεία παρουσίασης. Ο φοιτητής πρέπει να συμπληρώσει όλες τις απαραίτητες λεπτομέρειες (ημερομηνία, ώρα, τρόπος, τοποθεσία).' 
-                });
-            }
+            // Update announcement status from waiting to uploaded
+            const updateQuery = `
+                UPDATE announcements 
+                SET status = 'uploaded', updated_at = NOW()
+                WHERE thesis_id = ? AND status = 'waiting'
+            `;
 
-            const presentation = presentationResults[0];
-
-            // Λήψη στοιχείων φοιτητή
-            const studentQuery = 'SELECT name, surname FROM users WHERE user_id = ?';
-            connection.query(studentQuery, [presentation.student_id], (err, studentResults) => {
+            connection.query(updateQuery, [thesisId], (err, updateResult) => {
                 if (err) {
-                    console.error('Error fetching student:', err);
-                    return res.status(500).json({ 
+                    console.error('Error updating announcement status:', err);
+                    return res.status(500).json({ success: false, message: 'Database error' });
+                }
+
+                if (updateResult.affectedRows === 0) {
+                    return res.status(404).json({ 
                         success: false, 
-                        error: 'Internal server error',
-                        details: err.message 
+                        message: 'Δεν ήταν δυνατή η ενημέρωση της ανακοίνωσης' 
                     });
                 }
 
-                // Λήψη στοιχείων επιτροπής
-                const committeeIds = [presentation.instructor_id, presentation.member1, presentation.member2].filter(id => id);
-                const committeeQuery = 'SELECT id, name, surname FROM users WHERE id IN (?)';
-                
-                connection.query(committeeQuery, [committeeIds], (err, committeeResults) => {
-                    if (err) {
-                        console.error('Error fetching committee:', err);
-                        return res.status(500).json({ 
-                            success: false, 
-                            error: 'Internal server error',
-                            details: err.message 
-                        });
-                    }
-
-                    // Οργάνωση δεδομένων επιτροπής
-                    const supervisor = committeeResults.find(member => member.id === presentation.instructor_id);
-                    const members = committeeResults.map(member => ({
-                        ...member,
-                        role: member.id === presentation.instructor_id ? 'supervisor' : 'member'
-                    }));
-
-                    const responseData = {
-                        thesis: {
-                            id: presentation.thesis_id,
-                            title: presentation.thesis_title
-                        },
-                        student: studentResults[0],
-                        supervisor: supervisor,
-                        committee_members: members,
-                        announcement: {
-                            date: presentation.date,
-                            time: presentation.time,
-                            type: presentation.type,
-                            location_or_link: presentation.location_or_link,
-                            state: presentation.state || 'waiting'
-                        },
-                        presentation: {
-                            date: presentation.date,
-                            time: presentation.time,
-                            type: presentation.type,
-                            location_or_link: presentation.location_or_link
-                        }
-                    };
-
-                    res.json({
-                        success: true,
-                        data: responseData
-                    });
-                });
-            });
-        });
-    });
-});
-
-// Get announcement for editing (allows incomplete data)
-router.get('/professor/thesis/:thesis_id/announcement', (req, res) => {
-    const professorId = getAuthenticatedProfessorId(req, res);
-    if (!professorId) return;
-
-    const { thesis_id } = req.params;
-
-    // Check if professor is supervisor
-    const supervisorCheckQuery = `
-        SELECT instructor_id 
-        FROM thesis_topic 
-        WHERE thesis_id = ? AND instructor_id = ? AND state = 'Υπό Εξέταση'
-    `;
-
-    connection.query(supervisorCheckQuery, [thesis_id, professorId], (err, supervisorResults) => {
-        if (err) {
-            console.error('Error checking supervisor:', err);
-            return res.status(500).json({ 
-                success: false, 
-                error: 'Internal server error' 
-            });
-        }
-
-        if (supervisorResults.length === 0) {
-            return res.status(403).json({ 
-                success: false, 
-                error: 'Δεν έχετε δικαίωμα επεξεργασίας' 
-            });
-        }
-
-        // Get announcement data (even if incomplete)
-        const announcementQuery = `
-            SELECT * FROM announcements WHERE thesis_id = ?
-        `;
-
-        connection.query(announcementQuery, [thesis_id], (err, announcementResults) => {
-            if (err) {
-                console.error('Error fetching announcement:', err);
-                return res.status(500).json({ 
-                    success: false, 
-                    error: 'Database error' 
-                });
-            }
-
-            if (announcementResults.length === 0) {
-                return res.json({
-                    success: true,
-                    announcement: null
-                });
-            }
-
-            res.json({
-                success: true,
-                announcement: announcementResults[0]
-            });
-        });
-    });
-});
-
-// Frontend compatibility routes with /professor prefix
-router.get('/professor/thesis/:thesis_id/presentation-details', (req, res) => {
-    const professorId = getAuthenticatedProfessorId(req, res);
-    if (!professorId) return;
-
-    const { thesis_id } = req.params;
-
-    // Έλεγχος ότι ο καθηγητής είναι supervisor της διπλωματικής
-    const supervisorCheckQuery = `
-        SELECT instructor_id 
-        FROM thesis_topic 
-        WHERE thesis_id = ? AND instructor_id = ? AND state = 'Υπό Εξέταση'
-    `;
-
-    connection.query(supervisorCheckQuery, [thesis_id, professorId], (err, supervisorResults) => {
-        if (err) {
-            console.error('Error checking supervisor:', err);
-            return res.status(500).json({ 
-                success: false, 
-                error: 'Internal server error' 
-            });
-        }
-
-        if (supervisorResults.length === 0) {
-            return res.status(403).json({ 
-                success: false, 
-                error: 'Δεν έχετε δικαίωμα επεξεργασίας' 
-            });
-        }
-
-        // Get announcement data (even if incomplete)
-        const announcementQuery = `
-            SELECT * FROM announcements WHERE thesis_id = ?
-        `;
-
-        connection.query(announcementQuery, [thesis_id], (err, announcementResults) => {
-            if (err) {
-                console.error('Error fetching announcement:', err);
-                return res.status(500).json({ 
-                    success: false, 
-                    error: 'Database error' 
-                });
-            }
-
-            if (announcementResults.length === 0) {
-                return res.json({
-                    success: true,
-                    announcement: null
-                });
-            }
-
-            res.json({
-                success: true,
-                announcement: announcementResults[0]
-            });
-        });
-    });
-});
-
-// POST endpoint for professor frontend compatibility
-router.post('/professor/thesis/:thesis_id/announcement', (req, res) => {
-    const professorId = getAuthenticatedProfessorId(req, res);
-    if (!professorId) return;
-
-    const { thesis_id } = req.params;
-    const { date, time, type, location_or_link, action } = req.body;
-
-    // Validation
-    if (!date || !time || !type || !location_or_link) {
-        return res.status(400).json({
-            success: false,
-            error: 'Όλα τα στοιχεία παρουσίασης είναι υποχρεωτικά'
-        });
-    }
-
-    // Έλεγχος ότι ο καθηγητής είναι supervisor της διπλωματικής
-    const supervisorCheckQuery = `
-        SELECT instructor_id 
-        FROM thesis_topic 
-        WHERE thesis_id = ? AND instructor_id = ? AND state = 'Υπό Εξέταση'
-    `;
-
-    connection.query(supervisorCheckQuery, [thesis_id, professorId], (err, supervisorResults) => {
-        if (err) {
-            console.error('Error checking supervisor:', err);
-            return res.status(500).json({ 
-                success: false, 
-                error: 'Internal server error' 
-            });
-        }
-
-        if (supervisorResults.length === 0) {
-            return res.status(403).json({ 
-                success: false, 
-                error: 'Δεν έχετε δικαίωμα επεξεργασίας. Μόνο ο επιβλέπων καθηγητής μπορεί να επεξεργαστεί την ανακοίνωση.' 
-            });
-        }
-
-        // Determine state based on action
-        const state = (action === 'publish') ? 'uploaded' : 'waiting';
-
-        // Check if announcement already exists
-        const checkQuery = 'SELECT id FROM announcements WHERE thesis_id = ?';
-        
-        connection.query(checkQuery, [thesis_id], (err, existingResults) => {
-            if (err) {
-                console.error('Error checking existing announcement:', err);
-                return res.status(500).json({ 
-                    success: false, 
-                    error: 'Database error' 
-                });
-            }
-
-            let query, params;
-            if (existingResults.length > 0) {
-                // Update existing announcement
-                query = `
-                    UPDATE announcements 
-                    SET date = ?, time = ?, type = ?, location_or_link = ?, state = ?, updated_at = NOW()
-                    WHERE thesis_id = ?
-                `;
-                params = [date, time, type, location_or_link, state, thesis_id];
-            } else {
-                // Insert new announcement
-                query = `
-                    INSERT INTO announcements (thesis_id, date, time, type, location_or_link, state, created_at, updated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
-                `;
-                params = [thesis_id, date, time, type, location_or_link, state];
-            }
-
-            connection.query(query, params, (err, result) => {
-                if (err) {
-                    console.error('Error saving announcement:', err);
-                    return res.status(500).json({ 
-                        success: false, 
-                        error: 'Σφάλμα κατά την αποθήκευση της ανακοίνωσης' 
-                    });
-                }
-
-                // Record the event
+                // Log the publication event
                 const eventQuery = `
                     INSERT INTO thesis_events (thesis_id, event_type, description, event_date, status, created_by)
-                    VALUES (?, ?, ?, NOW(), ?, ?)
+                    VALUES (?, 'Δημοσίευση Ανακοίνωσης', 'Δημοσίευση ανακοίνωσης παρουσίασης διπλωματικής', NOW(), 
+                           (SELECT state FROM thesis_topic WHERE thesis_id = ?), ?)
                 `;
-                
-                const eventType = state === 'uploaded' ? 'Δημοσίευση Ανακοίνωσης' : 'Αποθήκευση Ανακοίνωσης';
-                const eventDescription = state === 'uploaded' ? 
-                    'Δημοσιεύτηκε η ανακοίνωση παρουσίασης διπλωματικής' : 
-                    'Αποθηκεύτηκε προσωρινά η ανακοίνωση παρουσίασης διπλωματικής';
-                
-                connection.query(eventQuery, [thesis_id, eventType, eventDescription, state, professorId], (eventErr) => {
+
+                connection.query(eventQuery, [thesisId, thesisId, professorId], (eventErr) => {
                     if (eventErr) {
-                        console.error('Error recording announcement event:', eventErr);
-                        // Don't fail the main operation
+                        console.error('Error logging announcement publication event:', eventErr);
+                        // Don't fail the main operation, just log the error
                     }
                 });
 
-                res.json({
+                res.json({ 
                     success: true,
-                    message: state === 'uploaded' ? 
-                        'Η ανακοίνωση δημοσιεύτηκε επιτυχώς!' : 
-                        'Η ανακοίνωση αποθηκεύτηκε επιτυχώς!',
-                    state: state
+                    message: 'Η ανακοίνωση δημοσιεύτηκε επιτυχώς'
                 });
             });
         });
