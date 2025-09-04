@@ -158,7 +158,15 @@ router.get('/api/professor/my-theses', (req, res) => {
              FROM thesis_events te 
              WHERE te.thesis_id = t.thesis_id 
              AND te.event_type = 'Δημιουργία Θέματος'
-            ) as created_at
+            ) as created_at,
+            (SELECT COUNT(*) 
+             FROM announcements a 
+             WHERE a.thesis_id = t.thesis_id 
+             AND a.date IS NOT NULL 
+             AND a.time IS NOT NULL 
+             AND a.type IS NOT NULL 
+             AND a.location_or_link IS NOT NULL
+            ) > 0 as has_presentation_details
         FROM thesis_topic t
         LEFT JOIN student s ON t.student_id = s.student_number
         JOIN professor p ON t.instructor_id = p.professor_id
@@ -1718,6 +1726,125 @@ router.post('/api/professor/committee-invitations/respond', (req, res) => {
                     message: `Η πρόσκληση έγινε ${responseText} επιτυχώς`,
                     invitation_id: invitation_id,
                     status: response
+                });
+            });
+        });
+    });
+});
+
+// ===== PRESENTATION DETAILS ENDPOINT =====
+// GET route για τα στοιχεία παρουσίασης διπλωματικής
+router.get('/thesis/:thesis_id/presentation-details', (req, res) => {
+    const professorId = getAuthenticatedProfessorId(req, res);
+    if (!professorId) return;
+
+    const { thesis_id } = req.params;
+
+    // Έλεγχος ότι ο καθηγητής είναι supervisor της διπλωματικής
+    const supervisorCheckQuery = `
+        SELECT instructor_id 
+        FROM thesis_topic 
+        WHERE thesis_id = ? AND instructor_id = ? AND state = 'Υπό Εξέταση'
+    `;
+
+    connection.query(supervisorCheckQuery, [thesis_id, professorId], (err, supervisorResults) => {
+        if (err) {
+            console.error('Error checking supervisor:', err);
+            return res.status(500).json({ 
+                success: false, 
+                error: 'Internal server error',
+                details: err.message 
+            });
+        }
+
+        if (supervisorResults.length === 0) {
+            return res.status(403).json({ 
+                success: false, 
+                error: 'Δεν έχετε δικαίωμα προβολής. Μόνο ο επιβλέπων καθηγητής μπορεί να δει τα στοιχεία παρουσίασης.' 
+            });
+        }
+
+        // Έλεγχος ότι υπάρχουν στοιχεία παρουσίασης
+        const presentationCheckQuery = `
+            SELECT a.*, tt.title as thesis_title, tt.student_id, tt.instructor_id, tt.member1, tt.member2
+            FROM announcements a
+            JOIN thesis_topic tt ON a.thesis_id = tt.thesis_id
+            WHERE a.thesis_id = ? AND a.date IS NOT NULL AND a.time IS NOT NULL 
+                AND a.type IS NOT NULL AND a.location_or_link IS NOT NULL
+        `;
+
+        connection.query(presentationCheckQuery, [thesis_id], (err, presentationResults) => {
+            if (err) {
+                console.error('Error checking presentation details:', err);
+                return res.status(500).json({ 
+                    success: false, 
+                    error: 'Internal server error',
+                    details: err.message 
+                });
+            }
+
+            if (presentationResults.length === 0) {
+                return res.status(400).json({ 
+                    success: false, 
+                    error: 'Δεν υπάρχουν πλήρη στοιχεία παρουσίασης. Ο φοιτητής πρέπει να συμπληρώσει όλες τις απαραίτητες λεπτομέρειες (ημερομηνία, ώρα, τρόπος, τοποθεσία).' 
+                });
+            }
+
+            const presentation = presentationResults[0];
+
+            // Λήψη στοιχείων φοιτητή
+            const studentQuery = 'SELECT name, surname FROM users WHERE user_id = ?';
+            connection.query(studentQuery, [presentation.student_id], (err, studentResults) => {
+                if (err) {
+                    console.error('Error fetching student:', err);
+                    return res.status(500).json({ 
+                        success: false, 
+                        error: 'Internal server error',
+                        details: err.message 
+                    });
+                }
+
+                // Λήψη στοιχείων επιτροπής
+                const committeeIds = [presentation.instructor_id, presentation.member1, presentation.member2].filter(id => id);
+                const committeeQuery = 'SELECT id, name, surname FROM users WHERE id IN (?)';
+                
+                connection.query(committeeQuery, [committeeIds], (err, committeeResults) => {
+                    if (err) {
+                        console.error('Error fetching committee:', err);
+                        return res.status(500).json({ 
+                            success: false, 
+                            error: 'Internal server error',
+                            details: err.message 
+                        });
+                    }
+
+                    // Οργάνωση δεδομένων επιτροπής
+                    const supervisor = committeeResults.find(member => member.id === presentation.instructor_id);
+                    const members = committeeResults.map(member => ({
+                        ...member,
+                        role: member.id === presentation.instructor_id ? 'supervisor' : 'member'
+                    }));
+
+                    const responseData = {
+                        thesis: {
+                            id: presentation.thesis_id,
+                            title: presentation.thesis_title
+                        },
+                        student: studentResults[0],
+                        supervisor: supervisor,
+                        committee_members: members,
+                        presentation: {
+                            date: presentation.date,
+                            time: presentation.time,
+                            type: presentation.type,
+                            location_or_link: presentation.location_or_link
+                        }
+                    };
+
+                    res.json({
+                        success: true,
+                        data: responseData
+                    });
                 });
             });
         });

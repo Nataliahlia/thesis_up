@@ -1494,3 +1494,51 @@ footer {
         text-shadow: 0 0 10px rgba(255, 193, 7, 0.8);
     }
 }
+
+/* Announcement Modal Styles */
+#announcementModal .modal-content {
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+#announcementModal .card {
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+#announcementModal .card-header {
+    border-radius: 8px 8px 0 0;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+#generatedAnnouncement {
+    max-height: 400px;
+    overflow-y: auto;
+    font-size: 14px;
+    line-height: 1.6;
+    border-radius: 6px;
+}
+
+#generatedAnnouncement::-webkit-scrollbar {
+    width: 6px;
+}
+
+#generatedAnnouncement::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+#generatedAnnouncement::-webkit-scrollbar-thumb {
+    background: #8B0000;
+    border-radius: 3px;
+}
+
+#generatedAnnouncement::-webkit-scrollbar-thumb:hover {
+    background: #660000;
+}
+
+/* Button for announcement generation */
+.btn-warning:hover {
+    background-color: #e0a800;
+    border-color: #d39e00;
+}

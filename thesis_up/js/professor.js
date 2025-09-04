@@ -1444,6 +1444,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     '<i class="fas fa-star me-2"></i>Βαθμολόγηση' +
                     '</button>';
         }
+
+        // Announcement generation button (only for "Υπό Εξέταση" status and supervisors with presentation details)
+        if (thesis.status === 'Υπό Εξέταση' && thesis.my_role === 'supervisor' && thesis.has_presentation_details) {
+            html += '<button type="button" class="btn btn-warning" onclick="openAnnouncementModal(' + thesis.id + ')" title="Δημιουργία ανακοίνωσης παρουσίασης διπλωματικής">' +
+                    '<i class="fas fa-bullhorn me-2"></i>Ανακοίνωση' +
+                    '</button>';
+        }
         
         // Draft file button (only for "Υπό Εξέταση" status and committee members/supervisors)
         if (thesis.status === 'Υπό Εξέταση' && (thesis.my_role === 'supervisor' || thesis.my_role === 'member')) {
@@ -4604,6 +4611,287 @@ document.addEventListener('DOMContentLoaded', function() {
             loadCommitteeInvitations();
         }, 2000);
     }
+
+    // ===== ANNOUNCEMENT FUNCTIONALITY =====
+    
+    // Open announcement modal for thesis presentation
+    window.openAnnouncementModal = function(thesisId) {
+        console.log('Opening announcement modal for thesis:', thesisId);
+        
+        // Create announcement modal if it doesn't exist
+        createAnnouncementModal();
+        
+        // Load thesis and presentation details
+        loadThesisPresentationDetails(thesisId);
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('announcementModal'));
+        modal.show();
+    };
+
+    // Create announcement modal dynamically
+    function createAnnouncementModal() {
+        // Check if modal already exists
+        if (document.getElementById('announcementModal')) {
+            return;
+        }
+        
+        const modalHTML = `
+            <div class="modal fade" id="announcementModal" tabindex="-1" aria-labelledby="announcementModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header" style="background-color: #6A1F2B; color: white;">
+                            <h5 class="modal-title" id="announcementModalLabel" style="background-color: transparent; color: white;">
+                                <i class="fas fa-bullhorn me-2"></i>Ανακοίνωση Παρουσίασης Διπλωματικής
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <!-- Loading State -->
+                            <div id="announcementLoading" class="text-center py-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Φόρτωση...</span>
+                                </div>
+                                <p class="mt-2 text-muted">Φόρτωση στοιχείων παρουσίασης...</p>
+                            </div>
+
+                            <!-- Main Content -->
+                            <div id="announcementContent" style="display: none;">
+                                <!-- Thesis Information -->
+                                <div class="card mb-4">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-graduation-cap me-2"></i>Στοιχεία Διπλωματικής
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <strong>Τίτλος:</strong> <span id="announcementThesisTitle"></span>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <strong>Φοιτητής:</strong> <span id="announcementStudentName"></span>
+                                            </div>
+                                        </div>
+                                        <div class="row mt-2">
+                                            <div class="col-md-6">
+                                                <strong>Επιβλέπων:</strong> <span id="announcementSupervisor"></span>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <strong>Μέλη Επιτροπής:</strong> <span id="announcementCommittee"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Presentation Details -->
+                                <div class="card mb-4">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-calendar-alt me-2"></i>Λεπτομέρειες Παρουσίασης
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <strong>Ημερομηνία:</strong> <span id="announcementDate"></span>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <strong>Ώρα:</strong> <span id="announcementTime"></span>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <strong>Τρόπος:</strong> <span id="announcementType"></span>
+                                            </div>
+                                        </div>
+                                        <div class="row mt-2">
+                                            <div class="col-md-12">
+                                                <strong>Τοποθεσία/Σύνδεσμος:</strong> <span id="announcementLocation"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Generated Announcement -->
+                                <div class="card">
+                                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-file-text me-2"></i>Παραγόμενη Ανακοίνωση
+                                        </h6>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="copyAnnouncementText()">
+                                            <i class="fas fa-copy me-1"></i>Αντιγραφή
+                                        </button>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="generatedAnnouncement" class="border rounded p-3" style="background-color: #f8f9fa; font-family: 'Times New Roman', serif; white-space: pre-line;">
+                                            <!-- Generated announcement text will appear here -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Error State -->
+                            <div id="announcementError" class="alert alert-danger" style="display: none;">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <span id="announcementErrorText"></span>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times me-2"></i>Κλείσιμο
+                            </button>
+                            <button type="button" class="btn btn-primary" onclick="printAnnouncement()" id="printAnnouncementBtn" style="display: none;">
+                                <i class="fas fa-print me-2"></i>Εκτύπωση
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Add modal to body
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+
+    // Load thesis and presentation details
+    async function loadThesisPresentationDetails(thesisId) {
+        const loadingDiv = document.getElementById('announcementLoading');
+        const contentDiv = document.getElementById('announcementContent');
+        const errorDiv = document.getElementById('announcementError');
+        const errorText = document.getElementById('announcementErrorText');
+
+        try {
+            loadingDiv.style.display = 'block';
+            contentDiv.style.display = 'none';
+            errorDiv.style.display = 'none';
+
+            const response = await fetch(`/thesis/${thesisId}/presentation-details`);
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                displayThesisPresentationDetails(result.data);
+                generateAnnouncementText(result.data);
+                
+                loadingDiv.style.display = 'none';
+                contentDiv.style.display = 'block';
+                document.getElementById('printAnnouncementBtn').style.display = 'inline-block';
+            } else {
+                throw new Error(result.error || 'Σφάλμα κατά τη φόρτωση των στοιχείων παρουσίασης');
+            }
+        } catch (error) {
+            console.error('Error loading presentation details:', error);
+            errorText.textContent = error.message || 'Σφάλμα κατά τη φόρτωση των στοιχείων παρουσίασης';
+            
+            loadingDiv.style.display = 'none';
+            contentDiv.style.display = 'none';
+            errorDiv.style.display = 'block';
+        }
+    }
+
+    // Display thesis and presentation details in the modal
+    function displayThesisPresentationDetails(data) {
+        document.getElementById('announcementThesisTitle').textContent = data.thesis.title;
+        document.getElementById('announcementStudentName').textContent = `${data.student.name} ${data.student.surname}`;
+        document.getElementById('announcementSupervisor').textContent = `${data.supervisor.name} ${data.supervisor.surname}`;
+        
+        const committeeMembers = data.committee_members
+            .filter(member => member.role !== 'supervisor')
+            .map(member => `${member.name} ${member.surname}`)
+            .join(', ');
+        document.getElementById('announcementCommittee').textContent = committeeMembers;
+
+        // Format date
+        const date = new Date(data.presentation.date);
+        const formattedDate = date.toLocaleDateString('el-GR', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        document.getElementById('announcementDate').textContent = formattedDate;
+        
+        document.getElementById('announcementTime').textContent = data.presentation.time;
+        document.getElementById('announcementType').textContent = data.presentation.type;
+        document.getElementById('announcementLocation').textContent = data.presentation.location_or_link;
+    }
+
+    // Generate announcement text
+    function generateAnnouncementText(data) {
+        const date = new Date(data.presentation.date);
+        const formattedDate = date.toLocaleDateString('el-GR', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        const committeeMembers = data.committee_members
+            .filter(member => member.role !== 'supervisor')
+            .map(member => `${member.name} ${member.surname}`)
+            .join(', ');
+
+        const announcementText = `ΑΝΑΚΟΙΝΩΣΗ
+
+ΠΑΡΟΥΣΙΑΣΗ ΔΙΠΛΩΜΑΤΙΚΗΣ ΕΡΓΑΣΙΑΣ
+
+Ανακοινώνεται ότι την ${formattedDate} και ώρα ${data.presentation.time} θα πραγματοποιηθεί η παρουσίαση της διπλωματικής εργασίας του/της φοιτητή/τριας ${data.student.name} ${data.student.surname} με τίτλο:
+
+"${data.thesis.title}"
+
+Τρόπος παρουσίασης: ${data.presentation.type}
+${data.presentation.type.toLowerCase().includes('διά ζώσης') ? 'Τοποθεσία' : 'Σύνδεσμος'}: ${data.presentation.location_or_link}
+
+Τριμελής Εξεταστική Επιτροπή:
+• ${data.supervisor.name} ${data.supervisor.surname} (Επιβλέπων Καθηγητής)
+• ${committeeMembers.split(', ').join('\n• ')}
+
+Η παρουσίαση είναι δημόσια και μπορούν να παραστούν όλα τα ενδιαφερόμενα μέλη της ακαδημαϊκής κοινότητας.
+
+Ημερομηνία ανακοίνωσης: ${new Date().toLocaleDateString('el-GR')}`;
+
+        document.getElementById('generatedAnnouncement').textContent = announcementText;
+    }
+
+    // Copy announcement text to clipboard
+    window.copyAnnouncementText = function() {
+        const announcementText = document.getElementById('generatedAnnouncement').textContent;
+        
+        navigator.clipboard.writeText(announcementText).then(() => {
+            showNotification('Το κείμενο της ανακοίνωσης αντιγράφηκε στο πρόχειρο!', 'success');
+        }).catch(err => {
+            console.error('Error copying text:', err);
+            showNotification('Σφάλμα κατά την αντιγραφή του κειμένου', 'error');
+        });
+    };
+
+    // Print announcement
+    window.printAnnouncement = function() {
+        const announcementText = document.getElementById('generatedAnnouncement').textContent;
+        
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Ανακοίνωση Παρουσίασης Διπλωματικής</title>
+                    <style>
+                        body {
+                            font-family: 'Times New Roman', serif;
+                            line-height: 1.6;
+                            margin: 2cm;
+                        }
+                        .announcement {
+                            white-space: pre-line;
+                            text-align: justify;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="announcement">${announcementText}</div>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.print();
+    };
 
     // Make sure to call initializeThesisDetailsWithNotes when loading thesis details
     // This should be integrated with your existing loadThesisDetails function
