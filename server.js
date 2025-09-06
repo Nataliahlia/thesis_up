@@ -7,12 +7,49 @@ const session = require('express-session');
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+// Cache Control Middleware για διαφορετικούς τύπους αρχείων
+app.use((req, res, next) => {
+  const url = req.url;
+  
+  // Για στατικά assets (CSS, JS, εικόνες) - μακροχρόνια cache
+  if (url.match(/\.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
+    // Cache για 30 ημέρες (2592000 seconds)
+    res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+    res.setHeader('Expires', new Date(Date.now() + 2592000000).toUTCString());
+  }
+  // Για HTML αρχεία - μικρή cache με validation
+  else if (url.match(/\.html$/)) {
+    // Cache για 5 λεπτά με must-revalidate
+    res.setHeader('Cache-Control', 'public, max-age=300, must-revalidate');
+  }
+  // Για dashboard σελίδες - no cache (πάντα fresh)
+  else if (url.includes('/dashboard')) {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+  // Για API endpoints - no cache
+  else if (url.startsWith('/api/') || url.startsWith('/auth/')) {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+  // Default για άλλα αρχεία - μικρή cache
+  else {
+    res.setHeader('Cache-Control', 'public, max-age=3600'); // 1 ώρα
+  }
+  
+  next();
+});
+
 // Serve static files, tells Express to serve static files from the current directory
 app.use(express.static(path.join(__dirname, 'thesis_up')));
 app.use('/uploads/thesis-pdfs', express.static(path.join(__dirname, 'uploads/thesis-pdfs')));
 
 // Favicon route
 app.get('/favicon.ico', (req, res) => {
+  // Cache favicon για 7 ημέρες
+  res.setHeader('Cache-Control', 'public, max-age=604800');
   res.sendFile(path.join(__dirname, 'thesis_up', 'loggo.png'));
 });
 

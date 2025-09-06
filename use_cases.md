@@ -1,3 +1,37 @@
+Στρατηγική Caching:
+
+Στατικά Assets (CSS, JS, εικόνες): max-age=2592000 (30 ημέρες) με immutable
+HTML αρχεία: max-age=300 (5 λεπτά) με must-revalidate
+Dashboard σελίδες: no-cache, no-store, must-revalidate (πάντα fresh)
+API endpoints: no-cache (πάντα fresh)
+Favicon: max-age=604800 (7 ημέρες)
+2. Τεχνική Αιτιολόγηση:
+Βιβλιογραφικές Αναφορές:
+
+RFC 7234 (HTTP/1.1 Caching): Ορίζει τα standards για HTTP caching
+Google Web Fundamentals: Συνιστά immutable για assets που δεν αλλάζουν
+MDN Web Docs: Best practices για Cache-Control headers
+Λόγοι επιλογών:
+
+30 ημέρες για assets: Βελτιώνει performance, μειώνει bandwidth
+5 λεπτά για HTML: Balance μεταξύ performance και freshness
+No-cache για dashboards: Ασφάλεια - πάντα fresh authentication data
+Immutable directive: Αποφεύγει περιττά conditional requests
+3. Screenshots που χρειάζεστε:
+Ανοίξτε Developer Tools (F12) και πάρτε screenshots από:
+
+Network Tab: Δείχνει τα Cache-Control headers
+Application Tab > Storage: Δείχνει cached resources
+Performance Tab: Δείχνει cache hits vs misses
+4. Έλεγχος λειτουργίας:
+Μετά την προσθήκη του κώδικα, ελέγξτε:
+
+Φορτώστε μια σελίδα → Δείτε "200" status
+Refresh → Δείτε "304 Not Modified" για cached resources
+Hard refresh (Ctrl+F5) → Δείτε όλα "200" (bypass cache)
+
+
+
 Expanded Use Cases for Thesis Support System
 
 Here's a breakdown of the system's functionalities into detailed use cases, categorized by user type.
