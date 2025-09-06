@@ -138,22 +138,42 @@ async function uploadUsers() {
         const result = await response.json();
 
         if (response.ok) {
-                    uploadResult.innerHTML = `<div class="alert alert-success">Προστέθηκαν ${result.addedStudents} φοιτητές και ${result.addedProfessors} καθηγητές.</div>`;
-                    fileInput.value = '';
+            // Ελέγχουμε αν προστέθηκαν χρήστες για να καθορίσουμε το στυλ του μηνύματος
+            const alertClass = (result.addedStudents === 0 && result.addedProfessors === 0) ? 'alert-danger' : 'alert-success';
+            uploadResult.innerHTML = `<div class="alert ${alertClass}">Προστέθηκαν ${result.addedStudents} φοιτητές και ${result.addedProfessors} καθηγητές.</div>`;
+            fileInput.value = '';
 
-                    const combined = [...(result.students || []), ...(result.professors || [])];
-                    combined.forEach(u => {
-                        const li = document.createElement('li');
-                        li.className = 'list-group-item';
-                        // Determine user type based on presence of student_number or professor_id
-                        const userType = u.student_number ? 'Φοιτητής/τρια' : 'Καθηγητής/τρια';
-                        li.textContent = `${userType} - Ονοματεπώνυμο: ${u.name} ${u.surname}, Email: ${u.email}`;
-                        list.appendChild(li);
-                    });
-                userSection.style.display = 'block';
-            } else {
-                uploadResult.innerHTML = `<div class="alert alert-danger">${result.error}</div>`;
+            if (students || professors) {
+                console.log('Displaying added and skipped users');
+               // Εμφάνιση χρηστών που προστέθηκαν επιτυχώς
+                const combined = [...(result.students || []), ...(result.professors || [])];
+                combined.forEach(u => {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item list-group-item-success';
+                    // Determine user type based on presence of student_number or professor_id
+                    const userType = u.student_number ? 'Φοιτητής/τρια' : 'Καθηγητής/τρια';
+                    li.textContent = `${userType} - Ονοματεπώνυμο: ${u.name} ${u.surname}, Email: ${u.email}`;
+                    list.appendChild(li);
+                });
             }
+            if (skippedStudents || skippedProfessors) {
+                console.log('Displaying skipped users due to duplicates');  
+                // Εμφάνιση duplicates αν υπάρχουν
+                const duplicates = [...(result.duplicateStudents || []), ...(result.duplicateProfessors || [])];
+                duplicates.forEach(u => {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item list-group-item-danger';
+                    // Determine user type - για duplicates δεν έχουμε student_number, οπότε ελέγχουμε το source array
+                    const isStudent = (result.duplicateStudents || []).includes(u);
+                    const userType = isStudent ? 'Φοιτητή' : 'Καθηγητή';
+                    li.textContent = `Σφάλμα κατά την αποθήκευση του ${userType} - Ονοματεπώνυμο: ${u.name} ${u.surname}, Email: ${u.email}`;
+                    list.appendChild(li);
+                });
+            }
+            userSection.style.display = 'block';
+        } else {
+            uploadResult.innerHTML = `<div class="alert alert-danger">${result.error}</div>`;
+        }
     } catch (err) {
         showCustomAlert('Σφάλμα σύνδεσης.');
     }

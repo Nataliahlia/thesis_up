@@ -32,6 +32,10 @@ router.post('/upload-user', upload.single('userAddingFile'), async (req, res) =>
         let skippedStudents = [];
         let skippedProfessors = [];
 
+        // Variables used to store successfully added users
+        let successfulStudents = [];
+        let successfulProfessors = [];
+
         try {
             const parsed = JSON.parse(jsonData); // Parse the JSON data from the file
             // Wrap single student object into array - to handle both single and multiple student uploads
@@ -55,24 +59,30 @@ router.post('/upload-user', upload.single('userAddingFile'), async (req, res) =>
                         continue;
                     }
 
-                    // Increment the addedStudents counter
-                    addedStudents++;
                     // Auto-generate password
                     const rawPassword = `stud${student_number}@2025`; 
                     // Hash the password using bcrypt
                     const hashedPassword = await bcrypt.hash(rawPassword, saltRounds); // Hash the password using bcrypt
                     // Insert the student into the database
                     const sql = `INSERT INTO student (student_number, email, password_hash, name, surname, street, number, city, postcode, father_name, landline_telephone, mobile_telephone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-                    console.log('Inserting student:', student_number, email, name, surname);
+                    console.log('Student:', student_number, email, name, surname);
                     // Wait until the query is done
                     try {
                         await connection.promise().query(sql, [student_number, email, hashedPassword, name, surname, street ?? null, number ?? null, city ?? null, postcode ?? null, father_name, landline_telephone ?? null, mobile_telephone ?? null]);
+                        console.log('Inserted student:', student_number, email, name, surname);
+                        // Increment the addedStudents counter
+                        addedStudents++;
+                        // Add to successful students
+                        successfulStudents.push(student);
                     } catch (dbError) {
                         if (dbError.code === 'ER_DUP_ENTRY') {
+                            console.log('Duplicate student found:', student.student_number, student.email);
+
+                            // Add to the non inserted students
                             skippedStudents.push(student);
-                            // Send a custom error for duplicate student
-                            return res.status(409).json({ error: 'Σφάλμα κατά την αποθήκευση χρηστών. Ελέγξτε για διπλότυπα δεδομένα.', email });
+                            continue; // Continue to next student instead of returning
                         } else {
+                            console.error('Database error for student:', student, dbError);
                             throw dbError; // Let other errors bubble up
                         }
                     }
@@ -89,8 +99,7 @@ router.post('/upload-user', upload.single('userAddingFile'), async (req, res) =>
                         console.error('Missing required fields for user:', professor);
                         continue;
                     }
-                    // Increment the addedProfessors counter
-                    addedProfessors++;
+
 
                     // Auto-generate password
                     const rawPassword = `prof_${email.split('@')[0]}@2025`;
@@ -101,28 +110,37 @@ router.post('/upload-user', upload.single('userAddingFile'), async (req, res) =>
                     // Wait until the query is done
                     try {
                         await connection.promise().query(sql, [email, hashedPassword, name, surname, topic, department, university, landline, mobile]);
+        
+                        // Increment the addedProfessors counter
+                        addedProfessors++;
+                        // Add to successful professors
+                        successfulProfessors.push(professor);
                     } catch (dbError) {
                         if (dbError.code === 'ER_DUP_ENTRY') {
+                            console.log('Duplicate professor found:', professor.email);
+                            // Add to the non inserted professors
                             skippedProfessors.push(professor);
-                            // Send a custom error for duplicate professor
-                            return res.status(409).json({ error: 'Σφάλμα κατά την αποθήκευση χρηστών. Ελέγξτε για διπλότυπα δεδομένα.', email });
+                            continue; // Continue to next professor instead of returning
                         } else {
+                            console.error('Database error for professor:', professor, dbError);
                             throw dbError; // Let other errors bubble up
                         }
                     }
                 }
             }
-            if (addedStudents === 0 && addedProfessors === 0) {
-                return res.status(400).json({ error: 'Δεν προστέθηκε κανένας χρήστης. Ελέγξτε ότι τα δεδομένα που εισάγονται είναι σωστά.' });
-            }
+            // if (addedStudents === 0 && addedProfessors === 0) {
+            //     return res.status(400).json({ error: 'Δεν προστέθηκε κανένας χρήστης. Ελέγξτε ότι τα δεδομένα που εισάγονται είναι σωστά.' });
+            // }
             // Send a response back to the client that contains the number of added students and professors
             res.status(200).json({
                 addedStudents,
                 addedProfessors,
                 success: true,
                 message: 'Users processed',
-                students: parsed.student || [],
-                professors: parsed.professor || []
+                students: successfulStudents,
+                professors: successfulProfessors,
+                duplicateStudents: skippedStudents,
+                duplicateProfessors: skippedProfessors
             });
         } catch (parseError) {
             // If there is an error parsing the JSON data, send an error response
