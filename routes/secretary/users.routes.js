@@ -38,10 +38,36 @@ router.post('/upload-user', upload.single('userAddingFile'), async (req, res) =>
 
         try {
             const parsed = JSON.parse(jsonData); // Parse the JSON data from the file
+            
+            // Check if the parsed data is empty
+            if (!parsed || Object.keys(parsed).length === 0) {
+                return res.status(400).json({
+                    error: 'Το αρχείο JSON είναι άδειο ή δεν περιέχει δεδομένα.'
+                });
+            }
+
+            // Check if there are students or professors in the JSON
+            if (!parsed.student && !parsed.professor) {
+                return res.status(400).json({
+                    error: 'Το αρχείο JSON δεν περιέχει στοιχεία φοιτητών ή καθηγητών. Παρακαλώ ελέγξτε τη δομή του αρχείου.'
+                });
+            }
+            
+            // Check if both students and professors are empty arrays
+            const studentsEmpty = !parsed.student || (Array.isArray(parsed.student) && parsed.student.length === 0);
+            const professorsEmpty = !parsed.professor || (Array.isArray(parsed.professor) && parsed.professor.length === 0);
+            
+            if (studentsEmpty && professorsEmpty) {
+                return res.status(400).json({
+                    error: 'Το αρχείο JSON περιέχει άδειες λίστες φοιτητών και καθηγητών.'
+                });
+            }
+            
             // Wrap single student object into array - to handle both single and multiple student uploads
             if (parsed.student && !Array.isArray(parsed.student)) {
                 parsed.student = [parsed.student];
-            } else if (parsed.professor && !Array.isArray(parsed.professor)) {
+            } 
+            if (parsed.professor && !Array.isArray(parsed.professor)) {
                 parsed.professor = [parsed.professor];
             }
             // Checks is it an array
@@ -51,7 +77,7 @@ router.post('/upload-user', upload.single('userAddingFile'), async (req, res) =>
                 for (const student of parsed.student) {
                     // process the student data
                     console.log('Processing student:', student);
-                    const { student_number, email, name, surname, street, number, city, postcode, father_name, landline_telephone, mobile_telephone } = student;
+                    const { student_number, emaiσl, name, surname, street, number, city, postcode, father_name, landline_telephone, mobile_telephone } = student;
                     // Check if all required fields are present, if not error
                     if (!student_number || !email || !name || !surname) {
                         console.error('Missing required fields for user:', student);
@@ -128,9 +154,23 @@ router.post('/upload-user', upload.single('userAddingFile'), async (req, res) =>
                     }
                 }
             }
-            // if (addedStudents === 0 && addedProfessors === 0) {
-            //     return res.status(400).json({ error: 'Δεν προστέθηκε κανένας χρήστης. Ελέγξτε ότι τα δεδομένα που εισάγονται είναι σωστά.' });
-            // }
+
+            // Final check: If no users were added and all were skipped
+            if (addedStudents === 0 && addedProfessors === 0) {
+                const totalSkipped = skippedStudents.length + skippedProfessors.length;
+                if (totalSkipped > 0) {
+                    return res.status(400).json({ 
+                        error: `Δεν προστέθηκε κανένας χρήστης. Όλοι οι ${totalSkipped} χρήστες παραλείφθηκαν λόγω προβλημάτων (διπλότυπα ή ελλιπή στοιχεία).`,
+                        duplicateStudents: skippedStudents,
+                        duplicateProfessors: skippedProfessors
+                    });
+                } else {
+                    return res.status(400).json({ 
+                        error: 'Δεν προστέθηκε κανένας χρήστης. Ελέγξτε ότι τα δεδομένα που εισάγονται είναι σωστά.' 
+                    });
+                }
+            }
+            
             // Send a response back to the client that contains the number of added students and professors
             res.status(200).json({
                 addedStudents,
