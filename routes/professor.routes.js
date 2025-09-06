@@ -151,7 +151,11 @@ router.get('/api/professor/my-theses', (req, res) => {
                 ELSE 'other'
             END as my_role,
             t.time_of_activation as assigned_at,
-            DATEDIFF(NOW(), t.time_of_activation) as duration,
+            CASE 
+                WHEN t.time_of_activation IS NOT NULL 
+                THEN DATEDIFF(NOW(), t.time_of_activation)
+                ELSE NULL 
+            END as duration,
             t.pdf as pdfFile,
             p.name as professor_name,
             (SELECT MIN(te.event_date) 
@@ -814,7 +818,11 @@ router.get('/api/professor/thesis-details/:thesisId', (req, res) => {
             s.student_number,
             p.name as supervisor_name,
             p.surname as supervisor_surname,
-            DATEDIFF(CURDATE(), tt.time_of_activation) as duration_days,
+            CASE 
+                WHEN tt.time_of_activation IS NOT NULL 
+                THEN DATEDIFF(CURDATE(), tt.time_of_activation)
+                ELSE NULL 
+            END as duration_days,
             (SELECT MIN(te.event_date) 
              FROM thesis_events te 
              WHERE te.thesis_id = tt.thesis_id 
@@ -1213,7 +1221,7 @@ router.get('/api/professor/statistics', (req, res) => {
         monthlyTrend: `
             SELECT 
                 DATE_FORMAT(date_created, '%Y-%m') as month,
-                COUNT(*) as count
+                COALESCE(COUNT(t.thesis_id), 0) as count
             FROM (
                 SELECT DATE_SUB(CURDATE(), INTERVAL n MONTH) as date_created
                 FROM (

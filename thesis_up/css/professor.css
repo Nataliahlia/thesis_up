@@ -16,6 +16,10 @@
     color: #8B0000 !important;
 }
 
+.bg-bordeaux {
+    background-color: #8B0000 !important;
+}
+
 /* Clickable Thesis Cards */
 .thesis-card-clickable {
     transition: transform 0.2s ease, box-shadow 0.2s ease;

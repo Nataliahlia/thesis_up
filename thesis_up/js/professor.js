@@ -1001,7 +1001,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function formatDuration(days) {
-        if (!days || days <= 0) return 'Μη διαθέσιμο';
+        if (!days || days === null || days === undefined) return 'Δεν έχει ενεργοποιηθεί';
+        if (days <= 0) return 'Μη διαθέσιμο';
         if (days < 30) return `${days} ημέρες`;
         const months = Math.floor(days / 30);
         const remainingDays = days % 30;
