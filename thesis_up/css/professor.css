@@ -1567,3 +1567,47 @@ select:disabled {
     opacity: 0.8;
     cursor: not-allowed;
 }
+
+/* ===== PUBLISH ANNOUNCEMENT SIMPLE STYLING ===== */
+
+/* Spinner animation */
+.fa-spin {
+    animation: fa-spin 1s infinite linear;
+}
+
+@keyframes fa-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Simple button styling for publish announcement */
+.btn-publish-announcement {
+    background-color: #8B0000;
+    border-color: #8B0000;
+    color: white;
+    transition: all 0.2s ease;
+}
+
+.btn-publish-announcement:hover:not(:disabled) {
+    background-color: #6A1F2B;
+    border-color: #6A1F2B;
+    color: white;
+}
+
+/* Disabled state */
+.btn-publish-announcement:disabled {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Loading state */
+.btn-loading {
+    pointer-events: none;
+}
+
+.btn-loading .fas {
+    margin-right: 6px;
+}
