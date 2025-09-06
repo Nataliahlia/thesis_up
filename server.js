@@ -7,36 +7,27 @@ const session = require('express-session');
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Cache Control Middleware για διαφορετικούς τύπους αρχείων
+// Cache Control Middleware για στατικά αρχεία μόνο
 app.use((req, res, next) => {
   const url = req.url;
   
-  // Για στατικά assets (CSS, JS, εικόνες) - μακροχρόνια cache
-  if (url.match(/\.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
+  // Για εικόνες - μακροχρόνια cache
+  if (url.match(/\.(png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
     // Cache για 30 ημέρες (2592000 seconds)
     res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
     res.setHeader('Expires', new Date(Date.now() + 2592000000).toUTCString());
+  }
+  // Για CSS και JS αρχεία - μικρή cache ή no cache για development
+  else if (url.match(/\.(css|js)$/)) {
+    // No cache για development - αλλάξτε αυτό σε production
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
   }
   // Για HTML αρχεία - μικρή cache με validation
   else if (url.match(/\.html$/)) {
     // Cache για 5 λεπτά με must-revalidate
     res.setHeader('Cache-Control', 'public, max-age=300, must-revalidate');
-  }
-  // Για pages σελίδες - no cache (πάντα fresh)
-  else if (url.includes('/pages')) {
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-  }
-  // Για API endpoints - no cache
-  else if (url.startsWith('/api/') || url.startsWith('/auth/')) {
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-  }
-  // Default για άλλα αρχεία - μικρή cache
-  else {
-    res.setHeader('Cache-Control', 'public, max-age=3600'); // 1 ώρα
   }
   
   next();
@@ -95,21 +86,30 @@ function isAuthenticated(req, res, next) {
 // Προστασία φακέλου pages
 app.use('/pages', isAuthenticated, express.static(path.join(__dirname, 'thesis_up', 'pages')));
 
-app.use(require('./routes/auth.routes'));
-app.use(require('./routes/dashboard.routes'));  
+// Middleware για no-cache σε δυναμικά δεδομένα
+function noCacheMiddleware(req, res, next) {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+}
+
+// Routes με no-cache για δυναμικά δεδομένα
+app.use(noCacheMiddleware, require('./routes/auth.routes'));
+app.use(noCacheMiddleware, require('./routes/dashboard.routes'));  
 app.use(require('./routes/public_endpoint.routes'));
-app.use(require('./routes/session.routes'));
-app.use(require('./routes/notes.routes')); // UC13 Notes routes
+app.use(noCacheMiddleware, require('./routes/session.routes'));
+app.use(noCacheMiddleware, require('./routes/notes.routes')); // UC13 Notes routes
 app.use(require('./routes/logout.route')); // Logout route
-app.use(require('./routes/thesis_grading.routes')); // UC3 Thesis routes
+app.use(noCacheMiddleware, require('./routes/thesis_grading.routes')); // UC3 Thesis routes
 
-// The routes that are used for secretary
+// The routes that are used for secretary - με no cache
 const secretaryRoutes = require('./routes/secretary/index.routes');
-app.use(secretaryRoutes);
+app.use(noCacheMiddleware, secretaryRoutes);
 
-// The routes that are used for student
+// The routes that are used for student - με no cache 
 const studentRoutes = require('./routes/student/index.routes');
-app.use(studentRoutes);
+app.use(noCacheMiddleware, studentRoutes);
 
 const updatePasswords = require('./scripts/updatePasswords');
 
@@ -121,17 +121,17 @@ updatePasswords((err, count) => {
   }
 });
 
-// Add professor routes with error handling
+// Add professor routes with error handling - με no cache
 try {
-    app.use(require('./routes/professor.routes'));
+    app.use(noCacheMiddleware, require('./routes/professor.routes'));
     console.log('Professor routes loaded successfully');
 } catch (error) {
     console.error('Error loading professor routes:', error.message);
 }
 
-// Add the committee routes
+// Add the committee routes - με no cache
 const committeeRoutes = require('./routes/committee.routes');
-app.use('/', committeeRoutes);
+app.use(noCacheMiddleware, committeeRoutes);
 
 // Serve the index page at root URL, when someone accesses the root URL send them the index.html file
 app.get('/', (req, res) => {

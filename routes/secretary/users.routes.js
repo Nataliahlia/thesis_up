@@ -77,7 +77,15 @@ router.post('/upload-user', upload.single('userAddingFile'), async (req, res) =>
                 for (const student of parsed.student) {
                     // process the student data
                     console.log('Processing student:', student);
-                    const { student_number, emaiσl, name, surname, street, number, city, postcode, father_name, landline_telephone, mobile_telephone } = student;
+                    let { student_number, email, name, surname, street, number, city, postcode, father_name, landline_telephone, mobile_telephone } = student;
+                    
+                    // Auto-fix email format if it doesn't start with 'up'
+                    if (email && !email.startsWith('up') && email.includes('@ac.upatras.gr')) {
+                        const emailParts = email.split('@');
+                        email = `up${emailParts[0]}@${emailParts[1]}`;
+                        console.log(`Auto-corrected email from ${student.email} to ${email}`);
+                    }
+                    
                     // Check if all required fields are present, if not error
                     if (!student_number || !email || !name || !surname) {
                         console.error('Missing required fields for user:', student);

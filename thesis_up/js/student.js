@@ -455,11 +455,11 @@ function initializeThesisManagementSection() {
             const thesis = await getThesisDetails();   // Call the function to fetch and display the thesis details
             
             if (thesis.state === 'Υπό Εξέταση') {
-                underExaminationThesisContent(thesis); // Call the function that handles under examination thesis
+                await underExaminationThesisContent(thesis); // Call the function that handles under examination thesis
             } else if (thesis.state === 'Περατωμένη') {
                 completedThesisContent(thesis); // Call the function that handles completed thesis
             } else if (thesis.state === "Υπό Ανάθεση") {
-                underAssignmentThesisContent(thesis); // Call the function that handles under assignment thesis
+                await underAssignmentThesisContent(thesis); // Call the function that handles under assignment thesis
             } else if (thesis.state === "Ενεργή") {
                 activeThesisContent(thesis); // Call the function that handles active thesis
             } 
@@ -1177,7 +1177,7 @@ async function underAssignmentThesisContent(thesis) {
     const dropdownWrapper = await getProfessorsList(thesis); // Call the function to get the professors list and populate the dropdown
     membersContent.appendChild(dropdownWrapper);    // Add the dropdown to the members content
 
-    existingInvitations(thesis, dropdownWrapper); // Call the function to fetch and display existing invitations
+    await existingInvitations(thesis, dropdownWrapper); // Call the function to fetch and display existing invitations
     addNewProfessorListener(thesis, dropdownWrapper); // Add event listener to the Add Professor button
 }
 
@@ -1243,10 +1243,13 @@ async function existingInvitations(thesis, dropdownWrapper) {
     const professorDropdown = dropdownWrapper.querySelector('#professorDropdown');
     const invitationsList = dropdownWrapper.querySelector('#invitationsList');
 
+    console.log('Fetching invitations for thesis:', thesis.thesis_id);
     const data = await fetchAndDisplayInvitations(thesis); // Fetch existing invitations
+    console.log('Invitations data received:', data);
 
     // If there are existing invitations, display them
     if (data.success && data.invitations.length > 0) {
+        console.log('Found', data.invitations.length, 'existing invitations');
         // Get the proseffors id in order to disable the ones that already have an invitation from the dropdown 
         const invitedIds = data.invitations.map(inv => inv.professor_id);
 
@@ -1273,6 +1276,8 @@ async function existingInvitations(thesis, dropdownWrapper) {
                 option.textContent += ' (Έχει ήδη αποσταλεί)';
             }
         });
+    } else {
+        console.log('No existing invitations found or request failed');
     }
 }
 // Function used to fetch the committe invitations
@@ -1282,9 +1287,10 @@ async function fetchAndDisplayInvitations(thesis) {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         return data;
-    } catch {
-        showCustomAlert('Σφάλμα κατά τη φόρτωση της λίστας καθηγητών.');
-        return { professors: [] };
+    } catch (error) {
+        console.error('Error fetching invitations:', error);
+        showCustomAlert('Σφάλμα κατά τη φόρτωση των προσκλήσεων.');
+        return { success: false, invitations: [] };
     }
 }
 
