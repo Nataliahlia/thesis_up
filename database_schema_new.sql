@@ -132,7 +132,6 @@ ADD COLUMN cancelled_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Ημε�
 ADD COLUMN assembly_number VARCHAR(50) NULL COMMENT 'Αριθμός Γενικής Συνέλευσης για ακύρωση',
 ADD COLUMN assembly_year YEAR NULL COMMENT 'Έτος Γενικής Συνέλευσης για ακύρωση',
 ADD INDEX idx_canceled_thesis_date (cancelled_at);
-ALTER TABLE canceled_thesis DROP FOREIGN KEY canceled_thesis_ibfk_1;
 
 -- Create table for announcements (needed for public endpoint)
 CREATE TABLE announcements (
