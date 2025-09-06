@@ -1,0 +1,524 @@
+/* bordeaux, primary colour -> used for navbars, buttons, links etc */
+.bg-bordeaux {
+  background-color: #6A1F2B; 
+}
+
+/* bordeaux, primary colour -> used for the texts */
+.text-bordeaux {
+  color:  #6A1F2B; 
+}
+
+/* Bold when hovered */
+a:hover .text-bordeaux {
+  font-weight: bold;
+}
+
+/* Colouring for the outlines, small details */
+.btn-outline-bordeaux {
+  color: #6A1F2B; /* bordeaux -> for the button */
+  border-color: #6A1F2B; /* bordeaux -> for the outline*/
+}
+
+/* Their colour when hovered */
+.btn-outline-bordeaux:hover {
+  background-color: #800000; /* dark bordeaux -> used for the button when hovered */
+  color: #fff;  /* white text when hovered */
+}
+
+/* Custom input field style for disabled fields */
+.bordeaux-outline {
+  border: 1px solid #6A1F2B;   /* Use same Bordeaux color as the buttons */
+  background-color: white;     /* Keep background white */
+  color: #212529;              /* Text color */
+  opacity: 1;                    /* Prevent Bootstrap from fading disabled input */
+  cursor: default;               /* Prevent text cursor */
+}
+
+.bordeaux-outline:disabled {
+  background-color: white;   /* Ensure background stays white when disabled */
+}
+
+/* White -> used for backgrounds */
+.bg-white {
+  background-color: #FFFFFF;
+}
+
+/* Light gray colour */
+.bg-light_gray {
+  background-color: #e2e1e1;
+}
+
+/* Custom alert styles, it is centered and hidden at first */
+.custom-alert-backdrop {
+  display: none;
+  justify-content: center;
+  align-items: center;
+}
+
+/* This adds some styling to the card that is used for links, in the student dashboard (the ones he/she uploads) */
+.link-card {
+  animation: fadein 0.3s ease-in;
+  border: 1px solid #dee2e6;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+  background-color: #f8f9fa;
+  position: relative;
+}
+
+/* This adds some styling to the card that is used for links, in the student dashboard (the ones he/she uploads) */
+/* It makes the input field inside the card seamless */
+.link-card input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  outline: none;
+}
+
+/* This adds some styling to the button that the user can click to remove the card (the ones he/she uploads) */
+.remove-btn {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  color: #dc3545;
+  cursor: pointer;
+}
+
+/* This styles the remove button inside each link row in the uploaded links area */
+.link-row .remove-btn {
+  position: static;
+  margin-left: 0.5rem;
+  font-size: 1.2em;
+  vertical-align: middle;
+}
+
+/* Aligns the icons in the navigation links */
+.nav-link i {
+  font-size: 1.2rem;
+  width: 20px;        
+  text-align: center; 
+}
+
+/* Ensures the body tkes full viewpoint height*/
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+/* This sets up a vertical page structure */
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Main content takes up all remaining vertical space between the header and the footer */
+.main-content {
+  flex: 1;
+}
+
+/* Timeline arrows are used when a thesis is completed to show the progress */
+/* The main container for the timeline arrows, the whole vertical container */
+.timeline-arrows {
+  display: flex;
+  flex-direction: column;
+  gap: 15px; 
+}
+
+/* Each step of a completed thesis is displayed using 3 columns*/
+.timeline-step {
+  display: grid;
+  grid-template-columns: 170px 80px 150px; 
+  align-items: center;
+  gap: 10px; 
+}
+
+/* This is the container for each arrow in the timeline, the arrows part of each step */
+.arrow-container {
+  display: flex;
+  flex-direction: column; 
+  align-items: center;    
+  margin: 0 10px;
+}
+
+/* The styling for the date part above the arrow */
+.date {
+  font-size: 0.8rem;
+  color: #6A1F2B;
+  margin-bottom: 2px;
+}
+
+/* Custom arrow styling used for the timeline */
+.custom-arrow {
+  position: relative;
+  width: 50px;
+  height: 12px;
+  margin: 0 10px;
+}
+
+/* This creates the arrow line */
+.custom-arrow::before {
+  content: "";
+  position: absolute;
+  top: 5px; 
+  left: 0;
+  width: 100%;
+  height: 2px; 
+  background-color: #6A1F2B;
+}
+
+/* This creates the arrowhead */
+.custom-arrow::after {
+  content: "";
+  position: absolute;
+  right: -8px;
+  top: 1px; 
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-left: 8px solid #6A1F2B;
+}
+
+/* This is the container for the progress ticks */
+.progress-ticks {
+  display: flex;
+  align-items: center;
+  gap: 5px; 
+}
+
+/* This is the container for each tick in the progress bar */
+.ticks {
+  display: flex;
+  align-items: center;  
+  gap: 2px;             
+  margin-left: 5px;    
+}
+
+/* Applies the styling to the tick icons */
+.ticks i {
+  font-size: 0.8rem;
+}
+
+@media (max-width: 768px) {
+  /* This styles the date range filter container when we are from mobile */
+  #dateRangeFilter {
+    flex-direction: column;
+  }
+
+  /* Used for the different parts */
+
+  /* This is for the logout modal */
+  /* Adjust the logout modal for a smaller screen -> phone, ipad*/
+  #customLogout .modal-content {
+    max-width: 95% !important; 
+    margin: auto;
+  }
+
+  /* Reduce the inner spacing in each modal section */
+  #customLogout .modal-header, 
+  #customLogout .modal-body, 
+  #customLogout .modal-footer {
+    padding: 0.8rem; 
+  }
+
+  /* Smaller buttons*/
+  #customLogout .btn {
+    font-size: 0.9rem; 
+    padding: 0.4rem 0.8rem;
+  }
+
+  /* Used for the different parts */
+
+  /* This is for the texts styling */
+  /* Smaller font size for body */
+  body {
+    font-size: 0.9rem; 
+  }
+
+  /* Smaller sizes for headings */
+  h1 {
+    font-size: 1.4rem; 
+  }
+
+  h2 {
+    font-size: 1.3rem;
+  }
+
+  h3 {
+    font-size: 1.2rem;
+  }
+
+  h4, h5 {
+    font-size: 1.1rem;
+  }
+
+  .card h3 {
+    font-size: 1.15rem; /* Ειδικά στους τίτλους καρτών */
+  }
+
+  /* A h1 heading that also has h3 and is text-bordeaux */
+  h1.h3.text-bordeaux {
+    font-size: 1.2rem !important; 
+    line-height: 1.2;
+  }
+
+  /* Used for the different parts */
+
+  /* This is for the carousel cards in mobile view */
+  /* Ensures the cards are not too small, even on narrow screens */
+  .carousel-track > .card {
+    min-width: 220px;     
+    width: 250px;        
+    height: auto;        
+    margin-right: 1rem;
+    padding: 0.5rem;
+    scroll-snap-align: start;    
+  }
+
+  /* Styling for the text so it can fit in the smaller cards */ 
+  .carousel-track > .card .card-body {
+    font-size: 0.8rem;   
+    line-height: 1.2;   
+  }
+
+  /* Styling for the title so it can fit in the smaller cards */ 
+  .carousel-track > .card .card-title {
+    font-size: 0.9rem;  
+    line-height: 1.2;
+  }
+
+  /* Styling for the text so it can break if it does not fit in the line */ 
+  .carousel-track > .card .card-text {
+    white-space: normal !important;
+    word-break: break-word;
+  }
+
+  /* Used for the different parts */
+  
+  /* Centers the cards - simplified for compatibility with index.html */
+  #carouselContainer {
+    display: flex;
+    justify-content: flex-start !important;
+    align-items: center;
+    overflow-x: auto !important;      
+    -webkit-overflow-scrolling: touch; 
+    scroll-snap-type: x proximity; 
+  }
+
+  /* Styling for the cards, so they fit nicely in the smaller screen */
+  /* Note: Main card sizing is now handled in index.html for better control */
+  #carouselContainer .card {
+    min-width: 280px;     
+    height: auto !important;   
+    padding: 0.5rem !important;
+    margin: 0.5rem !important;
+  }
+
+  /* Smaller text */
+  #carouselContainer .card .card-body {
+    font-size: 0.8rem;
+    line-height: 1.2;
+  }
+
+  /* Styling for the title so it can fit in the smaller cards */
+  #carouselContainer .card .card-title {
+    font-size: 0.9rem;
+    line-height: 1.2;
+  }
+
+  /* Stops the CSS animation */
+  .carousel-track {
+    animation: none !important;        
+    transform: none !important;
+  }
+
+  /* Card alignes to the start of the scroll container */ 
+  .carousel-track > .card {
+    scroll-snap-align: start;      
+  }
+
+  /* Used for the different parts */
+  
+  /* The following handles small changes in buttons etc, so that they can fit in the mobile */
+  /* This make this links container vertical -> the links the student uploads with his thesis file */
+  #linksContainer .d-flex:not(.link-row) {
+    flex-direction: column !important;
+    align-items: flex-start !important; 
+  }
+
+  /* Keep some distance between each link and the other elements */
+  #dynamicLinksArea {
+    margin-top: 0.8rem;
+    width: 100%; 
+  }
+
+  /* Styling for the whole area where the links go */
+  #dynamicLinksArea a {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    padding: 0.3rem 0.5rem;
+    margin-bottom: 0.4rem;
+    text-decoration: none;
+    word-break: break-all;
+  }
+
+  /* Mobile styling for submitted link text to prevent expansion and keep remove button on right */
+  .d-block.mb-1.text-bordeaux {
+    max-width: 250px !important; /* Leave space for remove button */
+    width: auto !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    display: inline-block !important; /* Change from block to inline-block */
+    word-break: normal !important;
+    vertical-align: middle !important; /* Align with remove button */
+  }
+
+  /* Ensure link-row maintains horizontal layout */
+  .link-row {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  /* Mobile styling for remove button to stay on same line */
+  .link-row .remove-btn {
+    position: static !important;
+    margin-left: 0.5rem !important;
+    font-size: 1.2em !important;
+    vertical-align: middle !important;
+    display: inline-block !important; /* Ensure it stays inline */
+  }
+
+  /* Used for the different parts */
+  
+  /* The following handles small changes in buttons etc, so that they can fit in the mobile */
+  /* This makes the grades info container vertical */  
+  #gradesInfo .d-flex {
+    flex-direction: column !important; 
+    align-items: stretch !important;   
+    gap: 0.5rem;                        
+  }
+
+  /* Makes the buttons in the container full width */
+  #gradesInfo .btn {
+    width: 100% !important;          
+    margin-left: 0 !important;         
+  }
+
+  /* Makes the div full width and enables text wrapping */
+  #gradesInfo .d-flex > div {
+    min-width: unset !important;  
+    width: 100% !important;        
+    white-space: normal !important;
+    word-break: break-word;       
+  }
+
+  /* Make only the Nimertis input wider on small screens */
+  #gradesInfo #nimertisLink {
+    width: 100% !important;         /* override w-50 */
+    margin-left: 0 !important;       /* override ms-2 */
+    margin-right: 0 !important;      /* override me-2 */
+  }
+
+  /* Used for the different parts */
+  
+  /* The following handles small changes in buttons etc, so that they can fit in the mobile */
+  /* This makes the three members committee container vertical */ 
+  #membersContainer .d-flex {
+    flex-direction: column !important; 
+    align-items: stretch !important;   
+    gap: 0.5rem;            
+  }
+
+  /* Makes the select and buttons in the container full width */
+  #membersContainer select,
+  #membersContainer button {
+    width: 100% !important;           
+  }
+
+  /* Used for the different parts */
+  
+  /* The following handles small changes in buttons etc, so that they can fit in the mobile */
+  /* This makes the chronological order of events container flex */   
+  #chronologicalInfo .timeline-step {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* The styling for each status */
+  #chronologicalInfo .timeline-step .status {
+    flex-basis: 35%;
+    min-width: 0;
+    max-width: 100%;
+    text-align: center;
+    flex-shrink: 1;
+    word-break: break-word;
+    font-size: 0.80rem;    
+  }
+
+  /* The styling for the arrow container */
+  #chronologicalInfo .timeline-step .arrow-container {
+    flex-basis: 20%;
+    min-width: 0;
+    max-width: 100%;
+    display: flex;
+    justify-content: center;
+    flex-shrink: 1;
+  }
+
+  /* Add styling to the second status -> consistent styling */
+  #chronologicalInfo .timeline-step .status:last-child {
+    text-align: center;
+  }
+
+  /* Hide the progress and ticks, looks tiring with them */
+  #chronologicalInfo .progress,
+  #chronologicalInfo .ticks {
+    display: none !important;
+  }
+
+  /* Smaller date */
+  #chronologicalInfo .date {
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+
+  /* Smaller arrows */
+  #chronologicalInfo .arrow-container {
+    transform: scale(0.8);
+  }
+
+  /* Used for the different parts */
+  
+  /* This is for the sidebar, so it can be used better when in mobile */
+  /* Now the bar opens on the main content, so it does not look weird */
+  #sidebar {
+    position: fixed;
+    top: 82px;         
+    left: -250px;        
+    width: 250px;
+    height: calc(100vh - 82px);
+    background-color: #f8f9fa;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    z-index: 2000;       
+    transition: left 0.3s ease;
+  }
+
+  /* Opens on the screen */
+  #sidebar.open {
+    left: 0;
+  }
+
+  /* The styling for the main content when the sidebar is open */
+  .main-content {
+    margin-left: 0 !important;
+  }
+}
+

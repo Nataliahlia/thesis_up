@@ -1,0 +1,56 @@
+{
+  "student": [
+    {
+      "student_number": 10015,
+      "email": "up10015@ac.upatras.gr",
+      "name": "Μαρία",
+      "surname": "Αθανασοπούλου",
+      "street": "Καλαβρύτων",
+      "number": 12,
+      "city": "Πάτρα",
+      "postcode": 26331,
+      "father_name": "Παναγιώτης",
+      "landline_telephone": "2610457890",
+      "mobile_telephone": "6987654321"
+    },
+        {
+      "student_number": 10016,
+      "email": "up10016@ac.upatras.gr",
+      "name": "Μαρία",
+      "surname": "Αθανασοπούλου",
+      "street": "Καλαβρύτων",
+      "number": 12,
+      "city": "Πάτρα",
+      "postcode": 26331,
+      "father_name": "Παναγιώτης",
+      "landline_telephone": "2610457890",
+      "mobile_telephone": "6987654321"
+    },
+    {
+      "student_number": 10017,
+      "email": "up10017@ac.upatras.gr",
+      "name": "Μαρία",
+      "surname": "Αθανασοπούλου",
+      "street": "Καλαβρύτων",
+      "number": 12,
+      "city": "Πάτρα",
+      "postcode": 26331,
+      "father_name": "Παναγιώτης",
+      "landline_telephone": "2610457890",
+      "mobile_telephone": "6987654321"
+    },
+    {
+      "student_number": 10018,
+      "email": "up10018@ac.upatras.gr",
+      "name": "Μαρία",
+      "surname": "Αθανασοπούλου",
+      "street": "Καλαβρύτων",
+      "number": 12,
+      "city": "Πάτρα",
+      "postcode": 26331,
+      "father_name": "Παναγιώτης",
+      "landline_telephone": "2610457890",
+      "mobile_telephone": "6987654321"
+    }
+  ]
+}
