@@ -48,6 +48,13 @@ a:hover .text-bordeaux {
   background-color: #e2e1e1;
 }
 
+/* Custom alert styles, it is centered and hidden at first */
+.custom-alert-backdrop {
+  display: none;
+  justify-content: center;
+  align-items: center;
+}
+
 /* Aligns the icons in the navigation links */
 .nav-link i {
   font-size: 1.2rem;
