@@ -22,8 +22,8 @@ app.use((req, res, next) => {
     // Cache για 5 λεπτά με must-revalidate
     res.setHeader('Cache-Control', 'public, max-age=300, must-revalidate');
   }
-  // Για dashboard σελίδες - no cache (πάντα fresh)
-  else if (url.includes('/dashboard')) {
+  // Για pages σελίδες - no cache (πάντα fresh)
+  else if (url.includes('/pages')) {
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
@@ -92,8 +92,8 @@ function isAuthenticated(req, res, next) {
   return res.redirect('/login');
 }
 
-// Προστασία φακέλου dashboards
-app.use('/dashboards', isAuthenticated, express.static(path.join(__dirname, 'dashboards')));
+// Προστασία φακέλου pages
+app.use('/pages', isAuthenticated, express.static(path.join(__dirname, 'thesis_up', 'pages')));
 
 app.use(require('./routes/auth.routes'));
 app.use(require('./routes/dashboard.routes'));  
@@ -133,10 +133,10 @@ try {
 const committeeRoutes = require('./routes/committee.routes');
 app.use('/', committeeRoutes);
 
-// Serve the login page at root URL, when someone accesses the root URL send them the public_endpoint.html file
+// Serve the index page at root URL, when someone accesses the root URL send them the index.html file
 app.get('/', (req, res) => {
   console.log('Attempting to serve index.html');
-  res.sendFile(path.join(__dirname, 'thesis_up', 'index.html'), (err) => {
+  res.sendFile(path.join(__dirname, 'thesis_up', 'pages', 'index.html'), (err) => {
     if (err) {
       console.error('Error sending file:', err);
       res.status(500).send('Error loading page');

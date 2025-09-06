@@ -4,10 +4,10 @@ const router = express.Router(); // Create a new router instance, to handle rout
 const connection = require('../db'); // Import the database connection
 const path = require('path'); // Import the path module to handle file paths
 
-// Serve the login page at /login, when someone accesses the /login URL send them the public_endpoint.html file
+// Serve the login page at /login, when someone accesses the /login URL send them the login.html file
 router.get('/login', (req, res) => {
     console.log('Attempting to serve login.html');
-    res.sendFile(path.join(__dirname, '..', 'thesis_up', 'login.html'));
+    res.sendFile(path.join(__dirname, '..', 'thesis_up', 'pages', 'login.html'));
 });
 
 // Handle login form submission, when the server receives a POST request to /login, it will execute the following function
@@ -54,11 +54,11 @@ router.post('/login', (req, res) => {
                     console.log('User session:', req.session.user);
                     // Redirect to dashboard if login successful
                     if (user.role == 'secretary') {
-                        return res.status(200).send('/dashboards/dashboardSecretary');
+                        return res.status(200).send('/pages/dashboardSecretary');
                     } else if (user.role == 'professor') {
-                        return res.status(200).send('/dashboards/dashboardProfessor');
+                        return res.status(200).send('/pages/dashboardProfessor');
                     } else if (user.role == 'student') {
-                        return res.status(200).send('/dashboards/dashboardStudent');
+                        return res.status(200).send('/pages/dashboardStudent');
                     }
                 }
             } catch (error) {

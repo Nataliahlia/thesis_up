@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professor Dashboard - Thesis Support System</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="../images/favicon_32x32.png">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="../css/professor.css" />
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-light bg-light p-3 sticky-top" style="box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center w-100">
+                <!-- Left side: Toggle button and brand logo -->
+                <div class="d-flex align-items-center">
+                    <button class="navbar-toggler btn-sm me-2" type="button" style="padding: 0.25rem; font-size: 0.8rem; margin-right: 10px;">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+
+                    <a class="navbar-brand" href="#">
+                        <img src="../images/new_logo_crop.png" class="img-fluid" style="height: 40px; width: auto;">
+                    </a>
+                </div>
+
+                <!-- Right side: Profile -->
+
+                    <!-- Profile circle -->
+                <div class="dropdown">
+                    <button class="btn btn-link p-0" type="button" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="border: none; background: none;">
+                        <div class="rounded-circle bg-bordeaux d-flex align-items-center justify-content-center" style="width: 35px; height: 35px; color: white; background-color: #8B0000 !important;">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+                        <li><a class="dropdown-item" href="#" id="logoutLink">Αποσύνδεση</a></li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Side Bar -->
+    <div class="d-flex">
+        <div class="sidebar" id="sidebar" style="background-color: #f8f9fa; width: 250px; height: calc(100vh - 82px); position: fixed; top: 82px; left: -250px; transition: left 0.3s ease; z-index: 999; box-shadow: 2px 0 5px rgba(0,0,0,0.1); overflow-y: auto; scrollbar-width: thin; scrollbar-color: #dee2e6 transparent; display: flex; flex-direction: column;">
+            <div class="p-3">
+                <h5>Μενού</h5>
+            </div>
+            <nav class="nav flex-column flex-grow-1">
+                <a class="nav-link text-bordeaux active d-flex align-items-center py-3 px-4" href="#">
+                    <i class="fas fa-home me-3 text-bordeaux"></i>
+                    <span class="text-bordeaux menu-text">Αρχική</span>
+                </a>
+                <a class="nav-link text-bordeaux d-flex align-items-center py-3 px-4" href="#" id="createTopicLink">
+                    <i class="fa-solid fa-book me-3 text-bordeaux"></i>
+                    <span class="text-bordeaux menu-text">Δημιουργία και Επεξεργασία Θέματος</span>
+                </a>
+                <a class="nav-link text-bordeaux d-flex align-items-center py-3 px-4" href="#" id="assignTopicLink">
+                    <i class="fa-solid fa-pen-fancy me-3 text-bordeaux"></i>
+                    <span class="text-bordeaux menu-text">Αρχική Ανάθεση Θέματος Διπλωματικής</span>
+                </a>
+                <a class="nav-link text-bordeaux d-flex align-items-center py-3 px-4" href="#" id="myThesesLink">
+                    <i class="fa-solid fa-book-open me-3 text-bordeaux"></i>
+                    <span class="text-bordeaux menu-text">Οι Διπλωματικές Μου</span>
+                </a>
+                <a class="nav-link text-bordeaux d-flex align-items-center py-3 px-4" href="#" id="committeeInvitationsLink">
+                    <i class="fa-solid fa-people-group me-3 text-bordeaux"></i>
+                    <span class="text-bordeaux menu-text">Προσκλήσεις σε Τριμελή Επιτροπή</span>
+                </a>
+            </nav>
+            
+            <!-- Sidebar Footer -->
+            <div class="mt-auto p-3 border-top">
+                <div class="text-muted small">Συνδεδεμένος/η ως:</div>
+                <div class="text-bold small" id="connectedUserFullname">...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" style="margin-left: 0; transition: margin-left 0.3s ease; width: 100%;">
+        
+        <!-- Create Thesis Topic Form -->
+        <div id="createTopicForm" style="display: none;" class="container-fluid mt-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light border-0 py-3">
+                    <h3 class="card-title mb-0 text-bordeaux">
+                        <i class="fa-solid fa-book me-2"></i>Δημιουργία Νέου Θέματος Διπλωματικής
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <form id="thesisTopicForm">
+                        <!-- Τίτλος θέματος -->
+                        <div class="mb-4">
+                            <label for="topicTitle" class="form-label fw-semibold">
+                                <i class="fas fa-heading me-2 text-bordeaux"></i>Τίτλος Θέματος *
+                            </label>
+                            <input type="text" id="topicTitle" name="title" class="form-control form-control-lg" 
+                                   placeholder="Εισάγετε τον τίτλο του θέματος..." required maxlength="255">
+                            <div class="form-text">Μέγιστο 255 χαρακτήρες</div>
+                        </div>
+                        
+                        <!-- Σύντομη περιγραφή -->
+                        <div class="mb-4">
+                            <label for="topicDescription" class="form-label fw-semibold">
+                                <i class="fas fa-align-left me-2 text-bordeaux"></i>Σύντομη Περιγραφή *
+                            </label>
+                            <textarea id="topicDescription" name="description" class="form-control" rows="5" 
+                                      placeholder="Περιγράψτε το θέμα της διπλωματικής εργασίας..." required></textarea>
+                            <div class="form-text">Προσθέστε μια σαφή και περιεκτική περιγραφή του θέματος</div>
+                        </div>
+                        
+                        <!-- Αρχείο PDF (προαιρετικό) -->
+                        <div class="mb-4">
+                            <label for="topicPdf" class="form-label fw-semibold">
+                                <i class="fas fa-file-pdf me-2 text-bordeaux"></i>Αρχείο PDF (Προαιρετικό)
+                            </label>
+                            <input type="file" id="topicPdf" name="pdf" class="form-control" accept=".pdf">
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Μπορείτε να επισυνάψετε ένα PDF με αναλυτική περιγραφή του θέματος (μέγιστο 5MB)
+                            </div>
+                        </div>
+                        
+                        <!-- Preview Section -->
+                        <div id="topicPreview" class="mb-4 p-3 bg-light rounded" style="display: none;">
+                            <h5 class="text-bordeaux">
+                                <i class="fas fa-eye me-2"></i>Προεπισκόπηση Θέματος
+                            </h5>
+                            <div class="border-start border-3 border-bordeaux ps-3">
+                                <h6 id="previewTitle" class="fw-bold"></h6>
+                                <p id="previewSummary" class="mb-1"></p>
+                                <small id="previewFile" class="text-muted"></small>
+                            </div>
+                        </div>
+                        
+                        <!-- Κουμπιά -->
+                        <div class="d-flex gap-3 justify-content-end">
+                            <button type="button" class="btn btn-outline-secondary px-4" id="cancelTopicForm">
+                                <i class="fas fa-times me-2"></i>Ακύρωση
+                            </button>
+                            <button type="submit" class="btn btn-bordeaux px-4">
+                                <i class="fas fa-save me-2"></i>Αποθήκευση Θέματος
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Assign Topic Form -->
+        <div id="assignTopicForm" style="display: none;" class="container-fluid mt-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light border-0 py-3">
+                    <h3 class="card-title mb-0 text-bordeaux">
+                        <i class="fa-solid fa-pen-fancy me-2"></i>Αρχική Ανάθεση Θέματος
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <!-- Βήμα 1: Επιλογή διαθέσιμου θέματος -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-list me-2 text-bordeaux"></i>Επιλέξτε Διαθέσιμο Θέμα *
+                        </label>
+                        <select id="topicSelect" class="form-select" required>
+                            <option value="">-- Επιλέξτε θέμα --</option>
+                        </select>
+                        <div id="selectedTopicInfo" class="mt-2"></div>
+                    </div>
+                    
+                    <!-- Βήμα 2: Αναζήτηση φοιτητή -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-search me-2 text-bordeaux"></i>Αναζήτηση Φοιτητή *
+                        </label>
+                        <div class="input-group">
+                            <input type="text" id="studentSearch" class="form-control" 
+                                   placeholder="Αναζήτηση διαθέσιμων φοιτητών με ΑΜ ή όνομα...">
+                            <button type="button" id="searchBtn" class="btn btn-outline-bordeaux">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                        <div class="form-text text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Εμφανίζονται μόνο φοιτητές που δεν έχουν ήδη ανατεθεί θέμα διπλωματικής
+                        </div>
+                        <!-- Αποτελέσματα αναζήτησης -->
+                        <div id="searchResults" class="mt-3"></div>
+                        <div id="selectedStudentInfo" class="mt-2"></div>
+                    </div>
+                    
+                    <!-- Κουμπιά -->
+                    <div class="d-flex gap-3 justify-content-end">
+                        <button type="button" class="btn btn-outline-secondary px-4" id="cancelAssignForm">
+                            <i class="fas fa-times me-2"></i>Ακύρωση
+                        </button>
+                        <button type="button" class="btn btn-bordeaux px-4" id="assignTopicBtn" disabled>
+                            <i class="fas fa-check me-2"></i>Ανάθεση Θέματος
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Available Topics List -->
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-light border-0 py-3">
+                    <h4 class="card-title mb-0 text-bordeaux">
+                        <i class="fas fa-list me-2"></i>Διαθέσιμα Θέματα
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div id="availableTopicsContainer">
+                        <div id="availableTopicsLoading" class="text-center py-4">
+                            <i class="fas fa-spinner fa-spin fa-2x text-bordeaux mb-3"></i>
+                            <p class="text-muted">Φόρτωση διαθέσιμων θεμάτων...</p>
+                        </div>
+                        <div id="availableTopicsContent" style="display: none;">
+                            <div id="availableTopicsCards"></div>
+                        </div>
+                        <div id="noAvailableTopics" style="display: none;" class="text-center py-5">
+                            <i class="fas fa-info-circle fa-3x text-info mb-3"></i>
+                            <h5>Δεν υπάρχουν διαθέσιμα θέματα</h5>
+                            <p class="text-muted">Δημιουργήστε νέα θέματα για να τα κάνετε διαθέσιμα για ανάθεση.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- My Theses List Section (UC8) -->
+        <div id="myThesesList" style="display: none;" class="container-fluid mt-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light border-0 py-3">
+                    <h3 class="card-title mb-0 text-bordeaux">
+                        <i class="fa-solid fa-book-open me-2"></i>Οι Διπλωματικές Μου
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Filters Section -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="statusFilter" class="form-label fw-semibold">
+                                <i class="fas fa-filter me-2 text-bordeaux"></i>Φίλτρο κατά Κατάσταση
+                            </label>
+                            <select id="statusFilter" class="form-select">
+                                <option value="">Όλες οι καταστάσεις</option>
+                                <option value="unassigned">Χωρίς Ανάθεση</option>
+                                <option value="under_assignment">Υπό Ανάθεση</option>
+                                <option value="active">Ενεργές</option>
+                                <option value="under_examination">Υπό Εξέταση</option>
+                                <option value="completed">Ολοκληρωμένες</option>
+                                <option value="cancelled">Ακυρωμένες</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="roleFilter" class="form-label fw-semibold">
+                                <i class="fas fa-user-tag me-2 text-bordeaux"></i>Φίλτρο κατά Ρόλο
+                            </label>
+                            <select id="roleFilter" class="form-select">
+                                <option value="">Όλοι οι ρόλοι</option>
+                                <option value="supervisor">Επιβλέπων</option>
+                                <option value="member">Μέλος Επιτροπής</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Search Section -->
+                    <div class="mb-4">
+                        <label for="thesesSearch" class="form-label fw-semibold">
+                            <i class="fas fa-search me-2 text-bordeaux"></i>Αναζήτηση
+                        </label>
+                        <div class="input-group">
+                            <input type="text" id="thesesSearch" class="form-control" 
+                                   placeholder="Αναζήτηση κατά τίτλο ή αριθμό μητρώου...">
+                            <button type="button" id="clearSearchBtn" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Results Summary -->
+                    <div class="mb-4 d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted">Εμφάνιση: <span id="filteredThesesCount">0</span> από <span id="totalThesesCount">0</span> διπλωματικές</span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <!-- Export Dropdown -->
+                            <div class="dropdown">
+                                <button class="btn btn-outline-bordeaux btn-sm dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-download me-2"></i>Εξαγωγή
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                                    <li>
+                                        <a class="dropdown-item" href="#" id="exportCsvOption">
+                                            <i class="fas fa-file-csv me-2 text-success"></i>CSV Format
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="#" id="exportJsonOption">
+                                            <i class="fas fa-file-code me-2 text-primary"></i>JSON Format
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Theses List -->
+                    <div id="thesesListContainer">
+                        <!-- Loading placeholder -->
+                        <div id="thesesLoading" class="text-center py-5">
+                            <i class="fas fa-spinner fa-spin fa-2x text-bordeaux"></i>
+                            <p class="mt-3 text-muted">Φόρτωση διπλωματικών...</p>
+                        </div>
+                        
+                        <!-- Theses Cards -->
+                        <div id="thesesCardsContainer" style="display: none;">
+                            <!-- Cards will be populated here -->
+                        </div>
+
+                        <!-- Empty state -->
+                        <div id="noThesesFound" style="display: none;" class="text-center py-5">
+                            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Δεν βρέθηκαν διπλωματικές</h5>
+                            <p class="text-muted">Δοκιμάστε να αλλάξετε τα φίλτρα ή τους όρους αναζήτησης.</p>
+                        </div>
+                    </div>
+
+                    <!-- Back Button -->
+                    <div class="d-flex justify-content-start mt-4">
+                        <button type="button" class="btn btn-outline-secondary px-4" id="backToMainFromTheses">
+                            <i class="fas fa-arrow-left me-2"></i>Επιστροφή στην Αρχική
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Thesis Details View Section (UC9) -->
+        <div id="thesisDetailsView" style="display: none;" class="container-fluid mt-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light border-0 py-3 d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0 text-bordeaux">
+                        <i class="fa-solid fa-info-circle me-2"></i>Λεπτομέρειες Διπλωματικής
+                    </h3>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="backToThesesList">
+                        <i class="fas fa-arrow-left me-2"></i>Επιστροφή στη Λίστα
+                    </button>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Loading state -->
+                    <div id="thesisDetailsLoading" class="text-center py-5">
+                        <i class="fas fa-spinner fa-spin fa-2x text-bordeaux"></i>
+                        <p class="mt-3 text-muted">Φόρτωση λεπτομερειών...</p>
+                    </div>
+                    
+                    <!-- Thesis Details Content -->
+                    <div id="thesisDetailsContent" style="display: none;">
+                        <!-- Basic Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body">
+                                        <h4 class="text-bordeaux mb-3">
+                                            <i class="fas fa-book me-2"></i>Βασικές Πληροφορίες
+                                        </h4>
+                                        <div class="row">
+                                            <div class="col-lg-8">
+                                                <h5 id="thesisTitle" class="text-dark mb-3"></h5>
+                                                <p id="thesisDescription" class="text-muted mb-3"></p>
+                                                
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <p><strong>Κωδικός:</strong> <span id="thesisCode"></span></p>
+                                                        <p><strong>Κατάσταση:</strong> <span id="thesisStatus" class="badge"></span></p>
+                                                        <p><strong>Ρόλος μου:</strong> <span id="myRole" class="badge"></span></p>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <p><strong>Ημερομηνία Δημιουργίας:</strong> <span id="creationDate"></span></p>
+                                                        <p><strong>Ημερομηνία Ανάθεσης:</strong> <span id="assignmentDate"></span></p>
+                                                        <p><strong>Διάρκεια:</strong> <span id="thesisDuration"></span></p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-4 text-center">
+                                                <div id="thesisActions" class="d-flex flex-column gap-2">
+                                                    <!-- Action buttons will be populated here -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Student Information -->
+                        <div class="row mb-4" id="studentInfoSection">
+                            <div class="col-md-6">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body">
+                                        <h5 class="text-bordeaux mb-3">
+                                            <i class="fas fa-user-graduate me-2"></i>Στοιχεία Φοιτητή
+                                        </h5>
+                                        <div id="studentDetails">
+                                            <p><strong><i class="fas fa-user me-2"></i>Όνομα:</strong> <span id="studentName"></span></p>
+                                            <p><strong><i class="fas fa-id-card me-2"></i>Αριθμός Μητρώου:</strong> <span id="studentNumber"></span></p>
+                                            <p><strong><i class="fas fa-envelope me-2"></i>Email:</strong> <a id="studentEmail" href=""></a></p>
+                                            <p><strong><i class="fas fa-phone me-2"></i>Τηλέφωνο:</strong> <span id="studentPhone"></span></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Committee Information -->
+                            <div class="col-md-6">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body">
+                                        <h5 class="text-bordeaux mb-3">
+                                            <i class="fas fa-users me-2"></i>Τριμελής Επιτροπή
+                                        </h5>
+                                        <div id="committeeDetails">
+                                            <!-- Committee members will be populated here -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notes Section (UC13) -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h5 class="text-bordeaux mb-0">
+                                                <i class="fas fa-sticky-note me-2"></i>Σημειώσεις Εποπτείας
+                                            </h5>
+                                            <!-- Add Note Button (only for supervisors) -->
+                                            <button type="button" class="btn btn-outline-bordeaux btn-sm" id="addNoteBtn" style="display: none;">
+                                                <i class="fas fa-plus me-2"></i>Προσθήκη Σημείωσης
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- Notes List -->
+                                        <div id="notesList">
+                                            <!-- Notes will be populated here -->
+                                            <div id="notesLoading" style="display: none;" class="text-center py-3">
+                                                <i class="fas fa-spinner fa-spin text-bordeaux"></i>
+                                                <span class="ms-2 text-muted">Φόρτωση σημειώσεων...</span>
+                                            </div>
+                                            
+                                            <div id="noNotesMessage" style="display: none;" class="text-center py-4">
+                                                <i class="fas fa-sticky-note fa-2x text-muted mb-2"></i>
+                                                <p class="text-muted mb-0">Δεν υπάρχουν σημειώσεις για αυτή τη διπλωματική</p>
+                                            </div>
+                                        </div>
+
+                                        <!-- Add Note Form (hidden by default) -->
+                                        <div id="addNoteForm" style="display: none;" class="mt-3 border-top pt-3">
+                                            <form id="noteForm">
+                                                <div class="mb-3">
+                                                    <label for="noteTitle" class="form-label fw-semibold">Τίτλος Σημείωσης</label>
+                                                    <input type="text" id="noteTitle" name="title" class="form-control" 
+                                                           placeholder="Εισάγετε τίτλο σημείωσης..." maxlength="100" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="noteContent" class="form-label fw-semibold">Περιεχόμενο</label>
+                                                    <textarea id="noteContent" name="content" class="form-control" rows="4" 
+                                                              placeholder="Εισάγετε το περιεχόμενο της σημείωσης..." required></textarea>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="noteType" class="form-label fw-semibold">Τύπος Σημείωσης</label>
+                                                    <select id="noteType" name="type" class="form-select" required>
+                                                        <option value="">-- Επιλέξτε τύπο --</option>
+                                                        <option value="general">Γενική Σημείωση</option>
+                                                        <option value="progress">Πρόοδος</option>
+                                                        <option value="meeting">Συνάντηση</option>
+                                                        <option value="deadline">Προθεσμία</option>
+                                                        <option value="issue">Πρόβλημα</option>
+                                                        <option value="achievement">Επίτευγμα</option>
+                                                    </select>
+                                                </div>
+                                                <div class="d-flex gap-2 justify-content-end">
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="cancelNoteBtn">
+                                                        <i class="fas fa-times me-2"></i>Ακύρωση
+                                                    </button>
+                                                    <button type="submit" class="btn btn-bordeaux btn-sm">
+                                                        <i class="fas fa-save me-2"></i>Αποθήκευση
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Timeline/Chronology -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body">
+                                        <h5 class="text-bordeaux mb-3">
+                                            <i class="fas fa-clock me-2"></i>Χρονολόγιο Εξέλιξης
+                                        </h5>
+                                        <div id="thesisTimeline">
+                                            <!-- Timeline will be populated here -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Final Grade Section (if completed) -->
+                        <div class="row mb-4" id="gradeSection" style="display: none;">
+                            <div class="col-md-6">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body">
+                                        <h5 class="text-bordeaux mb-3">
+                                            <i class="fas fa-award me-2"></i>Τελικός Βαθμός
+                                        </h5>
+                                        <div class="text-center">
+                                            <div class="display-4 text-bordeaux fw-bold" id="finalGrade"></div>
+                                            <p class="text-muted">Βαθμός Διπλωματικής</p>
+                                            <p><strong>Ημερομηνία Εξέτασης:</strong> <span id="examDate"></span></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body">
+                                        <h5 class="text-bordeaux mb-3">
+                                            <i class="fas fa-comment me-2"></i>Σχόλια Επιτροπής
+                                        </h5>
+                                        <div id="committeeComments">
+                                            <!-- Comments will be populated here -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Files and Links -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body">
+                                        <h5 class="text-bordeaux mb-3">
+                                            <i class="fas fa-paperclip me-2"></i>Αρχεία & Σύνδεσμοι
+                                        </h5>
+                                        <div id="thesisFiles">
+                                            <!-- Files and links will be populated here -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Edit Form (only for supervisors) -->
+                        <div id="editThesisForm" style="display: none;" class="card border-warning">
+                            <div class="card-header bg-warning text-dark">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-edit me-2"></i>Επεξεργασία Διπλωματικής
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="thesisEditForm">
+                                    <div class="row">
+                                        <div class="col-md-12 mb-3">
+                                            <label for="editTitle" class="form-label fw-semibold">Τίτλος</label>
+                                            <input type="text" id="editTitle" name="title" class="form-control" maxlength="255">
+                                        </div>
+                                        <div class="col-md-12 mb-3">
+                                            <label for="editDescription" class="form-label fw-semibold">Περιγραφή</label>
+                                            <textarea id="editDescription" name="description" class="form-control" rows="4"></textarea>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="editProtocolNumber" class="form-label fw-semibold">Αριθμός Πρωτοκόλλου</label>
+                                            <input type="number" id="editProtocolNumber" name="protocol_number" class="form-control" placeholder="Δεν έχει οριστεί ακόμη" readonly>
+                                            <div class="form-text">Ο αριθμός πρωτοκόλλου δεν μπορεί να επεξεργαστεί από τον καθηγητή</div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="editStatus" class="form-label fw-semibold">Κατάσταση</label>
+                                            <select id="editStatus" name="status" class="form-select">
+                                                <option value="Ενεργή">Ενεργή</option>
+                                                <option value="Υπό Εξέταση">Υπό Εξέταση</option>
+                                                <option value="Περατωμένη">Περατωμένη</option>
+                                                <option value="Ακυρωμένη">Ακυρωμένη</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="editPdf" class="form-label fw-semibold">Νέο PDF αρχείο</label>
+                                            <input type="file" id="editPdf" name="pdf" class="form-control" accept=".pdf">
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-3 justify-content-end">
+                                        <button type="button" class="btn btn-outline-secondary" id="cancelEditBtn">
+                                            <i class="fas fa-times me-2"></i>Ακύρωση
+                                        </button>
+                                        <button type="button" class="btn btn-success" id="saveAndReturnBtn">
+                                            <i class="fas fa-save me-2"></i>Αποθήκευση & Επιστροφή
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Committee Invitations Section (UC11) -->
+        <div id="committeeInvitationsSection" style="display: none;" class="container-fluid mt-4">
+            <div class="card shadow-sm border">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h3 class="card-title mb-0 text-bordeaux">
+                        <i class="fa-solid fa-people-group me-2"></i>Προσκλήσεις σε Τριμελή Επιτροπή
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Loading State -->
+                    <div id="invitationsLoading" style="display: none;" class="text-center py-5">
+                        <div class="spinner-border text-bordeaux mb-3" role="status">
+                            <span class="visually-hidden">Φόρτωση...</span>
+                        </div>
+                        <p class="text-muted">Φόρτωση προσκλήσεων...</p>
+                    </div>
+
+                    <!-- Error State -->
+                    <div id="invitationsError" style="display: none;" class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <span id="invitationsErrorMessage">Σφάλμα φόρτωσης προσκλήσεων</span>
+                        <button type="button" class="btn btn-sm btn-outline-danger ms-2" id="retryInvitationsBtn">
+                            <i class="fas fa-redo me-1"></i>Επανάληψη
+                        </button>
+                    </div>
+
+                    <!-- Content -->
+                    <div id="invitationsContent" style="display: none;">
+                        <!-- Filters and Search Row -->
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <label for="invitationStatusFilter" class="form-label fw-semibold">
+                                    <i class="fas fa-filter me-2 text-bordeaux"></i>Φίλτρο κατά Κατάσταση
+                                </label>
+                                <select id="invitationStatusFilter" class="form-select">
+                                    <option value="">Όλες οι προσκλήσεις</option>
+                                    <option value="pending">Εκκρεμείς</option>
+                                    <option value="accepted">Αποδεκτές</option>
+                                    <option value="declined">Απορριφθείσες</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8">
+                                <label for="invitationsSearch" class="form-label fw-semibold">
+                                    <i class="fas fa-search me-2 text-bordeaux"></i>Αναζήτηση
+                                </label>
+                                <div class="input-group">
+                                    <input type="text" id="invitationsSearch" class="form-control" 
+                                           placeholder="Αναζήτηση κατά τίτλο διπλωματικής ή όνομα φοιτητή...">
+                                    <button type="button" id="clearInvitationsSearchBtn" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Summary Cards Row -->
+                        <div class="row mb-4">
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="card border h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-envelope fa-2x text-primary mb-2"></i>
+                                        <h3 class="mb-1" id="totalInvitationsCount">0</h3>
+                                        <p class="text-muted mb-0">Συνολικές Προσκλήσεις</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="card border h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                                        <h3 class="mb-1" id="pendingInvitationsCount">0</h3>
+                                        <p class="text-muted mb-0">Εκκρεμείς</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="card border h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                                        <h3 class="mb-1" id="acceptedInvitationsCount">0</h3>
+                                        <p class="text-muted mb-0">Αποδεκτές</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="card border h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-times-circle fa-2x text-danger mb-2"></i>
+                                        <h3 class="mb-1" id="declinedInvitationsCount">0</h3>
+                                        <p class="text-muted mb-0">Απορριφθείσες</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Results Summary -->
+                        <div class="mb-4 d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="text-muted">Εμφάνιση: <span id="filteredInvitationsCount">0</span> από <span id="totalInvitationsDisplayCount">0</span> προσκλήσεις</span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-outline-bordeaux btn-sm" id="refreshInvitationsBtn">
+                                    <i class="fas fa-sync-alt me-1"></i>Ανανέωση
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Invitations List -->
+                        <div id="invitationsListContainer">
+                            <!-- Loading placeholder -->
+                            <div id="invitationsListLoading" class="text-center py-5">
+                                <i class="fas fa-spinner fa-spin fa-2x text-bordeaux"></i>
+                                <p class="mt-3 text-muted">Φόρτωση προσκλήσεων...</p>
+                            </div>
+                            
+                            <!-- Invitations Cards -->
+                            <div id="invitationsCardsContainer" style="display: none;">
+                                <!-- Cards will be populated here -->
+                            </div>
+
+                            <!-- Empty state -->
+                            <div id="noInvitationsFound" style="display: none;" class="text-center py-5">
+                                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">Δεν βρέθηκαν προσκλήσεις</h5>
+                                <p class="text-muted">Δεν έχετε προσκλήσεις σε τριμελείς επιτροπές ή δοκιμάστε να αλλάξετε τα φίλτρα αναζήτησης.</p>
+                            </div>
+                        </div>
+
+                        <!-- Navigation Buttons -->
+                        <div class="mt-4 d-flex gap-2">
+                            <button type="button" class="btn btn-secondary" id="backToMainFromInvitations">
+                                <i class="fas fa-arrow-left me-2"></i>Επιστροφή στην Αρχική
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Section (UC12) -->
+        <div id="statisticsSection" style="display: none;" class="container-fluid mt-4">
+            <div class="card shadow-sm border">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h3 class="card-title mb-0 text-bordeaux">
+                        <i class="fa-solid fa-chart-simple me-2"></i>Στατιστικά Εποπτείας
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Loading State -->
+                    <div id="statisticsLoading" style="display: none;" class="text-center py-5">
+                        <div class="spinner-border text-bordeaux mb-3" role="status">
+                            <span class="visually-hidden">Φόρτωση...</span>
+                        </div>
+                        <p class="text-muted">Φόρτωση στατιστικών...</p>
+                    </div>
+
+                    <!-- Error State -->
+                    <div id="statisticsError" style="display: none;" class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <span id="statisticsErrorMessage">Σφάλμα φόρτωσης στατιστικών</span>
+                        <button type="button" class="btn btn-sm btn-outline-danger ms-2" id="retryStatsBtn">
+                            <i class="fas fa-redo me-1"></i>Επανάληψη
+                        </button>
+                    </div>
+
+                    <!-- Content -->
+                    <div id="statisticsContent" style="display: none;">
+                        <!-- Overview Cards Row -->
+                        <div class="row mb-4">
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="card border h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-book fa-3x text-primary mb-3"></i>
+                                        <h3 class="mb-1" id="totalTopicsCount">0</h3>
+                                        <p class="text-muted mb-0">Συνολικά Θέματα</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="card border h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                                        <h3 class="mb-1" id="completedTopicsCount">0</h3>
+                                        <p class="text-muted mb-0">Περατωμένα</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="card border h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-clock fa-3x text-warning mb-3"></i>
+                                        <h3 class="mb-1" id="activeTopicsCount">0</h3>
+                                        <p class="text-muted mb-0">Ενεργά</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="card border h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-user-graduate fa-3x text-info mb-3"></i>
+                                        <h3 class="mb-1" id="totalStudentsCount">0</h3>
+                                        <p class="text-muted mb-0">Φοιτητές</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Charts Row -->
+                        <div class="row mb-4">
+                            <div class="col-lg-6 mb-4">
+                                <div class="card border h-100">
+                                    <div class="card-header bg-light border-bottom">
+                                        <h5 class="card-title mb-0 text-bordeaux">
+                                            <i class="fas fa-chart-pie me-2"></i>Κατανομή Καταστάσεων
+                                        </h5>
+                                    </div>
+                                    <div class="card-body p-4">
+                                        <div id="statusChartContainer" style="width: 100%; height: 300px;">
+                                            <canvas id="statusChart" width="300" height="300"></canvas>
+                                            <div id="statusChartFallback" style="display: none;">
+                                                <div class="p-2">
+                                                    <div id="statusChartData"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6 mb-4">
+                                <div class="card border h-100">
+                                    <div class="card-header bg-light border-bottom">
+                                        <h5 class="card-title mb-0 text-bordeaux">
+                                            <i class="fas fa-chart-line me-2"></i>Τάση ανά Μήνα
+                                        </h5>
+                                    </div>
+                                    <div class="card-body d-flex justify-content-center align-items-center p-4">
+                                        <div id="monthlyChartContainer" style="width: 100%; height: 300px;">
+                                            <canvas id="monthlyChart" width="400" height="300"></canvas>
+                                            <div id="monthlyChartFallback" style="display: none;">
+                                                <div class="p-2">
+                                                    <div id="monthlyChartData"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Performance Metrics -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card border">
+                                    <div class="card-header bg-light border-bottom">
+                                        <h5 class="card-title mb-0 text-bordeaux">
+                                            <i class="fas fa-chart-bar me-2"></i>Μετρικές Απόδοσης
+                                        </h5>
+                                    </div>
+                                    <div class="card-body p-4">
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <div class="d-flex justify-content-between">
+                                                    <span>Ποσοστό Ολοκλήρωσης:</span>
+                                                    <strong id="completionRate">0%</strong>
+                                                </div>
+                                                <div class="progress mt-2">
+                                                    <div id="completionProgress" class="progress-bar bg-success" style="width: 0%"></div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <div class="d-flex justify-content-between">
+                                                    <span>Μέσος Χρόνος Ολοκλήρωσης:</span>
+                                                    <strong id="avgCompletionTime">- μήνες</strong>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <div class="d-flex justify-content-between">
+                                                    <span>Ενεργές Επιβλέψεις:</span>
+                                                    <strong id="activeSupervisionsCount">0</strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Activity -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card border">
+                                    <div class="card-header bg-light border-bottom">
+                                        <h5 class="card-title mb-0 text-bordeaux">
+                                            <i class="fas fa-clock me-2"></i>Πρόσφατη Δραστηριότητα
+                                        </h5>
+                                    </div>
+                                    <div class="card-body p-4" style="max-height: 400px; overflow-y: auto;">
+                                        <div id="recentActivityList">
+                                            <p class="text-muted">Φόρτωση δραστηριότητας...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Logout Confirmation Modal -->
+    <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title text-bordeaux fw-bold" id="logoutModalLabel">
+                        <i class="fas fa-sign-out-alt me-2"></i>Επιβεβαίωση Αποσύνδεσης
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-question-circle text-warning" style="font-size: 3rem;"></i>
+                    </div>
+                    <p class="fs-5 mb-3">Είστε σίγουρος ότι θέλετε να αποσυνδεθείτε;</p>
+                    <p class="text-muted small">Θα χρειαστεί να συνδεθείτε ξανά για να έχετε πρόσβαση στο σύστημα.</p>
+                </div>
+                <div class="modal-footer border-0 justify-content-center">
+                    <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Ακύρωση
+                    </button>
+                    <button type="button" class="btn btn-bordeaux px-4" id="confirmLogout">
+                        <i class="fas fa-sign-out-alt me-2"></i>Αποσύνδεση
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Success Message Overlay -->
+    <div id="successOverlay" class="success-overlay">
+        <div class="success-message">
+            <!-- Close button στην πάνω δεξιά γωνία -->
+            <button type="button" class="btn-close position-absolute" id="closeSuccessBtn" 
+                    style="top: 15px; right: 15px;" aria-label="Close"></button>
+            
+            <div class="success-icon">
+                <i class="fas fa-check"></i>
+            </div>
+            <h2 class="success-title">Επιτυχής Ανάθεση!</h2>
+            <div class="success-details">
+                <p>Η διπλωματική εργασία ανατέθηκε επιτυχώς:</p>
+                <div class="success-topic">
+                    <div><strong>Θέμα:</strong> <span id="successTopicTitle"></span></div>
+                    <div><strong>Φοιτητής:</strong> <span id="successStudentName" class="success-student"></span></div>
+                </div>
+                <p class="mt-3 text-muted small">Ο φοιτητής θα ειδοποιηθεί μέσω email για την ανάθεση.</p>
+            </div>
+            <div class="success-actions">
+                <button type="button" class="btn btn-outline-bordeaux" id="viewMyThesesBtn">
+                    <i class="fas fa-list me-2"></i>Προβολή Διπλωματικών
+                </button>
+                <button type="button" class="btn btn-bordeaux" id="continueWorkBtn">
+                    <i class="fas fa-plus me-2"></i>Νέα Ανάθεση
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Cancel Assignment Confirmation Modal -->
+    <div class="modal fade" id="cancelAssignmentModal" tabindex="-1" aria-labelledby="cancelAssignmentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title text-danger fw-bold" id="cancelAssignmentModalLabel">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Επιβεβαίωση Ακύρωσης Ανάθεσης
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-times-circle text-danger" style="font-size: 3rem;"></i>
+                    </div>
+                    <p class="fs-5 mb-3">Είστε βέβαιοι ότι θέλετε να ακυρώσετε την ανάθεση;</p>
+                    <div class="alert alert-warning border-0 rounded-3 mb-3">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-info-circle text-warning me-2 mt-1"></i>
+                            <div class="text-start">
+                                <strong>Τι θα συμβεί:</strong>
+                                <ul class="mb-0 mt-2 ps-3">
+                                    <li>Η διπλωματική θα επιστρέψει στην κατάσταση "Χωρίς Ανάθεση"</li>
+                                    <li>Θα είναι διαθέσιμη για νέα ανάθεση</li>
+                                    <li>Ο φοιτητής θα ειδοποιηθεί για την ακύρωση</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-muted small" id="cancelAssignmentThesisInfo">
+                        <!-- Thesis info will be populated here -->
+                    </p>
+                </div>
+                <div class="modal-footer border-0 justify-content-center">
+                    <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
+                        <i class="fas fa-arrow-left me-2"></i>Πίσω
+                    </button>
+                    <button type="button" class="btn btn-danger px-4" id="confirmCancelAssignment">
+                        <i class="fas fa-times me-2"></i>Ακύρωση Ανάθεσης
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cancel Active Thesis Modal -->
+    <div class="modal fade" id="cancelActiveThesisModal" tabindex="-1" aria-labelledby="cancelActiveThesisModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title text-danger fw-bold" id="cancelActiveThesisModalLabel">
+                        <i class="fas fa-ban me-2"></i>Ακύρωση Ενεργής Διπλωματικής
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                    </div>
+                    
+                    <div class="alert alert-info border-0 rounded-3 mb-4">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-info-circle text-info me-2 mt-1"></i>
+                            <div class="text-start">
+                                <strong>Προϋποθέσεις ακύρωσης:</strong>
+                                <ul class="mb-0 mt-2 ps-3">
+                                    <li>Έχουν παρέλθει τουλάχιστον 2 έτη από την οριστική ανάθεση</li>
+                                    <li>Απαιτείται απόφαση Γενικής Συνέλευσης</li>
+                                    <li>Λόγος ακύρωσης: "από Διδάσκοντα"</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="assemblyNumber" class="form-label fw-bold">Αριθμός Γενικής Συνέλευσης *</label>
+                                <input type="number" class="form-control" id="assemblyNumber" placeholder="π.χ. 123" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="assemblyYear" class="form-label fw-bold">Έτος Γενικής Συνέλευσης *</label>
+                                <input type="number" class="form-control" id="assemblyYear" placeholder="π.χ. 2024" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="cancellationReason" class="form-label fw-bold">Λόγος Ακύρωσης</label>
+                        <input type="text" class="form-control" id="cancellationReason" value="από Διδάσκοντα" readonly>
+                    </div>
+
+                    <div class="alert alert-warning border-0 rounded-3 mb-3">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-exclamation-triangle text-warning me-2 mt-1"></i>
+                            <div class="text-start">
+                                <strong>Συνέπειες ακύρωσης:</strong>
+                                <ul class="mb-0 mt-2 ps-3">
+                                    <li>Η διπλωματική θα μεταβεί στην κατάσταση "Ακυρωμένη"</li>
+                                    <li>Ο φοιτητής θα ειδοποιηθεί για την ακύρωση</li>
+                                    <li>Η ενέργεια δεν μπορεί να αναιρεθεί</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border rounded-3 p-3 bg-light" id="activeThesisInfo">
+                        <!-- Thesis info will be populated here -->
+                    </div>
+                </div>
+                <div class="modal-footer border-0 justify-content-center">
+                    <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
+                        <i class="fas fa-arrow-left me-2"></i>Ακύρωση
+                    </button>
+                    <button type="button" class="btn btn-danger px-4" id="confirmCancelActiveThesis">
+                        <i class="fas fa-ban me-2"></i>Ακύρωση Διπλωματικής
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Accept Invitation Confirmation Modal -->
+    <div class="modal fade" id="acceptInvitationModal" tabindex="-1" aria-labelledby="acceptInvitationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title text-success fw-bold" id="acceptInvitationModalLabel">
+                        <i class="fas fa-check-circle me-2"></i>Αποδοχή Πρόσκλησης
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-check-circle fa-4x text-success"></i>
+                    </div>
+                    <h4 class="mb-3">Αποδοχή Συμμετοχής</h4>
+                    <div id="acceptInvitationDetails" class="mb-3">
+                        <!-- Invitation details will be populated here -->
+                    </div>
+                    <p class="text-muted">Είστε σίγουροι ότι θέλετε να αποδεχτείτε την πρόσκληση για συμμετοχή στην τριμελή επιτροπή;</p>
+                </div>
+                <div class="modal-footer border-0 justify-content-center">
+                    <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Ακύρωση
+                    </button>
+                    <button type="button" class="btn btn-success px-4" id="confirmAcceptInvitation">
+                        <i class="fas fa-check me-2"></i>Αποδοχή
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Decline Invitation Confirmation Modal -->
+    <div class="modal fade" id="declineInvitationModal" tabindex="-1" aria-labelledby="declineInvitationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title text-danger fw-bold" id="declineInvitationModalLabel">
+                        <i class="fas fa-times-circle me-2"></i>Απόρριψη Πρόσκλησης
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-times-circle fa-4x text-danger"></i>
+                    </div>
+                    <h4 class="mb-3">Απόρριψη Συμμετοχής</h4>
+                    <div id="declineInvitationDetails" class="mb-3">
+                        <!-- Invitation details will be populated here -->
+                    </div>
+                    <p class="text-muted">Είστε σίγουροι ότι θέλετε να απορρίψετε την πρόσκληση για συμμετοχή στην τριμελή επιτροπή;</p>
+                    
+                    <!-- Optional reason field -->
+                    <div class="text-start mt-4">
+                        <label for="declineReason" class="form-label fw-semibold">Λόγος Απόρριψης (Προαιρετικό)</label>
+                        <textarea id="declineReason" class="form-control" rows="3" 
+                                  placeholder="Προαιρετικά, μπορείτε να αναφέρετε το λόγο απόρριψης..."></textarea>
+                        <div class="form-text">Αυτό θα βοηθήσει τον φοιτητή να κατανοήσει την απόφασή σας.</div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 justify-content-center">
+                    <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
+                        <i class="fas fa-arrow-left me-2"></i>Επιστροφή
+                    </button>
+                    <button type="button" class="btn btn-danger px-4" id="confirmDeclineInvitation">
+                        <i class="fas fa-times me-2"></i>Απόρριψη
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-bordeaux border-top text-center text-lg-start">
+        <div class="text-center p-3"> 
+            <span class="text-white">© 2025 Πανεπιστήμιο Πατρών</span>
+            <a class="text-white" href="https://www.upatras.gr/">www.upatras.gr</a>
+        </div>
+    </footer>
+
+    <!-- Chart.js for Statistics (load before custom JS) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" onload="console.log('Chart.js loaded successfully')" onerror="console.error('Failed to load Chart.js')"></script>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script src="../js/professor.js"></script>
+
+    <script>
+        // Fetch session info to display connected user
+        // Wait until the DOM is fully loaded
+        window.addEventListener('DOMContentLoaded', () => {
+            // Send a GET request to the session-info endpoint
+            fetch('/session-info')
+                .then(res => res.json()) // JSON format response
+                .then(data => {
+                    // Display the user's full name
+                    document.getElementById('connectedUserFullname').textContent = data.name + ' ' + data.surname; 
+            })
+            .catch(() => {
+                // If there's an error, display a default message
+                document.getElementById('connectedUserFullname').textContent = 'Επισκέπτης';
+            });
+        });
+    </script>
+</body>
+</html>
