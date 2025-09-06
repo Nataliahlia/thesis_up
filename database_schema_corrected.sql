@@ -1,3 +1,18 @@
+-- ================================================================
+-- THESIS MANAGEMENT SYSTEM - DATABASE SCHEMA
+-- ================================================================
+-- This script creates the complete database structure for the 
+-- thesis management system including:
+-- - User tables (students, professors, secretary)
+-- - Thesis management tables
+-- - Comments and grading system
+-- - Triggers for automatic data integrity
+-- - Procedures for maintenance
+-- 
+-- IMPORTANT: This script uses MySQL 8.0+ features like 
+-- IF NOT EXISTS clauses for safer execution
+-- ================================================================
+
 DROP DATABASE IF EXISTS thesis_up;
 
 CREATE DATABASE thesis_up
@@ -89,15 +104,12 @@ CREATE TABLE thesis_topic (
   FOREIGN KEY (member2) REFERENCES professor(professor_id)
 );
 
+-- Safely add columns to thesis_topic table
 ALTER TABLE thesis_topic
-ADD COLUMN protocol_number INT AFTER additional_links,
-ADD COLUMN practical_file VARCHAR(255) AFTER protocol_number;
-ALTER TABLE thesis_topic
-ADD COLUMN nimertis_link VARCHAR(255) NULL;
-ALTER TABLE thesis_topic
-ADD COLUMN final_grade INT NULL;
-ALTER TABLE thesis_topic
-MODIFY COLUMN final_grade DECIMAL(4,2) NULL;
+ADD COLUMN IF NOT EXISTS protocol_number INT AFTER additional_links,
+ADD COLUMN IF NOT EXISTS practical_file VARCHAR(255) AFTER protocol_number,
+ADD COLUMN IF NOT EXISTS nimertis_link VARCHAR(255) NULL,
+ADD COLUMN IF NOT EXISTS final_grade DECIMAL(4,2) NULL;
 
 CREATE TABLE canceled_thesis (
 	submission_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -106,11 +118,14 @@ CREATE TABLE canceled_thesis (
     reason ENUM('από Διδάσκοντα', 'κατόπιν αίτησης Φοιτητή/τριας') NOT NULL
 );
 
+-- Safely add columns to canceled_thesis table
 ALTER TABLE canceled_thesis 
-ADD COLUMN cancelled_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Ημερομηνία ακύρωσης',
-ADD COLUMN assembly_number VARCHAR(50) NULL COMMENT 'Αριθμός Γενικής Συνέλευσης για ακύρωση',
-ADD COLUMN assembly_year YEAR NULL COMMENT 'Έτος Γενικής Συνέλευσης για ακύρωση',
-ADD INDEX idx_canceled_thesis_date (cancelled_at);
+ADD COLUMN IF NOT EXISTS cancelled_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Ημερομηνία ακύρωσης',
+ADD COLUMN IF NOT EXISTS assembly_number VARCHAR(50) NULL COMMENT 'Αριθμός Γενικής Συνέλευσης για ακύρωση',
+ADD COLUMN IF NOT EXISTS assembly_year YEAR NULL COMMENT 'Έτος Γενικής Συνέλευσης για ακύρωση';
+
+-- Add index if it doesn't exist
+CREATE INDEX IF NOT EXISTS idx_canceled_thesis_date ON canceled_thesis(cancelled_at);
 
 -- Create table for announcements (needed for public endpoint)
 CREATE TABLE announcements (
@@ -123,8 +138,9 @@ CREATE TABLE announcements (
     FOREIGN KEY (thesis_id) REFERENCES thesis_topic(thesis_id)
 );
 
+-- Safely add columns to announcements table
 ALTER TABLE announcements 
-ADD COLUMN state ENUM('waiting', 'uploaded');
+ADD COLUMN IF NOT EXISTS state ENUM('waiting', 'uploaded');
 
 -- Create table for thesis committee members
 CREATE TABLE thesis_committee (
@@ -141,6 +157,7 @@ CREATE TABLE thesis_committee (
     UNIQUE KEY unique_thesis_professor (thesis_id, professor_id)
 );
 
+-- Safely modify thesis_committee table
 ALTER TABLE thesis_committee
 MODIFY COLUMN role ENUM('supervisor', 'member') NULL;
 
@@ -158,7 +175,7 @@ CREATE TABLE thesis_events (
 );
 
 ALTER TABLE thesis_events
-DROP FOREIGN KEY thesis_events_ibfk_2,
+DROP FOREIGN KEY IF EXISTS thesis_events_ibfk_2,
 MODIFY status ENUM(
     'Χωρίς Ανάθεση',
     'Υπό Ανάθεση',
@@ -169,7 +186,7 @@ MODIFY status ENUM(
 ) NOT NULL,
 MODIFY event_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 MODIFY event_type VARCHAR(100) NULL,
-DROP FOREIGN KEY thesis_events_ibfk_1,
+DROP FOREIGN KEY IF EXISTS thesis_events_ibfk_1,
 MODIFY created_by VARCHAR(100) NOT NULL;
 
 -- Create table for thesis comments/grades from committee
@@ -185,7 +202,10 @@ CREATE TABLE thesis_comments (
     FOREIGN KEY (professor_id) REFERENCES professor(professor_id)
 );
 
-ALTER TABLE thesis_comments ADD COLUMN title VARCHAR(255) AFTER professor_id;
+-- Safely modify thesis_comments table
+ALTER TABLE thesis_comments 
+ADD COLUMN IF NOT EXISTS title VARCHAR(255) AFTER professor_id;
+
 ALTER TABLE thesis_comments
 MODIFY COLUMN comment_type ENUM(
     'general',      -- Γενική
@@ -197,6 +217,20 @@ MODIFY COLUMN comment_type ENUM(
     'final',        -- Τελική
     'correction'    -- Διόρθωση
 ) DEFAULT 'progress';
+
+-- Drop existing triggers if they exist to avoid conflicts
+DROP TRIGGER IF EXISTS after_insert_student;
+DROP TRIGGER IF EXISTS after_insert_secretary;
+DROP TRIGGER IF EXISTS after_insert_professor;
+DROP TRIGGER IF EXISTS check_committee_limit;
+DROP TRIGGER IF EXISTS calculate_thesis_final_grade;
+DROP TRIGGER IF EXISTS update_thesis_final_grade;
+DROP TRIGGER IF EXISTS distinct_members;
+
+-- Drop existing procedures if they exist
+DROP PROCEDURE IF EXISTS ResetProfessorTable;
+DROP PROCEDURE IF EXISTS ResetSecretaryTable;
+DROP PROCEDURE IF EXISTS ResetUserTable;
 
 DELIMITER //
 
@@ -426,3 +460,46 @@ BEGIN
 END$$
 
 DELIMITER ;
+
+-- ================================================================
+-- INITIAL DATA INSERTION
+-- ================================================================
+
+-- Insert initial secretary data
+INSERT INTO secretary (email, password_hash, name, surname, landline_telephone, mobile_telephone) VALUES
+('sec1000001@ac.upatras.gr', 'pending', 'Μαρία', 'Παπαδοπούλου', '2610123456', '6912345678'),
+('sec1000002@ac.upatras.gr', 'pending', 'Νίκος', 'Δημητρίου', '2610765432', '6945678910');
+
+-- ================================================================
+-- PASSWORD SETUP NOTES
+-- ================================================================
+-- The secretary passwords are set to 'pending' and should be updated
+-- using the updatePasswords.js script or manually:
+-- 
+-- For sec1000001: password will be "sec1@2025"
+-- For sec1000002: password will be "sec2@2025"
+-- 
+-- To update passwords, run: node scripts/updatePasswords.js
+
+-- ================================================================
+-- DATA RESET PROCEDURES (for development/testing)
+-- ================================================================
+-- Note: These procedures can be used to reset tables during development
+-- Uncomment the lines below if you need to reset the tables
+
+-- CALL ResetProfessorTable();
+-- CALL ResetSecretaryTable();
+-- CALL ResetUserTable();
+
+-- Verification queries to ensure tables were created correctly
+-- Uncomment these lines to verify the database structure after creation
+
+-- SELECT 'Database structure verification:' as status;
+-- SELECT COUNT(*) as student_table_exists FROM information_schema.tables WHERE table_schema = 'thesis_up' AND table_name = 'student';
+-- SELECT COUNT(*) as secretary_table_exists FROM information_schema.tables WHERE table_schema = 'thesis_up' AND table_name = 'secretary';
+-- SELECT COUNT(*) as professor_table_exists FROM information_schema.tables WHERE table_schema = 'thesis_up' AND table_name = 'professor';
+-- SELECT COUNT(*) as thesis_comments_title_column FROM information_schema.columns WHERE table_schema = 'thesis_up' AND table_name = 'thesis_comments' AND column_name = 'title';
+-- SELECT COUNT(*) as triggers_created FROM information_schema.triggers WHERE trigger_schema = 'thesis_up';
+
+-- Success message
+SELECT 'Database thesis_up created successfully!' as status;

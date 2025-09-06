@@ -7,8 +7,8 @@
 }
 
 .btn-bordeaux:hover {
-    background-color: #660000;
-    border-color: #660000;
+    background-color: #6A1F2B;
+    border-color: #6A1F2B;
     color: white;
 }
 
@@ -465,7 +465,7 @@ footer {
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    border-top: 1px solid #660000;
+    border-top: 1px solid #6A1F2B;
     padding: 0.75rem;
 }
 
@@ -1436,7 +1436,7 @@ footer {
 }
 
 #committeeDetails::-webkit-scrollbar-thumb:hover {
-    background: #660000;
+    background: #6A1F2B;
 }
 
 /* Grading Modal Styles */
@@ -1538,7 +1538,7 @@ footer {
 }
 
 #generatedAnnouncement::-webkit-scrollbar-thumb:hover {
-    background: #660000;
+    background: #6A1F2B;
 }
 
 /* Button for announcement generation */
