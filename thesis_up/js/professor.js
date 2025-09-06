@@ -2555,24 +2555,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Show supervisor enable section
                 supervisorSection.style.display = 'block';
                 
-                // Check if grading is already enabled by checking for existing grades
+                // Check if grading is already enabled by checking for existing grades or grading activity
                 try {
+                    // First check localStorage for quick response
+                    const localGradingEnabled = localStorage.getItem(`grading_enabled_${thesisId}`) === 'true';
+                    
                     const response = await fetch(`/api/thesis/${thesisId}/grades`);
                     const result = await response.json();
                     
                     if (response.ok && result.success) {
-                        // Check if supervisor has already activated grading (has submitted grade)
-                        const supervisorGrade = result.submitted_grades && result.submitted_grades.find(grade => 
-                            result.committee_members && result.committee_members.find(member => 
-                                member.professor_id === grade.professor_id && member.role === 'Επιβλέπων'
-                            )
-                        );
+                        // Check if ANY grades have been submitted OR if grading was previously enabled
+                        const hasAnyGrades = result.submitted_grades && result.submitted_grades.length > 0;
                         
-                        if (supervisorGrade) {
+                        // Check if grading_enabled flag exists in the response or localStorage
+                        const gradingEnabled = result.grading_enabled || hasAnyGrades || localGradingEnabled;
+                        
+                        if (gradingEnabled) {
                             // Grading is already enabled - check the radio and show main content
                             enableRadio.checked = true;
                             mainContent.style.display = 'block';
                             submitBtn.style.display = 'inline-block';
+                            
+                            // Update localStorage to reflect current state
+                            localStorage.setItem(`grading_enabled_${thesisId}`, 'true');
                         } else {
                             // Grading not yet enabled - hide main content
                             enableRadio.checked = false;
@@ -2580,10 +2585,16 @@ document.addEventListener('DOMContentLoaded', function() {
                             submitBtn.style.display = 'none';
                         }
                     } else {
-                        // Default to not enabled
-                        enableRadio.checked = false;
-                        mainContent.style.display = 'none';
-                        submitBtn.style.display = 'none';
+                        // Fallback to localStorage only
+                        if (localGradingEnabled) {
+                            enableRadio.checked = true;
+                            mainContent.style.display = 'block';
+                            submitBtn.style.display = 'inline-block';
+                        } else {
+                            enableRadio.checked = false;
+                            mainContent.style.display = 'none';
+                            submitBtn.style.display = 'none';
+                        }
                     }
                 } catch (error) {
                     console.error('Error checking grading status:', error);
@@ -2613,13 +2624,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const enableRadio = document.getElementById('enableGradingRadio');
         const mainContent = document.getElementById('gradingMainContent');
         const submitBtn = document.getElementById('submitGradingBtn');
+        const thesisId = document.getElementById('gradingThesisId').value;
         
         if (enableRadio.checked) {
             mainContent.style.display = 'block';
             submitBtn.style.display = 'inline-block';
             
-            // Enable grading for committee members
-            const thesisId = document.getElementById('gradingThesisId').value;
+            // Save the grading enabled state
+            localStorage.setItem(`grading_enabled_${thesisId}`, 'true');
+            
+            // Enable grading for committee members and save the grading enabled status
             enableCommitteeGrading(thesisId);
             
             // Show notification about enabling grading for committee members
@@ -2627,6 +2641,9 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             mainContent.style.display = 'none';
             submitBtn.style.display = 'none';
+            
+            // Remove the grading enabled state
+            localStorage.removeItem(`grading_enabled_${thesisId}`);
         }
     };
 
