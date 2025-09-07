@@ -1,0 +1,64 @@
+{
+  "professor": [
+    {
+      "email": "prof1@ac.upatras.gr",
+      "name": "Χρήστος",
+      "surname": "Λαζαρόπουλος",
+      "topic": "Ασφάλεια Δικτύων",
+      "department": "Τομέας Λογισμικού",
+      "university": "Πανεπιστήμιο Πατρών",
+      "landline": "2610234980",
+      "mobile": "6956239571"
+    },
+    {
+      "email": "prof2@ac.upatras.gr",
+      "name": "Νικόλαος",
+      "surname": "Κωνσταντινίδης",
+      "topic": "Τεχνητή Νοημοσύνη",
+      "department": "Τομέας Λογισμικού",
+      "university": "Πανεπιστήμιο Πατρών",
+      "landline": "2610789034",
+      "mobile": "6948034576"
+    },
+    {
+      "email": "prof3@ac.upatras.gr",
+      "name": "Μαρία",
+      "surname": "Χριστοπούλου",
+      "topic": "Τεχνητή Νοημοσύνη",
+      "department": "Τομέας Λογισμικού",
+      "university": "Πανεπιστήμιο Πατρών",
+      "landline": "2610789044",
+      "mobile": "6948034544"
+    },
+    {
+      "email": "prof4@ac.upatras.gr",
+      "name": "Ελένη",
+      "surname": "Αθανασοπούλου",
+      "topic": "Ψηφιακά Συστήματα",
+      "department": "Τομέας Υλικού",
+      "university": "Πανεπιστήμιο Πατρών",
+      "landline": "2610789114",
+      "mobile": "6948034511"
+    },
+    {
+      "email": "prof5@ac.upatras.gr",
+      "name": "Ευάγγελος",
+      "surname": "Πετρόπουλος",
+      "topic": "VLSI Σχεδίαση",
+      "department": "Τομέας Υλικού",
+      "university": "Πανεπιστήμιο Πατρών",
+      "landline": "2610782214",
+      "mobile": "6948032711"
+    },
+    {
+      "email": "prof6@ac.upatras.gr",
+      "name": "Μαρίνος",
+      "surname": "Κωνσταντόπουλος",
+      "topic": "Επεξεργασία Φυσικής Γλώσσας (Natural Language Processing)",
+      "department": "Τομέας Λογισμικού",
+      "university": "Πανεπιστήμιο Πατρών",
+      "landline": "2610787814",
+      "mobile": "6948032701"
+    }
+  ]
+}
