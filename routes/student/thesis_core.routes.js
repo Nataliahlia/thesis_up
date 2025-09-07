@@ -26,7 +26,7 @@ const storage = multer.diskStorage({
         const safeBase = base
             .normalize('NFD')                     // Clear diacritics
             .replace(/[\u0300-\u036f]/g, '')      // Remove diacritics
-            .replace(/[^\w.-]/gi, '_');           // Remove all non-safe characters
+            .replace(/[^\w.-]/gi, '_')           // Remove all non-safe characters
 
         const safeFilename = `${timestamp}-${safeBase}${ext}`;  // Create a safe filename with timestamp
         cb(null, safeFilename);                                 // Callback function of multer to save the file

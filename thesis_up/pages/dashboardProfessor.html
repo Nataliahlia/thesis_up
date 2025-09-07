@@ -877,36 +877,121 @@
                             </div>
                         </div>
 
-                        <!-- Performance Metrics -->
+                        <!-- UC12: Required Statistics -->
                         <div class="row mb-4">
                             <div class="col-12">
                                 <div class="card border">
                                     <div class="card-header bg-light border-bottom">
                                         <h5 class="card-title mb-0 text-bordeaux">
-                                            <i class="fas fa-chart-bar me-2"></i>Μετρικές Απόδοσης
+                                            <i class="fas fa-chart-line me-2"></i>Αναλυτικά Στατιστικά Επόπτειας
                                         </h5>
                                     </div>
                                     <div class="card-body p-4">
+                                        <!-- i. Μέσος χρόνος περάτωσης διπλωματικών -->
+                                        <div class="row mb-4">
+                                            <div class="col-12">
+                                                <h6 class="text-bordeaux mb-3"><i class="fas fa-clock me-2"></i>Μέσος χρόνος περάτωσης διπλωματικών</h6>
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="card bg-light h-100">
+                                                            <div class="card-body text-center">
+                                                                <h5 class="text-primary">Ως Επιβλέπων</h5>
+                                                                <h3 class="mb-1" id="supervisedAvgMonths">-</h3>
+                                                                <p class="text-muted mb-2">μήνες μέσος όρος</p>
+                                                                <small class="text-muted">(<span id="supervisedCompletedCount">0</span> ολοκληρωμένες)</small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="card bg-light h-100">
+                                                            <div class="card-body text-center">
+                                                                <h5 class="text-info">Ως Μέλος Επιτροπής</h5>
+                                                                <h3 class="mb-1" id="committeeAvgMonths">-</h3>
+                                                                <p class="text-muted mb-2">μήνες μέσος όρος</p>
+                                                                <small class="text-muted">(<span id="committeeCompletedCount">0</span> ολοκληρωμένες)</small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- ii. Μέσος βαθμός διπλωματικών -->
+                                        <div class="row mb-4">
+                                            <div class="col-12">
+                                                <h6 class="text-bordeaux mb-3"><i class="fas fa-star me-2"></i>Μέσος βαθμός διπλωματικών</h6>
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="card bg-light h-100">
+                                                            <div class="card-body text-center">
+                                                                <h5 class="text-primary">Ως Επιβλέπων</h5>
+                                                                <h3 class="mb-1" id="supervisedAvgGrade">-</h3>
+                                                                <p class="text-muted mb-2">μέσος βαθμός</p>
+                                                                <small class="text-muted">(<span id="supervisedGradedCount">0</span> βαθμολογημένες)</small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="card bg-light h-100">
+                                                            <div class="card-body text-center">
+                                                                <h5 class="text-info">Ως Μέλος Επιτροπής</h5>
+                                                                <h3 class="mb-1" id="committeeAvgGrade">-</h3>
+                                                                <p class="text-muted mb-2">μέσος βαθμός</p>
+                                                                <small class="text-muted">(<span id="committeeGradedCount">0</span> βαθμολογημένες)</small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- iii. Συνολικό πλήθος διπλωματικών -->
                                         <div class="row">
-                                            <div class="col-md-4 mb-3">
-                                                <div class="d-flex justify-content-between">
-                                                    <span>Ποσοστό Ολοκλήρωσης:</span>
-                                                    <strong id="completionRate">0%</strong>
-                                                </div>
-                                                <div class="progress mt-2">
-                                                    <div id="completionProgress" class="progress-bar bg-success" style="width: 0%"></div>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-4 mb-3">
-                                                <div class="d-flex justify-content-between">
-                                                    <span>Μέσος Χρόνος Ολοκλήρωσης:</span>
-                                                    <strong id="avgCompletionTime">- μήνες</strong>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-4 mb-3">
-                                                <div class="d-flex justify-content-between">
-                                                    <span>Ενεργές Επιβλέψεις:</span>
-                                                    <strong id="activeSupervisionsCount">0</strong>
+                                            <div class="col-12">
+                                                <h6 class="text-bordeaux mb-3"><i class="fas fa-list-ol me-2"></i>Συνολικό πλήθος διπλωματικών</h6>
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="card bg-light h-100">
+                                                            <div class="card-body">
+                                                                <h5 class="text-primary text-center mb-3">Ως Επιβλέπων</h5>
+                                                                <div class="row text-center">
+                                                                    <div class="col-4">
+                                                                        <h4 class="mb-1" id="supervisedTotalCount">0</h4>
+                                                                        <small class="text-muted">Συνολικά</small>
+                                                                    </div>
+                                                                    <div class="col-4">
+                                                                        <h4 class="mb-1 text-success" id="supervisedCompletedTotal">0</h4>
+                                                                        <small class="text-muted">Ολοκληρωμένες</small>
+                                                                    </div>
+                                                                    <div class="col-4">
+                                                                        <h4 class="mb-1 text-warning" id="supervisedActiveTotal">0</h4>
+                                                                        <small class="text-muted">Ενεργές</small>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="card bg-light h-100">
+                                                            <div class="card-body">
+                                                                <h5 class="text-info text-center mb-3">Ως Μέλος Επιτροπής</h5>
+                                                                <div class="row text-center">
+                                                                    <div class="col-4">
+                                                                        <h4 class="mb-1" id="committeeTotalCount">0</h4>
+                                                                        <small class="text-muted">Συνολικά</small>
+                                                                    </div>
+                                                                    <div class="col-4">
+                                                                        <h4 class="mb-1 text-success" id="committeeCompletedTotal">0</h4>
+                                                                        <small class="text-muted">Ολοκληρωμένες</small>
+                                                                    </div>
+                                                                    <div class="col-4">
+                                                                        <h4 class="mb-1 text-warning" id="committeeActiveTotal">0</h4>
+                                                                        <small class="text-muted">Ενεργές</small>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1186,6 +1271,32 @@
                     </button>
                     <button type="button" class="btn btn-danger px-4" id="confirmDeclineInvitation">
                         <i class="fas fa-times me-2"></i>Απόρριψη
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simple Publish Announcement Confirmation Modal -->
+    <div class="modal fade" id="publishAnnouncementModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title text-warning fw-bold">
+                        <i class="fas fa-bullhorn me-2"></i>Δημοσίευση Ανακοίνωσης
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <i class="fas fa-bullhorn fa-3x text-warning mb-3"></i>
+                    <p class="fs-5">Είστε σίγουροι ότι θέλετε να δημοσιεύσετε την ανακοίνωση παρουσίασης;</p>
+                </div>
+                <div class="modal-footer border-0 justify-content-center">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Ακύρωση
+                    </button>
+                    <button type="button" class="btn btn-warning" id="confirmPublishAnnouncement">
+                        <i class="fas fa-bullhorn me-2"></i>Δημοσίευση
                     </button>
                 </div>
             </div>

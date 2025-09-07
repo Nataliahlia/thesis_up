@@ -510,6 +510,17 @@ async function attachProtocol() {
         if (response.ok) {
             showCustomAlert('Ο αριθμός πρωτοκόλλου καταχωρήθηκε με επιτυχία.');
             lockExaminationFields(); // Lock the input field and hide the button
+            // Store the protocol number so that i don't need to refresh to see it again, after going back to the list
+            const thesisIndex = allTheses.findIndex(t => t.thesis_id == thesisId);
+            if (thesisIndex !== -1) {
+                allTheses[thesisIndex].protocol_number = protocolNumber;
+            }
+            
+            // Update the filteredTheses array as well, if a filter is applied
+            const filteredIndex = filteredTheses.findIndex(t => t.thesis_id == thesisId);
+            if (filteredIndex !== -1) {
+                filteredTheses[filteredIndex].protocol_number = protocolNumber;
+            }
         } else {
             showCustomAlert('Σφάλμα κατά την αποθήκευση: ' + result.error);
         }

@@ -794,7 +794,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 '</div>' +
                 '<div class="col-sm-6">' +
                 '<p class="mb-1"><strong>Ανάθεση:</strong> ' + formatDate(thesis.assignDate) + '</p>' +
-                '<p class="mb-1"><strong>Διάρκεια:</strong> ' + formatDuration(thesis.duration) + '</p>' +
+                '<p class="mb-1"><strong>Διάρκεια:</strong> ' + formatDuration(thesis.duration, thesis.status) + '</p>' +
                 '</div>' +
                 '</div>' +
                 '</div>' +
@@ -1000,10 +1000,13 @@ document.addEventListener('DOMContentLoaded', function() {
         return date.toLocaleDateString('el-GR');
     }
 
-    function formatDuration(days) {
+    function formatDuration(days, status) {
+        // If the thesis is "Χωρίς Ανάθεση", show "Μη διαθέσιμο"
+        if (status === 'Χωρίς Ανάθεση') return 'Μη διαθέσιμο';
+        
         if (days === null || days === undefined) return 'Δεν έχει ενεργοποιηθεί';
         if (days < 0) return 'Μη διαθέσιμο';
-        if (days === 0) return 'Ενεργοποιήθηκε σήμερα';
+        if (days === 0) return '0 ημέρες (σήμερα)';
         if (days < 30) return `${days} ημέρες`;
         const months = Math.floor(days / 30);
         const remainingDays = days % 30;
@@ -1207,7 +1210,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Dates
         document.getElementById('creationDate').textContent = formatDate(thesis.created_at);
         document.getElementById('assignmentDate').textContent = formatDate(thesis.assigned_at);
-        document.getElementById('thesisDuration').textContent = formatDuration(thesis.duration);
+        document.getElementById('thesisDuration').textContent = formatDuration(thesis.duration, thesis.status);
         
         // Student Information (only if assigned)
         const studentSection = document.getElementById('studentInfoSection');
@@ -1944,9 +1947,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             const thesis = result.data;
-            console.log('DEBUG: Thesis object received:', thesis);
-            console.log('DEBUG: Thesis title:', thesis.title);
-            console.log('DEBUG: Available properties:', Object.keys(thesis));
             generateThesisPDF(thesis);
             
             showNotification('Το PDF εξήχθη επιτυχώς!', 'success');
@@ -1967,7 +1967,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <!DOCTYPE html>
             <html>
             <head>
-                <title>Αναφορά Διπλωματικής - ${thesis.title || 'Διπλωματική Εργασία'}</title>
+                <title>Αναφορά Διπλωματικής - ${thesis.title}</title>
                 <meta charset="utf-8">
                 <style>
                     body { 
@@ -2073,7 +2073,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="label">Ημ. Ανάθεσης:</div>
                     <div>${thesis.assigned_at ? formatDate(thesis.assigned_at) : 'Μη ανατεθειμένη'}</div>
                     <div class="label">Διάρκεια:</div>
-                    <div>${thesis.duration ? thesis.duration + ' ημέρες' : 'Δεν υπολογίζεται'}</div>
+                    <div>${formatDuration(thesis.duration, thesis.status)}</div>
                 </div>
             </div>
         `;
@@ -2148,27 +2148,22 @@ document.addEventListener('DOMContentLoaded', function() {
             content += `</div>`;
         }
         
-        // Comments - Only show final comments for PDF export
+        // Comments
         if (thesis.comments && thesis.comments.length > 0) {
-            // Filter comments to show only 'final' type comments
-            const finalComments = thesis.comments.filter(comment => comment.comment_type === 'final');
-            
-            if (finalComments.length > 0) {
+            content += `
+                <div class="section">
+                    <h2>Σχόλια Επιτροπής</h2>
+            `;
+            thesis.comments.forEach(comment => {
                 content += `
-                    <div class="section">
-                        <h2>Σχόλια Επιτροπής</h2>
+                    <div class="comment">
+                        <strong>${comment.author_name}</strong> - ${formatDate(comment.created_at)}<br>
+                        ${comment.grade ? `<strong>Βαθμός:</strong> ${comment.grade}<br>` : ''}
+                        <p>${comment.comment}</p>
+                    </div>
                 `;
-                finalComments.forEach(comment => {
-                    content += `
-                        <div class="comment">
-                            <strong>${comment.author_name}</strong> - ${formatDate(comment.created_at)}<br>
-                            ${comment.grade ? `<strong>Βαθμός:</strong> ${comment.grade}<br>` : ''}
-                            <p>${comment.comment}</p>
-                        </div>
-                    `;
-                });
-                content += `</div>`;
-            }
+            });
+            content += `</div>`;
         }
         
         return content;
@@ -2564,29 +2559,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Show supervisor enable section
                 supervisorSection.style.display = 'block';
                 
-                // Check if grading is already enabled by checking for existing grades or grading activity
+                // Check if grading is already enabled by checking for existing grades
                 try {
-                    // First check localStorage for quick response
-                    const localGradingEnabled = localStorage.getItem(`grading_enabled_${thesisId}`) === 'true';
-                    
                     const response = await fetch(`/api/thesis/${thesisId}/grades`);
                     const result = await response.json();
                     
                     if (response.ok && result.success) {
-                        // Check if ANY grades have been submitted OR if grading was previously enabled
-                        const hasAnyGrades = result.submitted_grades && result.submitted_grades.length > 0;
+                        // Check if supervisor has already activated grading (has submitted grade)
+                        const supervisorGrade = result.submitted_grades && result.submitted_grades.find(grade => 
+                            result.committee_members && result.committee_members.find(member => 
+                                member.professor_id === grade.professor_id && member.role === 'Επιβλέπων'
+                            )
+                        );
                         
-                        // Check if grading_enabled flag exists in the response or localStorage
-                        const gradingEnabled = result.grading_enabled || hasAnyGrades || localGradingEnabled;
-                        
-                        if (gradingEnabled) {
+                        if (supervisorGrade) {
                             // Grading is already enabled - check the radio and show main content
                             enableRadio.checked = true;
                             mainContent.style.display = 'block';
                             submitBtn.style.display = 'inline-block';
-                            
-                            // Update localStorage to reflect current state
-                            localStorage.setItem(`grading_enabled_${thesisId}`, 'true');
                         } else {
                             // Grading not yet enabled - hide main content
                             enableRadio.checked = false;
@@ -2594,16 +2584,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             submitBtn.style.display = 'none';
                         }
                     } else {
-                        // Fallback to localStorage only
-                        if (localGradingEnabled) {
-                            enableRadio.checked = true;
-                            mainContent.style.display = 'block';
-                            submitBtn.style.display = 'inline-block';
-                        } else {
-                            enableRadio.checked = false;
-                            mainContent.style.display = 'none';
-                            submitBtn.style.display = 'none';
-                        }
+                        // Default to not enabled
+                        enableRadio.checked = false;
+                        mainContent.style.display = 'none';
+                        submitBtn.style.display = 'none';
                     }
                 } catch (error) {
                     console.error('Error checking grading status:', error);
@@ -2633,16 +2617,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const enableRadio = document.getElementById('enableGradingRadio');
         const mainContent = document.getElementById('gradingMainContent');
         const submitBtn = document.getElementById('submitGradingBtn');
-        const thesisId = document.getElementById('gradingThesisId').value;
         
         if (enableRadio.checked) {
             mainContent.style.display = 'block';
             submitBtn.style.display = 'inline-block';
             
-            // Save the grading enabled state
-            localStorage.setItem(`grading_enabled_${thesisId}`, 'true');
-            
-            // Enable grading for committee members and save the grading enabled status
+            // Enable grading for committee members
+            const thesisId = document.getElementById('gradingThesisId').value;
             enableCommitteeGrading(thesisId);
             
             // Show notification about enabling grading for committee members
@@ -2650,9 +2631,6 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             mainContent.style.display = 'none';
             submitBtn.style.display = 'none';
-            
-            // Remove the grading enabled state
-            localStorage.removeItem(`grading_enabled_${thesisId}`);
         }
     };
 
@@ -2729,9 +2707,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify({
                     thesis_id: gradingData.thesis_id,
                     grade: gradingData.grade,
-                    comment: gradingData.comment,
-                    comment_type: 'final',
-                    title: 'Τελική Βαθμολογία'
+                    comment: gradingData.comment
                 })
             });
             
@@ -3343,37 +3319,50 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log('Overview cards updated');
         
-        // Update performance metrics
-        const avgMonths = stats.performance.averageCompletionMonths;
-        updateElement('avgCompletionTime', avgMonths > 0 ? `${avgMonths} μήνες` : '-');
-        updateElement('successRate', stats.performance.successRate > 0 ? `${stats.performance.successRate}%` : '-');
-        updateElement('supervisorCount', stats.overview.roleDistribution.supervisor || 0);
-        updateElement('committeeCount', stats.overview.roleDistribution.committee_member || 0);
-        updateElement('activeSupervisionsCount', stats.overview.statusDistribution.active || 0);
-        
-        // Calculate and update completion rate
-        const totalTheses = stats.overview.totalTheses;
-        const completedTheses = stats.overview.statusDistribution.completed || 0;
-        const completionRate = totalTheses > 0 ? Math.round((completedTheses / totalTheses) * 100) : 0;
-        updateElement('completionRate', `${completionRate}%`);
-        
-        console.log('Performance metrics updated');
-        
-        // Update progress bars
-        const completionProgress = document.getElementById('completionProgress');
-        const successProgress = document.getElementById('successProgress');
-        
-        if (completionProgress) {
-            completionProgress.style.width = `${completionRate}%`;
-            completionProgress.setAttribute('aria-valuenow', completionRate);
+        // UC12: Update new statistics fields
+        if (stats.metrics) {
+            console.log('Updating UC12 metrics:', stats.metrics);
+            
+            // i. Average completion time
+            if (stats.metrics.averageCompletionTime) {
+                const supervised = stats.metrics.averageCompletionTime.supervised;
+                const committee = stats.metrics.averageCompletionTime.committeeMember;
+                
+                updateElement('supervisedAvgMonths', supervised.avgMonths > 0 ? supervised.avgMonths.toFixed(1) : '-');
+                updateElement('supervisedCompletedCount', supervised.totalCompleted || 0);
+                
+                updateElement('committeeAvgMonths', committee.avgMonths > 0 ? committee.avgMonths.toFixed(1) : '-');
+                updateElement('committeeCompletedCount', committee.totalCompleted || 0);
+            }
+            
+            // ii. Average grade
+            if (stats.metrics.averageGrade) {
+                const supervisedGrade = stats.metrics.averageGrade.supervised;
+                const committeeGrade = stats.metrics.averageGrade.committeeMember;
+                
+                updateElement('supervisedAvgGrade', supervisedGrade.avgGrade > 0 ? supervisedGrade.avgGrade.toFixed(2) : '-');
+                updateElement('supervisedGradedCount', supervisedGrade.totalGraded || 0);
+                
+                updateElement('committeeAvgGrade', committeeGrade.avgGrade > 0 ? committeeGrade.avgGrade.toFixed(2) : '-');
+                updateElement('committeeGradedCount', committeeGrade.totalGraded || 0);
+            }
+            
+            // iii. Total counts
+            if (stats.metrics.totalCounts) {
+                const supervisedCounts = stats.metrics.totalCounts.supervised;
+                const committeeCounts = stats.metrics.totalCounts.committeeMember;
+                
+                updateElement('supervisedTotalCount', supervisedCounts.total || 0);
+                updateElement('supervisedCompletedTotal', supervisedCounts.completed || 0);
+                updateElement('supervisedActiveTotal', supervisedCounts.active || 0);
+                
+                updateElement('committeeTotalCount', committeeCounts.total || 0);
+                updateElement('committeeCompletedTotal', committeeCounts.completed || 0);
+                updateElement('committeeActiveTotal', committeeCounts.active || 0);
+            }
+            
+            console.log('UC12 metrics updated');
         }
-        
-        if (successProgress && stats.performance.successRate > 0) {
-            successProgress.style.width = `${stats.performance.successRate}%`;
-            successProgress.setAttribute('aria-valuenow', stats.performance.successRate);
-        }
-        
-        console.log('Progress bars updated');
         
         // Create charts
         console.log('Creating charts with data:', stats);
@@ -4763,9 +4752,30 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Publish announcement by changing status from waiting to uploaded
     window.publishAnnouncement = function(thesisId) {
-        if (!confirm('Είστε σίγουροι ότι θέλετε να δημοσιεύσετε την ανακοίνωση παρουσίασης;')) {
-            return;
+        // Store thesis ID for confirmation
+        document.getElementById('confirmPublishAnnouncement').setAttribute('data-thesis-id', thesisId);
+        
+        // Show the modal
+        const modal = new bootstrap.Modal(document.getElementById('publishAnnouncementModal'));
+        modal.show();
+    };
+
+    // Handle the confirmation button click
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'confirmPublishAnnouncement') {
+            const thesisId = e.target.getAttribute('data-thesis-id');
+            if (thesisId) {
+                // Hide the modal first
+                const modal = bootstrap.Modal.getInstance(document.getElementById('publishAnnouncementModal'));
+                if (modal) modal.hide();
+                
+                // Proceed with publishing
+                performActualPublish(thesisId);
+            }
         }
+    });
+
+    function performActualPublish(thesisId) {
 
         // Disable button during request
         const button = document.querySelector(`[onclick="publishAnnouncement(${thesisId})"]`);

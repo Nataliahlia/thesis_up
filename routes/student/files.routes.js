@@ -45,7 +45,7 @@ async function createProtocolHtml(thesisId) {
         <title>Πρακτικό Εξέτασης</title>
         
         <!-- Favicon -->
-        <link rel="icon" type="image/png" href="../favicon_32x32.png">
+        <link rel="icon" type="image/png" href="../images/favicon_32x32.png">
 
         <style>
             body {

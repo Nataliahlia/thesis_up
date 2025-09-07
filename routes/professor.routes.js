@@ -152,8 +152,17 @@ router.get('/api/professor/my-theses', (req, res) => {
             END as my_role,
             t.time_of_activation as assigned_at,
             CASE 
-                WHEN t.time_of_activation IS NOT NULL 
+                WHEN t.time_of_activation IS NOT NULL AND t.state IN ('Ενεργή', 'Υπό Εξέταση')
                 THEN DATEDIFF(NOW(), t.time_of_activation)
+                WHEN t.time_of_activation IS NOT NULL AND t.state = 'Περατωμένη'
+                THEN DATEDIFF(
+                    (SELECT te.event_date 
+                     FROM thesis_events te 
+                     WHERE te.thesis_id = t.thesis_id 
+                     AND te.event_type = 'Περάτωση' 
+                     LIMIT 1), 
+                    t.time_of_activation
+                )
                 ELSE NULL 
             END as duration,
             t.pdf as pdfFile,
@@ -197,8 +206,10 @@ router.get('/api/professor/my-theses', (req, res) => {
             student: thesis.student_name && thesis.student_surname ? 
                 `${thesis.student_name} ${thesis.student_surname}` : 'Μη ανατεθειμένη',
             assigned_at: thesis.assigned_at ? thesis.assigned_at.toISOString().split('T')[0] : null,
+            assignDate: thesis.assigned_at ? thesis.assigned_at.toISOString().split('T')[0] : null, // Add this for frontend compatibility
             created_at: thesis.created_at ? thesis.created_at.toISOString().split('T')[0] : null,
-            duration: thesis.duration || 0
+            duration: thesis.duration || 0,
+            role: thesis.my_role // Add this to fix the undefined role badge
         }));
         
         console.log('Transformed results:', transformedResults);
@@ -819,8 +830,17 @@ router.get('/api/professor/thesis-details/:thesisId', (req, res) => {
             p.name as supervisor_name,
             p.surname as supervisor_surname,
             CASE 
-                WHEN tt.time_of_activation IS NOT NULL 
+                WHEN tt.time_of_activation IS NOT NULL AND tt.state IN ('Ενεργή', 'Υπό Εξέταση')
                 THEN DATEDIFF(CURDATE(), tt.time_of_activation)
+                WHEN tt.time_of_activation IS NOT NULL AND tt.state = 'Περατωμένη'
+                THEN DATEDIFF(
+                    (SELECT te.event_date 
+                     FROM thesis_events te 
+                     WHERE te.thesis_id = tt.thesis_id 
+                     AND te.event_type = 'Περάτωση' 
+                     LIMIT 1), 
+                    tt.time_of_activation
+                )
                 ELSE NULL 
             END as duration_days,
             (SELECT MIN(te.event_date) 
@@ -1204,16 +1224,19 @@ router.get('/api/professor/statistics', (req, res) => {
 
     // Parallel queries to get comprehensive statistics
     const queries = {
-        // Basic counts by status
+        // Basic counts by status (avoiding duplicates)
         statusStats: `
             SELECT 
                 state as status,
-                COUNT(*) as count
+                COUNT(DISTINCT thesis_id) as count
             FROM thesis_topic 
-            WHERE instructor_id = ? OR thesis_id IN (
-                SELECT thesis_id FROM thesis_committee 
-                WHERE professor_id = ?
-            )
+            WHERE instructor_id = ? 
+               OR member1 = ? 
+               OR member2 = ?
+               OR thesis_id IN (
+                   SELECT DISTINCT thesis_id FROM thesis_committee 
+                   WHERE professor_id = ? AND status = 'accepted'
+               )
             GROUP BY state
         `,
         
@@ -1221,7 +1244,7 @@ router.get('/api/professor/statistics', (req, res) => {
         monthlyTrend: `
             SELECT 
                 DATE_FORMAT(date_created, '%Y-%m') as month,
-                COALESCE(COUNT(t.thesis_id), 0) as count
+                COALESCE(COUNT(thesis_creation.thesis_id), 0) as count
             FROM (
                 SELECT DATE_SUB(CURDATE(), INTERVAL n MONTH) as date_created
                 FROM (
@@ -1230,9 +1253,14 @@ router.get('/api/professor/statistics', (req, res) => {
                     SELECT 8 UNION SELECT 9 UNION SELECT 10 UNION SELECT 11
                 ) nums
             ) months
-            LEFT JOIN thesis_topic t ON DATE_FORMAT(t.time_of_activation, '%Y-%m') = DATE_FORMAT(months.date_created, '%Y-%m')
-                AND t.instructor_id = ?
-                AND t.time_of_activation IS NOT NULL
+            LEFT JOIN (
+                SELECT DISTINCT t.thesis_id, MIN(te.event_date) as creation_date
+                FROM thesis_topic t
+                INNER JOIN thesis_events te ON te.thesis_id = t.thesis_id
+                WHERE t.instructor_id = ?
+                   AND (te.status = 'Χωρίς Ανάθεση' OR te.event_type LIKE '%Δημιουργία%')
+                GROUP BY t.thesis_id
+            ) thesis_creation ON DATE_FORMAT(thesis_creation.creation_date, '%Y-%m') = DATE_FORMAT(months.date_created, '%Y-%m')
             GROUP BY DATE_FORMAT(date_created, '%Y-%m')
             ORDER BY month ASC
         `,
@@ -1266,6 +1294,87 @@ router.get('/api/professor/statistics', (req, res) => {
                 COUNT(CASE WHEN state = 'Ακυρωμένη' THEN 1 END) as cancelled_count
             FROM thesis_topic 
             WHERE instructor_id = ?
+        `,
+        
+        // UC12: Average completion time for supervised theses
+        supervisedCompletionTime: `
+            SELECT 
+                AVG(DATEDIFF(te.event_date, t.time_of_activation)) as avg_completion_days,
+                COUNT(*) as total_supervised_completed
+            FROM thesis_topic t
+            INNER JOIN thesis_events te ON t.thesis_id = te.thesis_id
+            WHERE t.instructor_id = ? 
+            AND t.state = 'Περατωμένη'
+            AND te.event_type = 'Περάτωση'
+            AND t.time_of_activation IS NOT NULL
+        `,
+        
+        // UC12: Average completion time for committee member theses
+        committeeMemberCompletionTime: `
+            SELECT 
+                AVG(DATEDIFF(te.event_date, t.time_of_activation)) as avg_completion_days,
+                COUNT(*) as total_committee_completed
+            FROM thesis_topic t
+            INNER JOIN thesis_events te ON t.thesis_id = te.thesis_id
+            WHERE (t.member1 = ? OR t.member2 = ? OR EXISTS (
+                SELECT 1 FROM thesis_committee tc 
+                WHERE tc.thesis_id = t.thesis_id AND tc.professor_id = ? AND tc.status = 'accepted'
+            ))
+            AND t.instructor_id != ?
+            AND t.state = 'Περατωμένη'
+            AND te.event_type = 'Περάτωση'
+            AND t.time_of_activation IS NOT NULL
+        `,
+        
+        // UC12: Average grade for supervised theses
+        supervisedGrades: `
+            SELECT 
+                AVG(t.final_grade) as avg_grade,
+                COUNT(*) as total_supervised_graded
+            FROM thesis_topic t
+            WHERE t.instructor_id = ? 
+            AND t.state = 'Περατωμένη'
+            AND t.final_grade IS NOT NULL
+        `,
+        
+        // UC12: Average grade for committee member theses
+        committeeMemberGrades: `
+            SELECT 
+                AVG(t.final_grade) as avg_grade,
+                COUNT(*) as total_committee_graded
+            FROM thesis_topic t
+            WHERE (t.member1 = ? OR t.member2 = ? OR EXISTS (
+                SELECT 1 FROM thesis_committee tc 
+                WHERE tc.thesis_id = t.thesis_id AND tc.professor_id = ? AND tc.status = 'accepted'
+            ))
+            AND t.instructor_id != ?
+            AND t.state = 'Περατωμένη'
+            AND t.final_grade IS NOT NULL
+        `,
+        
+        // UC12: Total count of supervised vs committee member theses
+        roleBasedCounts: `
+            SELECT 
+                'supervised' as role_type,
+                COUNT(*) as total_count,
+                COUNT(CASE WHEN state = 'Περατωμένη' THEN 1 END) as completed_count,
+                COUNT(CASE WHEN state = 'Ενεργή' THEN 1 END) as active_count
+            FROM thesis_topic 
+            WHERE instructor_id = ?
+            
+            UNION ALL
+            
+            SELECT 
+                'committee_member' as role_type,
+                COUNT(*) as total_count,
+                COUNT(CASE WHEN state = 'Περατωμένη' THEN 1 END) as completed_count,
+                COUNT(CASE WHEN state = 'Ενεργή' THEN 1 END) as active_count
+            FROM thesis_topic t
+            WHERE (t.member1 = ? OR t.member2 = ? OR EXISTS (
+                SELECT 1 FROM thesis_committee tc 
+                WHERE tc.thesis_id = t.thesis_id AND tc.professor_id = ? AND tc.status = 'accepted'
+            ))
+            AND t.instructor_id != ?
         `,
         
         // Student performance stats
@@ -1387,6 +1496,26 @@ router.get('/api/professor/statistics', (req, res) => {
         const studentSuccessRate = studentData.total_students > 0 ? 
             ((studentData.successful_students / studentData.total_students) * 100).toFixed(1) : 0;
 
+        // UC12: Process new statistics for the required metrics
+        const supervisedCompletionData = results.supervisedCompletionTime[0] || {};
+        const committeeMemberCompletionData = results.committeeMemberCompletionTime[0] || {};
+        const supervisedGradesData = results.supervisedGrades[0] || {};
+        const committeeMemberGradesData = results.committeeMemberGrades[0] || {};
+        
+        // Process role-based counts
+        const roleBasedData = {
+            supervised: { total_count: 0, completed_count: 0, active_count: 0 },
+            committee_member: { total_count: 0, completed_count: 0, active_count: 0 }
+        };
+        
+        results.roleBasedCounts.forEach(row => {
+            if (row.role_type === 'supervised') {
+                roleBasedData.supervised = row;
+            } else if (row.role_type === 'committee_member') {
+                roleBasedData.committee_member = row;
+            }
+        });
+
         // Prepare final response
         const statistics = {
             overview: {
@@ -1407,8 +1536,53 @@ router.get('/api/professor/statistics', (req, res) => {
                 cancelledStudents: studentData.cancelled_students || 0,
                 successRate: parseFloat(studentSuccessRate)
             },
+            // UC12: Required statistics
+            metrics: {
+                // i. Μέσος χρόνος περάτωσης διπλωματικών
+                averageCompletionTime: {
+                    supervised: {
+                        avgDays: supervisedCompletionData.avg_completion_days || 0,
+                        avgMonths: supervisedCompletionData.avg_completion_days ? 
+                            Math.round((supervisedCompletionData.avg_completion_days / 30) * 10) / 10 : 0,
+                        totalCompleted: supervisedCompletionData.total_supervised_completed || 0
+                    },
+                    committeeMember: {
+                        avgDays: committeeMemberCompletionData.avg_completion_days || 0,
+                        avgMonths: committeeMemberCompletionData.avg_completion_days ? 
+                            Math.round((committeeMemberCompletionData.avg_completion_days / 30) * 10) / 10 : 0,
+                        totalCompleted: committeeMemberCompletionData.total_committee_completed || 0
+                    }
+                },
+                // ii. Μέσος βαθμός διπλωματικών
+                averageGrade: {
+                    supervised: {
+                        avgGrade: supervisedGradesData.avg_grade ? 
+                            Math.round(supervisedGradesData.avg_grade * 100) / 100 : 0,
+                        totalGraded: supervisedGradesData.total_supervised_graded || 0
+                    },
+                    committeeMember: {
+                        avgGrade: committeeMemberGradesData.avg_grade ? 
+                            Math.round(committeeMemberGradesData.avg_grade * 100) / 100 : 0,
+                        totalGraded: committeeMemberGradesData.total_committee_graded || 0
+                    }
+                },
+                // iii. Συνολικό πλήθος διπλωματικών
+                totalCounts: {
+                    supervised: {
+                        total: roleBasedData.supervised.total_count || 0,
+                        completed: roleBasedData.supervised.completed_count || 0,
+                        active: roleBasedData.supervised.active_count || 0
+                    },
+                    committeeMember: {
+                        total: roleBasedData.committee_member.total_count || 0,
+                        completed: roleBasedData.committee_member.completed_count || 0,
+                        active: roleBasedData.committee_member.active_count || 0
+                    }
+                }
+            },
             trends: {
-                monthlyCreation: monthlyData
+                monthlyCreation: monthlyData,
+                statusChanges: results.recentActivity.slice(0, 10) // Last 10 status changes
             },
             recentActivity: results.recentActivity.map(activity => ({
                 ...activity,
@@ -1451,12 +1625,19 @@ router.get('/api/professor/statistics', (req, res) => {
     };
 
     // Execute all queries
-    executeQuery('statusStats', queries.statusStats, [professorId, professorId]);
+    executeQuery('statusStats', queries.statusStats, [professorId, professorId, professorId, professorId]);
     executeQuery('monthlyTrend', queries.monthlyTrend, [professorId]);
     executeQuery('roleDistribution', queries.roleDistribution, [professorId, professorId, professorId]);
     executeQuery('completionStats', queries.completionStats, [professorId]);
     executeQuery('studentStats', queries.studentStats, [professorId]);
     executeQuery('recentActivity', queries.recentActivity, [professorId]);
+    
+    // UC12: New statistics queries
+    executeQuery('supervisedCompletionTime', queries.supervisedCompletionTime, [professorId]);
+    executeQuery('committeeMemberCompletionTime', queries.committeeMemberCompletionTime, [professorId, professorId, professorId, professorId]);
+    executeQuery('supervisedGrades', queries.supervisedGrades, [professorId]);
+    executeQuery('committeeMemberGrades', queries.committeeMemberGrades, [professorId, professorId, professorId, professorId]);
+    executeQuery('roleBasedCounts', queries.roleBasedCounts, [professorId, professorId, professorId, professorId, professorId]);
 });
 
 // ===== UC11: COMMITTEE INVITATIONS ENDPOINTS =====

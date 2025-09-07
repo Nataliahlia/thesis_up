@@ -481,6 +481,17 @@ async function underExaminationThesisContent(thesis) {
     examinationTypeRendering(); // Call the function that handles the rendering of the examination type inputs
     uploadedFile(thesis); // Call the function to upload the file
 
+// Έλεγχος αν έχει γίνει ήδη υποβολή για να κρυφτεί το κουμπί
+if (thesis.draft_file || (thesis.additional_links && JSON.parse(thesis.additional_links || '[]').length > 0)) {
+    // Κρύψε το κουμπί υποβολής αν υπάρχει ήδη αρχείο ή σύνδεσμοι
+    setTimeout(() => {
+        const submitBtn = document.querySelector('#thesisManagementForm button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.style.display = 'none';
+        }
+    }, 100); // Μικρή καθυστέρηση για να φορτωθεί το DOM
+}
+
     // Check if the thesis has a draft file
     if (thesis.draft_file) {
         renderUploadedFile(thesis.draft_file); // Call the function to render the uploaded file
@@ -605,6 +616,12 @@ function uploadedFile(thesis) {
             if (result.success) {
                 showCustomAlert("Επιτυχής Υποβολή");
 
+                // Hide the submit button after successful submission
+                const submitBtn = document.querySelector('#thesisManagementForm button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.style.display = 'none';
+                }
+
                 // Clear the dynamic links area
                 const inputCards = document.querySelectorAll('#dynamicLinksArea .link-card');
                 inputCards.forEach(card => card.remove());
@@ -617,6 +634,7 @@ function uploadedFile(thesis) {
                         console.log('Updated thesis details:', updatedThesis);
                         thesis = updatedThesis;
 
+                        console.log('Updated thesis details:', updatedThesis.additional_links);
                         if (updatedThesis.additional_links) {
                             let linksArray = [];
                             try {
@@ -625,8 +643,11 @@ function uploadedFile(thesis) {
                                 linksArray = [];
                             }
             
-                            // Call the function to render the submitted links
-                            renderSubmittedLinks(linksArray, thesis); 
+                            // Only render if the array is not empty
+                            if (Array.isArray(linksArray) && linksArray.length > 0) {
+                                // Call the function to render the submitted links
+                                renderSubmittedLinks(linksArray, thesis); 
+                            }
                         }
                         if (updatedThesis.draft_file) {
                             // Call the function to render the uploaded file
@@ -717,7 +738,7 @@ async function getExaminationInfo(thesis) {
         // if the examination info is available it will be true for sure
         hasExaminationInfo = true; 
 
-        const { date, time, type, location_or_link } = result.data;     // Get the server answer   
+        const { date, time, type, location_or_link, state } = result.data;     // Get the server answer   
         document.getElementById('dateOfExamination').value = date.split('T')[0];    // Extract just the date, not the time
         document.getElementById('timeOfExamination').value = time;
         document.getElementById('examinationType').value = type;
@@ -1506,10 +1527,22 @@ function renderUploadedFile(filename) {
         fileInput.required = true;                                  // Make field required again
         info.remove();                                              // Remove the info message
         changeBtn.remove();                                         // Remove the change button
+
+        // Show the hidden submit button again
+        const submitBtn = document.querySelector('#thesisManagementForm button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.style.display = 'block';
+        }
     };
 
     // Add the info and change button to the file input's parent element
     fileInput.parentElement.parentElement.prepend(info, changeBtn);
+
+    // Κρύψε το κουμπί υποβολής αφού υπάρχει ήδη αρχείο
+const submitBtn = document.querySelector('#thesisManagementForm button[type="submit"]');
+if (submitBtn) {
+    submitBtn.style.display = 'none';
+}
 }
 
 // Function to render the submitted links
@@ -1574,6 +1607,14 @@ function renderSubmittedLinks(linksArray, thesis) {
         row.appendChild(removeBtn);
         container.appendChild(row);
     });
+
+    // Κρύψε το κουμπί υποβολής αφού υπάρχουν ήδη σύνδεσμοι
+if (linksArray.length > 0) {
+    const submitBtn = document.querySelector('#thesisManagementForm button[type="submit"]');
+    if (submitBtn) {
+        submitBtn.style.display = 'none';
+    }
+}
 }
 
 // This is created for the additional links
@@ -1605,6 +1646,12 @@ function addLinkInput() {
 
     // Add the card to the container
     container.appendChild(card);
+
+    // Show the hidden submit button
+    const submitBtn = document.querySelector('#thesisManagementForm button[type="submit"]');
+    if (submitBtn) {
+        submitBtn.style.display = 'block';
+    }
 }
 
 // Function for the successful submission of the thesis

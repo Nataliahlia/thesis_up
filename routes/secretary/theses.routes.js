@@ -186,8 +186,8 @@ router.post('/finalize-thesis', (req, res) => {
 
         // SQL query to insert into the thesis events
         const query_two = `
-            INSERT INTO thesis_events (thesis_id, status, created_by, event_type, description)
-            VALUES (?, 'Περατωμένη', ?, 'Περάτωση', 'Η διπλωματική εργασία περατώθηκε.')
+            INSERT INTO thesis_events (thesis_id, status, created_by, event_type, event_date, description)
+            VALUES (?, 'Περατωμένη', ?, 'Περάτωση', NOW(), 'Η διπλωματική εργασία περατώθηκε.')
         `;
 
         // Execute the insert query into thesis_events
