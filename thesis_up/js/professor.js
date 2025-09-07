@@ -1001,8 +1001,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function formatDuration(days) {
-        if (!days || days === null || days === undefined) return 'Δεν έχει ενεργοποιηθεί';
-        if (days <= 0) return 'Μη διαθέσιμο';
+        if (days === null || days === undefined) return 'Δεν έχει ενεργοποιηθεί';
+        if (days < 0) return 'Μη διαθέσιμο';
+        if (days === 0) return 'Ενεργοποιήθηκε σήμερα';
         if (days < 30) return `${days} ημέρες`;
         const months = Math.floor(days / 30);
         const remainingDays = days % 30;
@@ -1943,6 +1944,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             const thesis = result.data;
+            console.log('DEBUG: Thesis object received:', thesis);
+            console.log('DEBUG: Thesis title:', thesis.title);
+            console.log('DEBUG: Available properties:', Object.keys(thesis));
             generateThesisPDF(thesis);
             
             showNotification('Το PDF εξήχθη επιτυχώς!', 'success');
@@ -1963,7 +1967,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <!DOCTYPE html>
             <html>
             <head>
-                <title>Αναφορά Διπλωματικής - ${thesis.title}</title>
+                <title>Αναφορά Διπλωματικής - ${thesis.title || 'Διπλωματική Εργασία'}</title>
                 <meta charset="utf-8">
                 <style>
                     body { 
@@ -2144,22 +2148,27 @@ document.addEventListener('DOMContentLoaded', function() {
             content += `</div>`;
         }
         
-        // Comments
+        // Comments - Only show final comments for PDF export
         if (thesis.comments && thesis.comments.length > 0) {
-            content += `
-                <div class="section">
-                    <h2>Σχόλια Επιτροπής</h2>
-            `;
-            thesis.comments.forEach(comment => {
+            // Filter comments to show only 'final' type comments
+            const finalComments = thesis.comments.filter(comment => comment.comment_type === 'final');
+            
+            if (finalComments.length > 0) {
                 content += `
-                    <div class="comment">
-                        <strong>${comment.author_name}</strong> - ${formatDate(comment.created_at)}<br>
-                        ${comment.grade ? `<strong>Βαθμός:</strong> ${comment.grade}<br>` : ''}
-                        <p>${comment.comment}</p>
-                    </div>
+                    <div class="section">
+                        <h2>Σχόλια Επιτροπής</h2>
                 `;
-            });
-            content += `</div>`;
+                finalComments.forEach(comment => {
+                    content += `
+                        <div class="comment">
+                            <strong>${comment.author_name}</strong> - ${formatDate(comment.created_at)}<br>
+                            ${comment.grade ? `<strong>Βαθμός:</strong> ${comment.grade}<br>` : ''}
+                            <p>${comment.comment}</p>
+                        </div>
+                    `;
+                });
+                content += `</div>`;
+            }
         }
         
         return content;
@@ -2720,7 +2729,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify({
                     thesis_id: gradingData.thesis_id,
                     grade: gradingData.grade,
-                    comment: gradingData.comment
+                    comment: gradingData.comment,
+                    comment_type: 'final',
+                    title: 'Τελική Βαθμολογία'
                 })
             });
             

@@ -96,7 +96,12 @@ CREATE TABLE thesis_topic (
   draft_file VARCHAR(255),               
   additional_links TEXT,             
   -- Πληροφορίες ενεργοποίησης
-  time_of_activation DATETIME,            -- Πότε έγινε ενεργή η διπλωματική         
+  time_of_activation DATETIME,            -- Πότε έγινε ενεργή η διπλωματική
+  -- Επιπλέον στοιχεία
+  protocol_number INT,
+  practical_file VARCHAR(255),
+  nimertis_link VARCHAR(255),
+  final_grade DECIMAL(4,2),
   -- Ξένες κλείδες
   FOREIGN KEY (instructor_id) REFERENCES professor(professor_id),
   FOREIGN KEY (student_id) REFERENCES student(student_number),
@@ -104,28 +109,18 @@ CREATE TABLE thesis_topic (
   FOREIGN KEY (member2) REFERENCES professor(professor_id)
 );
 
--- Safely add columns to thesis_topic table
-ALTER TABLE thesis_topic
-ADD COLUMN IF NOT EXISTS protocol_number INT AFTER additional_links,
-ADD COLUMN IF NOT EXISTS practical_file VARCHAR(255) AFTER protocol_number,
-ADD COLUMN IF NOT EXISTS nimertis_link VARCHAR(255) NULL,
-ADD COLUMN IF NOT EXISTS final_grade DECIMAL(4,2) NULL;
-
 CREATE TABLE canceled_thesis (
 	submission_id INT AUTO_INCREMENT PRIMARY KEY,
     id INT NOT NULL,
     state ENUM('ακυρωμένη') DEFAULT 'ακυρωμένη',
-    reason ENUM('από Διδάσκοντα', 'κατόπιν αίτησης Φοιτητή/τριας') NOT NULL
+    reason ENUM('από Διδάσκοντα', 'κατόπιν αίτησης Φοιτητή/τριας') NOT NULL,
+    cancelled_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Ημερομηνία ακύρωσης',
+    assembly_number VARCHAR(50) NULL COMMENT 'Αριθμός Γενικής Συνέλευσης για ακύρωση',
+    assembly_year YEAR NULL COMMENT 'Έτος Γενικής Συνέλευσης για ακύρωση'
 );
 
--- Safely add columns to canceled_thesis table
-ALTER TABLE canceled_thesis 
-ADD COLUMN IF NOT EXISTS cancelled_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Ημερομηνία ακύρωσης',
-ADD COLUMN IF NOT EXISTS assembly_number VARCHAR(50) NULL COMMENT 'Αριθμός Γενικής Συνέλευσης για ακύρωση',
-ADD COLUMN IF NOT EXISTS assembly_year YEAR NULL COMMENT 'Έτος Γενικής Συνέλευσης για ακύρωση';
-
--- Add index if it doesn't exist
-CREATE INDEX IF NOT EXISTS idx_canceled_thesis_date ON canceled_thesis(cancelled_at);
+-- Add index
+CREATE INDEX idx_canceled_thesis_date ON canceled_thesis(cancelled_at);
 
 -- Create table for announcements (needed for public endpoint)
 CREATE TABLE announcements (
@@ -135,19 +130,16 @@ CREATE TABLE announcements (
     time TIME NOT NULL,
     type ENUM('Διά Ζώσης', 'Διαδικτυακά') NOT NULL,
     location_or_link VARCHAR(255),
+    state ENUM('waiting', 'uploaded'),
     FOREIGN KEY (thesis_id) REFERENCES thesis_topic(thesis_id)
 );
-
--- Safely add columns to announcements table
-ALTER TABLE announcements 
-ADD COLUMN IF NOT EXISTS state ENUM('waiting', 'uploaded');
 
 -- Create table for thesis committee members
 CREATE TABLE thesis_committee (
     id INT AUTO_INCREMENT PRIMARY KEY,
     thesis_id INT NOT NULL,
     professor_id INT NOT NULL,
-    role ENUM('supervisor', 'member', 'secretary') NOT NULL,
+    role ENUM('supervisor', 'member') NULL,
     invitation_date DATE,
     acceptance_date DATE,
     denial_date DATE,
@@ -157,66 +149,47 @@ CREATE TABLE thesis_committee (
     UNIQUE KEY unique_thesis_professor (thesis_id, professor_id)
 );
 
--- Safely modify thesis_committee table
-ALTER TABLE thesis_committee
-MODIFY COLUMN role ENUM('supervisor', 'member') NULL;
-
 -- Create table for thesis timeline/events
 CREATE TABLE thesis_events (
     id INT AUTO_INCREMENT PRIMARY KEY,
     thesis_id INT NOT NULL,
-    event_type VARCHAR(100) NOT NULL,
+    event_type VARCHAR(100) NULL,
     description TEXT,
-    event_date DATETIME NOT NULL,
-    status VARCHAR(50),
-    created_by INT,
-    FOREIGN KEY (thesis_id) REFERENCES thesis_topic(thesis_id),
-    FOREIGN KEY (created_by) REFERENCES professor(professor_id) 
+    event_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    status ENUM(
+        'Χωρίς Ανάθεση',
+        'Υπό Ανάθεση',
+        'Ενεργή',
+        'Υπό Εξέταση',
+        'Περατωμένη',
+        'Ακυρωμένη'
+    ) NOT NULL,
+    created_by VARCHAR(100) NOT NULL,
+    FOREIGN KEY (thesis_id) REFERENCES thesis_topic(thesis_id)
 );
-
-ALTER TABLE thesis_events
-DROP FOREIGN KEY IF EXISTS thesis_events_ibfk_2,
-MODIFY status ENUM(
-    'Χωρίς Ανάθεση',
-    'Υπό Ανάθεση',
-    'Ενεργή',
-    'Υπό Εξέταση',
-    'Περατωμένη',
-    'Ακυρωμένη'
-) NOT NULL,
-MODIFY event_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-MODIFY event_type VARCHAR(100) NULL,
-DROP FOREIGN KEY IF EXISTS thesis_events_ibfk_1,
-MODIFY created_by VARCHAR(100) NOT NULL;
 
 -- Create table for thesis comments/grades from committee
 CREATE TABLE thesis_comments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     thesis_id INT NOT NULL,
     professor_id INT NOT NULL,
+    title VARCHAR(255),
     comment TEXT,
     grade DECIMAL(4,2),
     comment_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-    comment_type ENUM('progress', 'final', 'correction') DEFAULT 'progress',
+    comment_type ENUM(
+        'general',      -- Γενική
+        'progress',     -- Πρόοδος
+        'meeting',      -- Συνάντηση
+        'deadline',     -- Προθεσμία
+        'issue',        -- Πρόβλημα
+        'achievement',  -- Επίτευγμα
+        'final',        -- Τελική
+        'correction'    -- Διόρθωση
+    ) DEFAULT 'general',
     FOREIGN KEY (thesis_id) REFERENCES thesis_topic(thesis_id),
     FOREIGN KEY (professor_id) REFERENCES professor(professor_id)
 );
-
--- Safely modify thesis_comments table
-ALTER TABLE thesis_comments 
-ADD COLUMN IF NOT EXISTS title VARCHAR(255) AFTER professor_id;
-
-ALTER TABLE thesis_comments
-MODIFY COLUMN comment_type ENUM(
-    'general',      -- Γενική
-    'progress',     -- Πρόοδος
-    'meeting',      -- Συνάντηση
-    'deadline',     -- Προθεσμία
-    'issue',        -- Πρόβλημα
-    'achievement',  -- Επίτευγμα
-    'final',        -- Τελική
-    'correction'    -- Διόρθωση
-) DEFAULT 'progress';
 
 -- Drop existing triggers if they exist to avoid conflicts
 DROP TRIGGER IF EXISTS after_insert_student;
