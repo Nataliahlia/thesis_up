@@ -301,39 +301,6 @@ thesis_up/
     └── readMe.md             # Caching strategy documentation
 ```
 
-## Development
-
-### Running in Development Mode
-```bash
-# Install development dependencies
-npm install --dev
-
-# Start with nodemon for auto-restart
-npx nodemon server.js
-
-# Or use the start script
-npm start
-```
-
-### Database Migrations
-```bash
-# Reset database (WARNING: This will delete all data)
-mysql -u root -p -e "DROP DATABASE thesis_up;"
-mysql -u root -p < database/database_schema_fixed.sql
-
-# Update passwords for existing users
-node scripts/updatePasswords.js
-```
-
-### Testing
-```bash
-# Run basic connection tests
-node -e "require('./db.js')"
-
-# Test server startup
-npm start
-```
-
 ## License
 
 This project is licensed under the ISC License - see the package.json file for details.
